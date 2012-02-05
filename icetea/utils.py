@@ -22,10 +22,6 @@ def coerce_put_post(request):
 
 		request.PUT = request.POST
 
-class HttpStatusCode(Exception):
-	def __init__(self, response):
-		self.response = response
-
 class MimerDataException(Exception):
     """
     Raised if the content_type and data don't match
@@ -118,6 +114,3 @@ class Mimer(object):
 def translate_mime(request):
     request = Mimer(request).translate()
                                                    
-# TODO: Move to resource.py
-def format_error(error):
-	return u"Django-IceTea crash report:\n\n%s" % error

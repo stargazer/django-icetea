@@ -18,8 +18,6 @@ from django.core import serializers
 
 import simplejson
 
-from utils import HttpStatusCode
-
 # Class which will register MimeTypes to methods which will decode the
 # corresponding MimeType to python data structures.
 from utils import Mimer
@@ -120,8 +118,6 @@ class Emitter(object):
                 ret = str(thing)
             elif isinstance(thing, Model):
                 ret = _model(thing, fields, nested)
-            elif isinstance(thing, HttpResponse):
-                raise HttpStatusCode(thing)
             elif inspect.isfunction(thing):
                 if not inspect.getargspec(thing)[0]:
                     ret = _any(thing())
