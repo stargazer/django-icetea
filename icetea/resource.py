@@ -6,18 +6,22 @@ from django.conf import settings
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.http import Http404, HttpResponseBadRequest, \
 	HttpResponseGone, HttpResponseNotAllowed, HttpResponseNotFound, \
-	HttpResponseForbidden
+	HttpResponseForbidden, HttpResponseServerError
 
 from django.db import connection
 import datetime
         
-from .utils import coerce_put_post, translate_mime, \
+from utils import coerce_put_post, translate_mime, format_error, \
 	MimerDataException, MethodNotAllowed, HttpStatusCode
 from .emitters import Emitter
-
+                   
+from django.views.debug import ExceptionReporter   
+from django.core.mail import send_mail, EmailMessage
+import sys
+									 
 # Mappings of:
 # {Handler, model}
-typemapper = {}
+TYPEMAPPER = {}
 
 class Resource():
 
@@ -37,7 +41,7 @@ class Resource():
 		self.handler = handler()
 
 		if getattr(self.handler, 'model', None):
-			typemapper[self.handler] = self.handler.model
+			TYPEMAPPER[self.handler] = self.handler.model
 
 
 		# TODO: Is this needed? Where and how is it used?
@@ -137,7 +141,7 @@ class Resource():
 		except Exception, e:
 			# If an exception was raised, call the ``error_handler`` method to
 			# format it nicely.
-			result = self.error_handler(e)
+			result = self.error_handler(e, request)
 
 		# OUTPUT
 		# ********
@@ -160,7 +164,7 @@ class Resource():
 			return result
 
 		# create instance of the emitter class
-		serializer = emitter_class(result, typemapper, self.handler, fields)
+		serializer = emitter_class(result, TYPEMAPPER, self.handler, fields)
 		# serialize
 		serialized_result = serializer.render(request)
 
@@ -179,9 +183,23 @@ class Resource():
 		return response
 
 	def email_exception(self, reporter):
-		pass
+		subject = "Piston crash report"
+		html = reporter.get_traceback_html()
+		message = EmailMessage(
+			settings.EMAIL_SUBJECT_PREFIX + subject,
+			html,
+			settings.SERVER_EMAIL,
+			[admin[1] for admin in settings.ADMINS]
+		)
+		message.content_subtype = 'html'
+		# Modify it if it works!
+		message.send(fail_silently=False)
 
-	def error_handler(self, e):
+	def error_handler(self, e, request):
+		"""
+		Any exceptions that are raised within the API handler, are taken care
+		of here.
+		"""
 		if isinstance(e, (ValidationError, TypeError)):
 			return HttpResponseBadRequest(dict(
 				type='validation',
@@ -202,7 +220,20 @@ class Resource():
 			return e.response
 
 		else:
-			pass
+			exc_type, exc_value, traceback = sys.exc_info()
+			reporter = ExceptionReporter(
+				request, 
+				exc_type, 
+				exc_value,
+				traceback.tb_next
+			)
+			if self.email_errors:
+				self.email_exception(reporter)
+			if self.display_errors:
+				return HttpResponseServerError(
+					format_error('\n'.join(reporter.format_exception())))
+			else:
+				raise
 			# TODO: Give 500 error. Crash report.
 
 		
