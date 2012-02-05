@@ -11,6 +11,7 @@ from .utils import MethodNotAllowed
 from django.core.exceptions import ValidationError
 from .custom_filters import filter_to_method
 
+# mappings of {Http request type, method}
 CALLMAP = {
 	'GET': 'read',
 	'PUT': 'update',

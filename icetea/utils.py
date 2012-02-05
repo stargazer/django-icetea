@@ -117,4 +117,7 @@ class Mimer(object):
 
 def translate_mime(request):
     request = Mimer(request).translate()
-    
+                                                   
+# TODO: Move to resource.py
+def format_error(error):
+	return u"Django-IceTea crash report:\n\n%s" % error
