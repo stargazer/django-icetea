@@ -27,22 +27,31 @@ from utils import Mimer
 #TODO: Needed?
 #from validate_jsonp import is_valid_jsonp_callback_value
 
+# TODO: WTF?
 try:
     import cStringIO as StringIO
 except ImportError:
     import StringIO
 
+#TODO: WTF?
 # Allow people to change the reverser (default `permalink`).
 reverser = permalink
 
 class Emitter(object):
     """
     Super emitter. All other emitters should subclass
-    this one. It has the `construct` method which
-    conveniently returns a serialized `dict`. This is
-    usually the only method you want to use in your
-    emitter. See below for examples.
+    this one. 
+    
+    Its :meth:~`icetea.emitters.Emitter.construct`method returns a serialized 
+    dictionary of whatever data it is given. This is typically the only method 
+    that a custom emitter needs.
 
+    Every time we need the API handler needs to return a response, a new
+    instance of the appropriate emitter should be created. Calling the
+    emitter's :meth:`icetea.emitters.Emitter.render` method, should serialize
+    the response data, and return them to the calling function.
+
+    TODO: WTF?
     `RESERVED_FIELDS` was introduced when better resource
     method detection came, and we accidentially caught these
     as the methods on the handler. Issue58 says that's no good.
@@ -53,23 +62,19 @@ class Emitter(object):
                             'allowed_methods', 'fields', 'exclude' ])
 
     def __init__(self, payload, typemapper, handler, fields=()):
+        # Typemapper: Contains mappings of { <api handler>: <data model>}       
         self.typemapper = typemapper
+        # Data to be serialized
         self.data = payload
+        # API Handler, handling this request        
         self.handler = handler
+        # Fields that the handler needs to output
         self.fields = fields
-
-        # Observation: Only the first time that the _model(thing, fields)
-        # function is called, it is called for the model that the self.handler
-        # represents. 
-        # Subsequent calls are caused by nested representations of models. 
-        # After the field selection has been made for the first time that _model has been
-		# called, we set self.nested to True. So we know that from that point
-		# on, all model representations are nested.
-        self.nested = False
 
         if isinstance(self.data, Exception):
             raise
 
+    # TODO: WTF?
     def method_fields(self, handler, fields):
         if not handler:
             return { }
@@ -83,23 +88,30 @@ class Emitter(object):
                 ret[field] = t
 
         return ret
-
+            
     def construct(self):
+
         """
         Recursively serialize a lot of types, and
         in cases where it doesn't recognize the type,
         it will fall back to Django's `smart_unicode`.
 
-        Returns `dict`.
+        Returns a dictionary representation of ``self.data``.
         """
-        def _any(thing, fields=()):
+        def _any(thing, fields=(), nested=False):
             """
             Dispatch, all types are routed through here.
+
+			@param thing: Data we are trying to serialize
+			@param fields: The fields of ``thing`` to serialize. Applies only
+            for database models.
+			@param nested: Are the fields of ``thing`` nested, or are they
+			first class fields?
             """        
             ret = None
 
             if isinstance(thing, QuerySet):
-                ret = _qs(thing, fields=fields)
+                ret = _qs(thing, fields=fields, nested=nested)
             elif isinstance(thing, (tuple, list, set)):
                 ret = _list(thing, fields=fields)
             elif isinstance(thing, dict):
@@ -107,7 +119,7 @@ class Emitter(object):
             elif isinstance(thing, decimal.Decimal):
                 ret = str(thing)
             elif isinstance(thing, Model):
-                ret = _model(thing, fields)
+                ret = _model(thing, fields, nested)
             elif isinstance(thing, HttpResponse):
                 raise HttpStatusCode(thing)
             elif inspect.isfunction(thing):
@@ -118,21 +130,25 @@ class Emitter(object):
                 if inspect.ismethod(f) and len(inspect.getargspec(f)[0]) == 1:
                     ret = _any(f())
             elif repr(thing).startswith("<django.db.models.fields.related.RelatedManager"):
-                ret = _any(thing.all())
+                ret = _any(thing.all(), (), nested)
             else:
                 ret = smart_unicode(thing, strings_only=True)
 
             return ret
 
-        def _fk(data, field):
+        def _fk(data, field, nested=True):
             """
             Foreign keys.
-            """
-            return _any(getattr(data, field.name))
 
-        def _related(data, fields=()):
+			Fields of foreign keys are always nested.
+            """
+            return _any(getattr(data, field.name), fields=(), nested=True)
+
+        def _related(data, fields=(), nested=True):
             """
             Foreign keys.
+
+            Fields of (related) foreign keys are always nested
             """
             return [ _model(m, fields) for m in data.iterator() ]
 
@@ -142,19 +158,20 @@ class Emitter(object):
             """
             return [ _model(m, fields) for m in getattr(data, field.name).iterator() ]
 
-        def _model(data, fields=()):
+        # TODO: Study it again, and get rid of all its garbage.
+        def _model(data, fields=(), nested=False):
             """
-            Models. Will respect the `fields` and/or
-            `exclude` on the handler (see `typemapper`.)
+            Models. 
+            
+            If ``data`` is nested, then the ``fields`` are decided by:
+                handler.fields - handler.exclude_nested.
+            If not, the ``fields`` should be given as input to the method.
             """
             ret = { }
             handler = self.in_typemapper(type(data))
 
-            if self.nested:
+            if nested:
                 fields = set(handler.fields) - set(handler.exclude_nested)
-
-			# Subsequent calls to _model, will be for nested models
-            self.nested = True
 
             get_absolute_uri = False
 
@@ -203,7 +220,7 @@ class Emitter(object):
                                 get_fields.remove(f.attname)
                         else:
                             if f.attname[:-3] in get_fields:
-                                ret[f.name] = _fk(data, f)
+                                ret[f.name] = _fk(data, f, nested=True)
                                 get_fields.remove(f.name)
 
                 for mf in data._meta.many_to_many:
@@ -225,7 +242,7 @@ class Emitter(object):
                                 if len(inspect.getargspec(inst)[0]) == 1:
                                     ret[model] = _any(inst(), fields)
                             else:
-                                ret[model] = _model(inst, fields)
+                                ret[model] = _model(inst, fields, nested=True)
 
                     elif maybe_field in met_fields:
                         # Overriding normal field which has a "resource method"
@@ -240,7 +257,7 @@ class Emitter(object):
                                 if len(inspect.getargspec(maybe)[0]) <= 1:
                                     ret[maybe_field] = _any(maybe())
                             else:
-                                ret[maybe_field] = _any(maybe)
+                                ret[maybe_field] = _any(maybe, nested=True)
                         else:
                             handler_f = getattr(handler or self.handler, maybe_field, None)
 
@@ -279,12 +296,14 @@ class Emitter(object):
 
             return ret
 
-        def _qs(data, fields=()):
+        def _qs(data, fields=(), nested=False):
             """
             Querysets.
 			``data`` is a queryset
+
+            Queryset data might as well be nested or first class fields.
             """
-            return [ _any(v, fields) for v in data ]
+            return [ _any(v, fields, nested) for v in data ]
 
         def _list(data, fields=()):
             """
@@ -298,10 +317,13 @@ class Emitter(object):
             """
             return dict([ (k, _any(v, fields)) for k, v in data.iteritems() ])
         
-        # Kickstart the seralizin'.
+        # Kickstart the seralizin'. 
         return _any(self.data, self.fields)
 
     def in_typemapper(self, model):
+        """
+        Returns the ``model``'s associated API handler.
+        """
         for _handler, _model in self.typemapper.iteritems():
             if model is _model:
                 return _handler
@@ -355,8 +377,10 @@ class JSONEmitter(Emitter):
     JSON emitter, understands timestamps.
     """
     def render(self, request):
+        # TODO: Get rid of this callback shit
         cb = request.GET.get('callback', None)
-        seria = simplejson.dumps(self.construct(), cls=DateTimeAwareJSONEncoder, ensure_ascii=False, indent=4)
+        data_as_dic = self.construct()
+        seria = simplejson.dumps(data_as_dic, cls=DateTimeAwareJSONEncoder, ensure_ascii=False, indent=4)
 
         # Callback
         if cb and is_valid_jsonp_callback_value(cb):
