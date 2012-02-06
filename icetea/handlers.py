@@ -6,10 +6,10 @@ import re
 from django.core.exceptions import ValidationError
 from django.db import models, connection
 from django.conf import settings
-from .authentication import DjangoAuthentication
-from .utils import MethodNotAllowed
+from authentication import DjangoAuthentication
+from utils import MethodNotAllowed
 from django.core.exceptions import ValidationError
-from .custom_filters import filter_to_method
+from custom_filters import filter_to_method
 
 # mappings of {Http request type, method}
 CALLMAP = {
@@ -18,9 +18,6 @@ CALLMAP = {
     'POST': 'create',
     'DELETE': 'delete',
 }
-
-# mappings of {Handler: Model}
-typemapper = {}
 
 class BaseHandlerMeta(type):
     """
