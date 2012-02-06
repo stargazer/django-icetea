@@ -490,14 +490,14 @@ class BaseHandler():
         # operation should work with.
         self.response_slice_data(response_structure, request, *args, **kwargs)
 
-        # TODO: Move this to the Resource class.    
-        if settings.DEBUG:
-            response = self.response_add_debug(response_structure, request)
-
-        # Since the response has been constructed, we can go and delete the
+        # Since the response has been constructed, we can go on and delete the
         # data now.
         if request.method.upper() == 'DELETE':
             self.data_safe_for_delete(response)
+
+        # TODO: Move this to the Resource class.    
+        if settings.DEBUG:
+            response = self.response_add_debug(response_structure, request)
 
 
         return response_structure
@@ -802,9 +802,10 @@ class ModelHandler(BaseHandler):
     def data_safe_for_delete(self, data):
         # The delete() Django method can only be called on a QuerySet or on a
         # Model instance. However, sometimes data=None (in cases where a
-        # singular DELETE request has been issued, but the model instancei
+        # singular DELETE request has been issued, but the model instance
         # specified cannot be deleted because of some dependencies), and the 
-        # delete() cannot be applied on a None object. Therefore, we need the check `if data`
+        # delete() cannot be applied on a None object. 
+        # Therefore, we need the check `if data`
         if data:
             data.delete()
 
