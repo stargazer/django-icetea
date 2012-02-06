@@ -18,12 +18,8 @@ from emitters import Emitter
 from django.views.debug import ExceptionReporter   
 from django.core.mail import send_mail, EmailMessage
 import sys
-                                     
-# Mappings of:
-# {Handler, model}
-TYPEMAPPER = {}
 
-class Resource():
+class Resource:
     """
     Instances of this class act as Django views.
     For every API endpoint, one such instance should be created, with the API
@@ -33,6 +29,9 @@ class Resource():
     Instances are callable, and therefore, every request on the application endpoint will start from
     the :meth:`Resource.__call__`.
     """
+    # Mappings of: {<Api Handler instance>, <model>}
+    TYPEMAPPER = {}
+    DEFAULT_EMITTER_FORMAT = 'json'
 
     def __init__(self, handler):
         """
@@ -45,13 +44,11 @@ class Resource():
         # This handler, resource pair will be responsible to handle all
         # incoming request of a certain API endpoint.
         """
-        self.DEFAULT_EMITTER_FORMAT = 'json'
         # Instantiate Handler instance
         self.handler = handler()
 
         if getattr(self.handler, 'model', None):
-            TYPEMAPPER[self.handler] = self.handler.model
-
+            self.TYPEMAPPER[self.handler] = self.handler.model
 
         # TODO: Is this needed? Where and how is it used?
         self.csrf_exempt = getattr(self.handler, 'csrf_exempt', True)
@@ -134,7 +131,7 @@ class Resource():
         fields = self.handler.get_requested_fields(request)
 
         # create instance of the emitter class
-        serializer = emitter_class(result, TYPEMAPPER, self.handler, fields)
+        serializer = emitter_class(self.TYPEMAPPER, result, self.handler, fields)
         # serialize the result
         serialized_result = serializer.render(request)
 
