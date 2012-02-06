@@ -170,7 +170,7 @@ class Resource():
         # Call the handler's request() method, which starts the actual
         # execution of the received request.
         try:            
-            result = self.handler.request(request, *args, **kwargs)
+            result = self.handler.execute_request(request, *args, **kwargs)
             # It's already in {data: <result>} data structure
         except Exception, e:
             # If an exception was raised, call the ``error_handler`` method to
@@ -196,7 +196,7 @@ class Resource():
             status_code
         except:
             status_code = 200
-
+        
         # Construct HTTP response       
         response = HttpResponse(serialized_result, mimetype=content_type, status=status_code)
         

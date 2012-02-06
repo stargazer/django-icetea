@@ -466,7 +466,7 @@ class BaseHandler():
             return data
     
     
-    def request(self, request, *args, **kwargs):
+    def execute_request(self, request, *args, **kwargs):
         """
         All requests are entering the handler here.
         """ 
@@ -495,12 +495,12 @@ class BaseHandler():
         if request.method.upper() == 'DELETE':
             self.data_safe_for_delete(response)
 
-        # TODO: Move this to the Resource class.    
         if settings.DEBUG:
-            response = self.response_add_debug(response_structure, request)
-
+            self.response_add_debug(response_structure, request)
 
         return response_structure
+
+
     
     def create(self, request, *args, **kwargs):
         """
