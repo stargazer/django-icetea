@@ -25,17 +25,11 @@ from utils import Mimer
 #TODO: Needed?
 #from validate_jsonp import is_valid_jsonp_callback_value
 
-# TODO: WTF?
-try:
-    import cStringIO as StringIO
-except ImportError:
-    import StringIO
-
 #TODO: WTF?
 # Allow people to change the reverser (default `permalink`).
 reverser = permalink
 
-class Emitter(object):
+class Emitter:
     """
     Super emitter. All other emitters should subclass
     this one. 
@@ -59,9 +53,10 @@ class Emitter(object):
                             'delete', 'model', 'anonymous',
                             'allowed_methods', 'fields', 'exclude' ])
 
-    def __init__(self, payload, typemapper, handler, fields=()):
-        # Typemapper: Contains mappings of { <api handler>: <data model>}       
+    def __init__(self, typemapper, payload, handler, fields=()):
+        # Maps pairs of {<API Handler instance>: <Model>}
         self.typemapper = typemapper
+
         # Data to be serialized
         self.data = payload
         # API Handler, handling this request        
