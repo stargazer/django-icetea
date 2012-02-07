@@ -177,7 +177,8 @@ class BaseHandler():
             requested = [field for field in requested if self.may_output_field(field)]
         
         return tuple(requested)
-    
+
+
     def may_output_field(self, field):
         """
         Determines if the field named *field* should be included in the
@@ -466,6 +467,16 @@ class BaseHandler():
     def execute_request(self, request, *args, **kwargs):
         """
         All requests are entering the handler here.
+
+        If the handler is a ModelHandler, returns:
+            <data>, <fields allowed>
+        The Emitter can then construct the data structure to be output, based
+        on these 2 pieces of information.
+
+        If the handler is a BaseHandler, returns:
+            <subset of data allowed to be output>, ()
+        The Emitter will output exactly the data that we return here, without
+        making any selection.
         """ 
         if request.method.upper() == 'POST' and not self.data_item(request, *args, **kwargs) is None:
             raise MethodNotAllowed('GET', 'PUT', 'DELETE')
@@ -476,28 +487,65 @@ class BaseHandler():
         # Pick action to run
         action = getattr(self,  CALLMAP.get(request.method.upper()))
         # Run it
-        response = action(request, *args, **kwargs)
-        # Set response data structure
-        # { 'data': <response>}
-        response_structure = self.set_response_data(request,response)
+        result = action(request, *args, **kwargs)
 
-        # Slicing should be done after everything else, as it is to be
-        # perceived as a "view on the data set in the response," rather than
-        # a selection mechanism to influence the data that the requested
-        # operation should work with.
-        self.response_slice_data(response_structure, request, *args, **kwargs)
+        # If ModelHandler, return <data>, <fields>
+        # Else, return <subset of data>, ()
+        result, fields = self.analyze_result(request, result)
 
-        # Since the response has been constructed, we can go on and delete the
-        # data now.
-        if request.method.upper() == 'DELETE':
-            self.data_safe_for_delete(response)
+        return result, fields
 
-        if settings.DEBUG:
-            self.response_add_debug(response_structure, request)
+    def analyze_result(self, request, data):
+        """
+        Analyzes the data result of the request execution. 
+        Filters the data and returns ONLY the subset of the data that the handler is allowed to output.
 
-        return response_structure
+        Since this is a BaseHandler, there are no model fields to check on.
+        Therefore what we do is check whether the data result is a dictionary
+        or includes dictionaries, which we then filter based on their keys.
 
+        We take into consideration:
+            get_requested_fields(): Fields(dictionary keys in the case of
+            BaseHandler) that have been asked implicitly or
+            explicitly, and the handler allows
+            may_output_field(): Returns True if the field(dictionary key) can be output
 
+        It only makes sense for handlers that extend the BaseHandler only.
+        It filters the data, and makes sure that only data that we allow to be
+        output, are returned in the final result
+        """                             
+        # Fields(dictionary keys in this case), that have been implicitly or
+        # explicitly requested        
+        fields = self.get_requested_fields(request)
+
+       
+        def strip_down(data):       
+            if isinstance(data, dict):
+                if fields:
+                    return dict(
+                       [(field, value) for field, value in data.items() \
+                            if self.may_output_field(field) 
+                            and field in fields]
+                    )
+                else:
+                    return dict(
+                       [(field, value) for field, value in data.items() \
+                            if self.may_output_field(field) ] 
+                    )
+
+            elif isinstance(data, (list, tuple, set, models.query.QuerySet)):
+                    return map(strip_down, data)
+
+            else:
+                return data
+
+        # Get the final data that we can output
+        final_data = strip_down(data)
+
+        # The emitter doesn't need the ``fields`` selection for a BaseHandler.
+        return final_data, ()                   
+
+     
     
     def create(self, request, *args, **kwargs):
         """
@@ -639,7 +687,11 @@ class ModelHandler(BaseHandler):
             # been modified or not.
             # The actual save() of model instances is done in the update()
             # method of the handler.
-    
+       
+    def analyze_result(self, request, data):
+        return data, self.get_requested_fields(request)
+
+
     def working_set(self, request, *args, **kwargs):
         # All keyword arguments that originate from the URL pattern are
         # applied as filters to the *QuerySet*.

@@ -61,7 +61,114 @@ class Resource:
         self.email_errors = getattr(settings, 'ICETEA_ERRORS', True)
         self.display_errors = getattr(settings, 'ICETEA_DISPLAY_ERRORS', True)
         
-    
+
+
+    # TODO: study what this does
+    @vary_on_headers('Authorization')
+    def __call__(self, request, *args, **kwargs):
+        """
+        Initiates the serving of the request that has just been received.
+
+        It analyzes the request, executes it, packs and serializes the response, and
+        sends it back to the caller.
+        """                         
+        # Reset query list
+        connection.queries = []
+
+        # Is user authenticated?
+        if not self.authenticate(request):
+            return HttpResponseForbidden()
+
+        # Is this HTTP method allowed?
+        request_method = request.method.upper()
+        if not request_method in self.handler.allowed_methods:
+            return HttpResponseNotAllowed(self.handler.allowed_methods)
+
+        try:
+            # Cleanup the request and make sure its request body is valid.
+            self.cleanup(request, request_method)
+        except MimerDataException:
+            return HttpResponseBadRequest("Invalid request body")
+        
+        # Execute request
+        try:          
+            data, fields = self.handler.execute_request(request, *args, **kwargs)
+
+            # Creates {'data': data}
+            result_structure = self.handler.set_response_data(request, data) 
+            # Slice the result_structure
+            self.handler.response_slice_data(result_structure, request, *args, **kwargs)
+            # Transform the whole result_structure to a dictionary
+            emitter = Emitter(self.TYPEMAPPER, result_structure, self.handler, fields)
+            result_dictionary = emitter.construct()
+
+            # Delete the data if DELETE. 
+            # We can only do it now. If we had deleted them earlier, the
+            # emitter wouldn't know the IDs of the model instances.
+            if request_method == 'DELETE':
+                self.handler.data_safe_for_delete(data)
+
+            # Add ``['debug'] if needed. Includes also the DELETE query,
+            # if it happened.
+            if settings.DEBUG:
+                result_dictionary.update({ 
+                    'debug': 
+                        dict(
+                            query_log=connection.queries,
+                            query_count=len(connection.queries)
+                        )
+                })
+
+            # Serialize the result into JSON
+            serialized_result, content_type = self.serialize_result(result_dictionary, request, fields, *args, **kwargs) 
+
+            # Construct HTTP response       
+            response = HttpResponse(serialized_result, mimetype=content_type, status=200)
+
+            return response
+
+        except Exception, e:
+            # Create appropriate HttpResponse object, depending on the request
+            result = self.error_handler(e, request)
+
+            if isinstance(result, HttpResponse) and not result._is_string:
+                # Only for HttpResponseBadRequest, we return data.
+                serialized_result, content_type = self.serialize_result(
+                    result, request, None, *args, **kwargs)
+                return HttpResponse(serialized_result, mimetype=content_type, \
+                    status=result.status_code)
+            elif isinstance(result, HttpResponse):
+                return result
+        
+        #if 'format' in request.GET and request.GET.get('format') == 'excel':
+        #   date = datetime.date.today()
+        #   response['Content-Disposition'] = 'attachment; filename=Smart.pr-export-%s.xls' % date
+            
+
+    def serialize_result(self, result, request, fields, *args, **kwargs):
+        """
+        @param result: Result of the execution of the handler, wrapped in a
+        dictionary with keys 'data' and (maybe) 'debug'.
+        @param request: Request object
+        @param fields: If handler is a ModelHandler, fields is a list of fields
+        to output. Else ().
+        """
+        # What's the emitter format to use?
+        emitter_format = self.determine_emitter_format(request, *args, **kwargs)
+
+        # Based on that, find the Emitter class, and the corresponding content
+        # type
+        emitter_class, content_type = Emitter.get(emitter_format)
+
+        # create instance of the emitter class
+        serializer = emitter_class(self.TYPEMAPPER, result, self.handler, fields)
+        # serialize the result
+        serialized_result = serializer.render(request)
+
+        return serialized_result, content_type
+ 
+ 
+
     def determine_emitter_format(self, request, *args, **kwargs):
         """
         Returns the emitter format.
@@ -106,7 +213,7 @@ class Resource:
             try:
                 translate_mime(request)
             except MimerDataException:
-                return HttpResponseBadRequest()
+                raise
                 
             # Check whether the data have the correct format, according to
             # their 'Content/Type' header
@@ -116,92 +223,6 @@ class Resource:
                 else:
                     request.data = request.PUT
 
-
-    def serialize_result(self, result, request, *args, **kwargs):
-        """
-        """
-        # What's the emitter format to use?
-        emitter_format = self.determine_emitter_format(request, *args, **kwargs)
-        # Based on that, find the Emitter class, and the corresponding content
-        # type
-        emitter_class, content_type = Emitter.get(emitter_format)
-
-        # Which fields should the response contain?
-        # TODO: What happens with ``fields`` for BaseHandlers ?
-        fields = self.handler.get_requested_fields(request)
-
-        # create instance of the emitter class
-        serializer = emitter_class(self.TYPEMAPPER, result, self.handler, fields)
-        # serialize the result
-        serialized_result = serializer.render(request)
-
-        return serialized_result, content_type
- 
-
-    # TODO: study what this does
-    @vary_on_headers('Authorization')
-    def __call__(self, request, *args, **kwargs):
-        """
-        Initiates the serving of the request that has just been received.
-
-        It analyzes the request, executes it, serializes the response, and
-        sends it back to the caller.
-        """
-        # Reset query list
-        connection.queries = []
-
-        # Is user authenticated?
-        if not self.authenticate(request):
-            return HttpResponseForbidden()
-
-        # Is this HTTP method allowed?
-        request_method = request.method.upper()
-        if not request_method in self.handler.allowed_methods:
-            # TODO: error_handler should take care of this?
-            return HttpResponseNotAllowed(self.handler.allowed_methods)
-
-        # Cleanup the request and make sure its request body is valid.
-        self.cleanup(request, request_method)
-
-        # Execute request
-        # Call the handler's request() method, which starts the actual
-        # execution of the received request.
-        try:            
-            result = self.handler.execute_request(request, *args, **kwargs)
-            # It's already in {data: <result>} data structure
-        except Exception, e:
-            # If an exception was raised, call the ``error_handler`` method to
-            # format it nicely.
-            result = self.error_handler(e, request)
-
-        # Has an error occured?
-        if isinstance(result, HttpResponse) and not result._is_string:
-            # This is only the case for the HttpResponse objects with the special
-            # message attributes. For now it only happens for
-            # HttpResponseBadRequest.
-            status_code = result.status_code
-            result = result._container  #Description of the error
-        elif isinstance(result, HttpResponse):
-            # Else if it is an ``HttpResponse object`` but with no extra
-            # messages, simply return the HttpResponse object, and end here.
-            return result
-
-        # Serialize the result
-        serialized_result, content_type = self.serialize_result(result, request, *args, **kwargs) 
-
-        try:
-            status_code
-        except:
-            status_code = 200
-        
-        # Construct HTTP response       
-        response = HttpResponse(serialized_result, mimetype=content_type, status=status_code)
-        
-        #if 'format' in request.GET and request.GET.get('format') == 'excel':
-        #   date = datetime.date.today()
-        #   response['Content-Disposition'] = 'attachment; filename=Smart.pr-export-%s.xls' % date
-            
-        return response
 
     def email_exception(self, reporter):
         subject = "Piston crash report"
@@ -229,12 +250,12 @@ class Resource:
         def format_error(error):
 	        return u"Django-IceTea crash report:\n\n%s" % error
 
-        if isinstance(e, (ValidationError, TypeError)):
+        if isinstance(e, ValidationError):
             # HttpResponse object returned, contains the message in its
             # ``_container`` attribute. It's the only case where we give
             # details over what happened.
             return HttpResponseBadRequest(dict(
-                type='validation',
+                type='Validation Error',
                 message='Invalid data provided.',
                 errors=e.messages,
             ))

@@ -29,6 +29,8 @@ from utils import Mimer
 # Allow people to change the reverser (default `permalink`).
 reverser = permalink
 
+from handlers import BaseHandler, ModelHandler
+
 class Emitter:
     """
     Super emitter. All other emitters should subclass
@@ -108,7 +110,7 @@ class Emitter:
             elif isinstance(thing, (tuple, list, set)):
                 ret = _list(thing, fields=fields)
             elif isinstance(thing, dict):
-                ret = _dict(thing, fields)
+                ret = _dict(thing, fields, nested)
             elif isinstance(thing, decimal.Decimal):
                 ret = str(thing)
             elif isinstance(thing, Model):
@@ -154,41 +156,43 @@ class Emitter:
             """
             Models. 
             
-            If ``data`` is nested, then the ``fields`` are decided by:
+            If nested=True, then the ``fields`` are decided by:
                 handler.fields - handler.exclude_nested.
+
             If not, the ``fields`` should be given as input to the method.
+
+            If no handler can be found, the emitter will try to construct a
+            default representation of the data.
             """
             ret = { }
             handler = self.in_typemapper(type(data))
 
-            if nested:
+            if nested and handler:
                 fields = set(handler.fields) - set(handler.exclude_nested)
 
-            get_absolute_uri = False
-
-            if handler or fields:
-                v = lambda f: getattr(data, f.attname)
-
+            
+            if handler:
                 if not fields:
                     """
-                    Fields was not specified, try to find teh correct
-                    version in the typemapper we were sent.
+                    ``fields`` was empty or not given at all, and the model is not nested, so we could not
+                    construct it ourselves.
+                    What happens now? If fields were explicitly excluded (using
+                    the handler's ``exclude`` parameter, we exclude them. The
+                    other are shown.
+                   
                     """
-                    mapped = self.in_typemapper(type(data))
-                    get_fields = set(mapped.fields)
-                    exclude_fields = set(mapped.exclude).difference(get_fields)
+                    # Does the handler define ``fields``?                       
+                    get_fields = set(handler.fields)
+                    # Which fields have been explicitly excluded?
+                    exclude_fields = set(handler.exclude).difference(get_fields)
 
-                    if 'absolute_uri' in get_fields:
-                        get_absolute_uri = True
-
+                    # Find all the fields of the model that corresponds to the
+                    # handler
                     if not get_fields:
                         get_fields = set([ f.attname.replace("_id", "", 1)
                             for f in data._meta.fields + data._meta.virtual_fields])
-                    
-                    if hasattr(mapped, 'extra_fields'):
-                        get_fields.update(mapped.extra_fields)
 
-                    # sets can be negated.
+                    # Exclude fields that should be excluded
                     for exclude in exclude_fields:
                         if isinstance(exclude, basestring):
                             get_fields.discard(exclude)
@@ -199,9 +203,13 @@ class Emitter:
                                     get_fields.discard(field)
 
                 else:
+                    # Fields we need to show. They were either given as input
+                    # to the method, or deducted if the model is nested.                                                
                     get_fields = set(fields)
 
+                # Callable fields
                 met_fields = self.method_fields(handler, get_fields)
+                v = lambda f: getattr(data, f.attname)
 
                 for f in data._meta.local_fields + data._meta.virtual_fields:
                     if f.serialize and not any([ p in met_fields for p in [ f.attname, f.name ]]):
@@ -255,6 +263,8 @@ class Emitter:
                             if handler_f:
                                 ret[maybe_field] = _any(handler_f(data))
 
+            # No handler could be found. So trying to construct a default
+            # representation for the model.
             else:
                 for f in data._meta.fields:
                     ret[f.attname] = _any(getattr(data, f.attname))
@@ -264,26 +274,6 @@ class Emitter:
 
                 for k in add_ons:
                     ret[k] = _any(getattr(data, k))
-
-            # resouce uri
-            if self.in_typemapper(type(data)):
-                handler = self.in_typemapper(type(data))
-                if hasattr(handler, 'resource_uri'):
-                    url_id, fields = handler.resource_uri(data)
-
-                    try:
-                        ret['resource_uri'] = reverser( lambda: (url_id, fields) )()
-                    except NoReverseMatch, e:
-                        pass
-
-            if hasattr(data, 'get_api_url') and 'resource_uri' not in ret:
-                try: ret['resource_uri'] = data.get_api_url()
-                except: pass
-
-            # absolute uri
-            if hasattr(data, 'get_absolute_url') and get_absolute_uri:
-                try: ret['absolute_uri'] = data.get_absolute_url()
-                except: pass
 
             return ret
 
@@ -302,14 +292,22 @@ class Emitter:
             """
             return [ _any(v, fields) for v in data ]
 
-        def _dict(data, fields=()):
+        def _dict(data, fields=(), nested=False):
             """
             Dictionaries.
+
+            IF the values of the dictionary are models or querysets, they
+            should appear as nested.
             """
-            return dict([ (k, _any(v, fields)) for k, v in data.iteritems() ])
+            return dict([ (k, _any(v, fields, nested)) for k, v in data.iteritems() ])
+        
+
+        # If the handler is a BaseHandler, any models should appear as nested
+        nested = False
+        if not isinstance(self.handler, ModelHandler): nested = True
         
         # Kickstart the seralizin'. 
-        return _any(self.data, self.fields)
+        return _any(self.data, self.fields, nested)
 
     def in_typemapper(self, model):
         """
@@ -318,13 +316,6 @@ class Emitter:
         for _handler, _model in self.typemapper.iteritems():
             if model is _model:
                 return _handler
-
-    def get_fields(self, handler):
-        if handler != self.handler:
-            #nested
-			return set(handler.fields) - set(handler.exclude_nested)
-        return handler.fields
-
 
     def render(self):
         """
