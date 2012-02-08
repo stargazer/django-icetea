@@ -353,26 +353,14 @@ class BaseHandler():
         return data
     
     
-    # The *request* parameter in the following methods can be used to
-    # construct responses that are structured differently for different types
-    # of requests.
-
-    def get_response_data(self, request, response):
+    def set_response_data(self, response, key, data):
         """
-        Reads the data from a response structure. Raises a *KeyError* if
-        response contains no data.
+        Sets data onto a response structure. 
+        @param: Dictionary that represents response
+        @param key: New key added to the dictinary
+        @param data: Value added under key
         """
-        return response['data']
-    
-    def set_response_data(self, request, data, response=None):
-        """
-        Sets data onto a response structure. Creates a new response structure
-        if none is provided.
-        """
-        if response is None:
-            response = {}
-        response['data'] = data
-        return response
+        response.update({key: data})
     
     
     filters = False
@@ -410,26 +398,24 @@ class BaseHandler():
     should be used. Disabled (``False``) by default.
     """
     
-    def response_slice_data(self, response, request, *args, **kwargs):
+    def response_slice_data(self, data, request, total=None):
         """
-        Slices the data set in *response*. This method's job is to interpret
-        the order parameters in the request (if any), translate them to a call
-        to :meth:`.slice_data` and alter the response respectively. Returns
-        a boolean value that indicates whether the data has been sliced or
-        not.
+        @param data: Dataset to slice
+        @param request: Incoming request
+
+        @return: Returns a list (sliced_data, total)
+         * sliced_data: The final data set, after slicing. If no slicing has
+           been performed, the initial dataset will be returned
+         * total:       Total size of initial dataset. None if no slicing was
+           performed.
         """
-        
+
         slice = request.GET.get(self.slice, None)
-        
         if not slice:
-            return False
+            return data, None
         
-        data = self.get_response_data(request, response)
-        
-        # Allow this to be preempted by other methods, which may be useful (or
-        # necessary) in case of big lazy loading data sets.
-        if not 'total' in response:
-            response['total'] = len(data)
+        if not total:
+            total = len(data)
         
         slice = slice.split(':')
         
@@ -446,15 +432,15 @@ class BaseHandler():
                 # ... but don't choke if it's not.
                 process.append(slice_arg or None)
         
-        self.set_response_data(request,
-            self.slice_data(data, *process),
-            response,
-        )
-        return True
+        # Slices the ``data``
+        sliced_data = self.slice_data(data, *process)
+        
+        return sliced_data, total
     
     def slice_data(self, data, start=None, stop=None, step=None):
         """
-        Slices the provided data according to *start*, *stop* and *step*.
+        Slices and returns the provided data according to *start*, *stop* and *step*.
+        If the data is not sliceable, simply return it
         """
         try:
             return data[start:stop:step]
@@ -468,6 +454,12 @@ class BaseHandler():
         """
         All requests are entering the handler here.
 
+        It returns a dictionary of the result. The dictionary only contains:
+            {'data': <data result>}
+
+        The data result is simply text. The nested models, queryset and
+        everything else, have been serialized as text, within this dictionary.          
+
         If the handler is a ModelHandler, returns:
             <data>, <fields allowed>
         The Emitter can then construct the data structure to be output, based
@@ -477,7 +469,7 @@ class BaseHandler():
             <subset of data allowed to be output>, ()
         The Emitter will output exactly the data that we return here, without
         making any selection.
-        """ 
+        """
         if request.method.upper() == 'POST' and not self.data_item(request, *args, **kwargs) is None:
             raise MethodNotAllowed('GET', 'PUT', 'DELETE')
         
@@ -491,9 +483,33 @@ class BaseHandler():
 
         # If ModelHandler, return <data>, <fields>
         # Else, return <subset of data>, ()
-        result, fields = self.analyze_result(request, result)
+        data, fields = self.analyze_result(request, result)
 
-        return result, fields
+        # ``data`` will now hold only the sliced data.
+        sliced_data, total = self.response_slice_data(data, request)
+
+        # Construct the response dictionary.
+        response_structure = {}
+        self.set_response_data(response_structure, 'data', sliced_data)
+        if total:
+            self.set_response_data(response_structure, 'total', total)
+
+        # Overwrite this method in your handler, in order to wrap extra
+        # (meta)data within the response.
+        self.enrich_response(response_structure)
+        
+        # Transform the response_structure to a dictionary. All the nested
+        # models/querysets/whatever, are transformed into raw text.
+        from resource import Resource
+        from emitters import Emitter
+        emitter = Emitter(Resource.TYPEMAPPER, response_structure, self, fields)
+        response_dictionary = emitter.construct()
+
+        if request.method.upper() == 'DELETE':
+            self.data_safe_for_delete(result)
+
+        return response_dictionary
+
 
     def analyze_result(self, request, data):
         """
@@ -517,7 +533,6 @@ class BaseHandler():
         # Fields(dictionary keys in this case), that have been implicitly or
         # explicitly requested        
         fields = self.get_requested_fields(request)
-
        
         def strip_down(data):       
             if isinstance(data, dict):
@@ -545,7 +560,13 @@ class BaseHandler():
         # The emitter doesn't need the ``fields`` selection for a BaseHandler.
         return final_data, ()                   
 
-     
+
+    def enrich_response(self, response_structure):
+        """
+        Overwrite this method in your handler, in order to add more (meta)data
+        within the response data structure.
+        """
+        pass
     
     def create(self, request, *args, **kwargs):
         """
@@ -577,20 +598,6 @@ class BaseHandler():
         the handler defines ``delete = True``.
         """
         return self.data(request, *args, **kwargs)
-    
-    
-    def response_add_debug(self, response, request):
-        """
-        Adds debug information to the response -- currently the database
-        queries that were performed in this operation. May be overridden to
-        extend with custom debug information.
-        """
-        # Unfortunately we lost *args* and *kwargs* in *response_constructed*.
-        response['debug'] = dict(
-            query_log=connection.queries,
-            query_count=len(connection.queries),
-        )
-        return response
     
     def data_safe_for_delete(self, data):
         """
@@ -778,19 +785,31 @@ class ModelHandler(BaseHandler):
     def order_data(self, data, *order):
         return data.order_by(*order)
     
-    def response_slice_data(self, response, request, *args, **kwargs):
-        data = self.get_response_data(request, response)
+    def response_slice_data(self, data, request):
+        """
+        @param data: Dataset to slice
+        @param request: Incoming request
+
+        @return: Returns a list (sliced_data, total)
+         * sliced_data: The final data set, after slicing. If no slicing has
+           been performed, the initial dataset will be returned
+         * total:       Total size of initial dataset. None if no slicing was
+           performed.
+        """
+        total = None
+        # Single model instance cannot be sliced
+        if isinstance(data, self.model):
+            return data, None
         
         # Optimization for lazy and potentially large query sets.
-        if isinstance(data, models.query.QuerySet) and self.slice in request.GET:
-            response['total'] = data.count()
-        
-        sliced = super(ModelHandler, self).response_slice_data(response, request, *args, **kwargs)
-        
-        if not sliced and 'total' in response:
-            del response['total']
-        
-        return sliced
+        elif isinstance(data, models.query.QuerySet) and self.slice in request.GET:
+            total = data.count()
+                 
+        # ``data`` gets sliced
+        sliced_data, _ = super(ModelHandler, self).response_slice_data(data, request, total)
+                            
+        # Return sliced, total
+        return sliced_data, total
     
     
     def create(self, request, *args, **kwargs):
