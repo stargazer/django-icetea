@@ -4,8 +4,7 @@ Generic handlers.
 
 import re
 from django.core.exceptions import ValidationError
-from django.db import models, connection
-from django.conf import settings
+from django.db import models
 from authentication import DjangoAuthentication
 from utils import MethodNotAllowed
 from django.core.exceptions import ValidationError
@@ -25,11 +24,6 @@ class BaseHandlerMeta(type):
     type. This is useful because it enables us to set attributes to default
     values without requiring an explicit value in their definition. See for
     example :attr:`BaseHandler.request_fields`.
-    
-    Note that this inherits from :mod:`piston.handler.HandlerMetaClass`, which
-    deals with some model related stuff. This is not a problem for non-model
-    handlers as long as they do not have a ``model`` attribute with a value
-    other than ``None`` (which :class:`BaseHandler` doesn't).
     """
     
     def __new__(meta, name, bases, attrs):
@@ -40,7 +34,7 @@ class BaseHandlerMeta(type):
         # the two requirements by disabling operations (overriding them with
         # ``False``) at the last minute, just before the class is being
         # constructed.
-        # We get rid of the attrs that are of the form:
+        # Basically we get rid of the attrs that are of the form:
         #    <operation> = True,
         # so that they don't overwrite the function calls for the
         # respective operations.
@@ -50,9 +44,6 @@ class BaseHandlerMeta(type):
                 del attrs[operation]
         
         cls = type.__new__(meta, name, bases, attrs)
-        
-        #if getattr(cls, 'model', None):
-        #   typemapper[cls] = cls.model
         
         # At this point, the  enabled operations are:
         #       - those that have been enabled as <operation> = True. These keep    
@@ -67,21 +58,22 @@ class BaseHandlerMeta(type):
             for method, operation in CALLMAP.iteritems()
             if callable(getattr(cls, operation))])
 
+
         # The general idea is that an attribute with value ``True`` indicates
         # that we want to enable it with its default value.
         
+        # Indicates which querystring parameter will make the field selection
         if cls.request_fields is True:
             cls.request_fields = 'field'
-        
+
+        # Indicates which querystring parameter will request ordering
         if cls.order is True:
             cls.order = 'order'
-        
+
+        # Indicates which querystring parameter will request data slicing
         if cls.slice is True:
             cls.slice = 'slice'
         
-        # Changing this attribute at run-time won't work, but removing the
-        # attribute for that reason is not a good idea, as that would render
-        # the resulting handler type unsuitable for further inheritance.
         if cls.authentication is True:
             cls.authentication = DjangoAuthentication()
         
@@ -92,12 +84,6 @@ class BaseHandler():
     All handlers should (directly or indirectly) inherit from this one. Its
     public attributes and methods were designed with extensibility in mind, so
     don't hesitate to override.
-    
-    .. note::
-       
-       Pistoff's :attr:`pistoff.handler.BaseHandler.allowed_methods` attribute
-       should not be used, as it is auto-generated based on the values of
-       :meth:`.create`, :meth:`.read`, :meth:`.update` `oauth_`and :meth:`.delete`.
     """
     
     __metaclass__ = BaseHandlerMeta
@@ -110,12 +96,7 @@ class BaseHandler():
     :attr:`request_fields`) and the base set of fields that are allowed as
     incoming data (see :meth:`.may_input_field`). If it is an empty iterable
     (the default) the decision whether or not a field is allowed to be
-    included is taken by :meth:`.is_field_allowed`.
-    
-    Note that the value of this attribute is not automatically used as field
-    definition on the emitter, as is the behavior of Piston's default base
-    handler. See the monkey-patched :meth:`piston.emitters.Emitter.construct`
-    in :mod:`.patches` for more information.
+    included in a response is taken by :meth:`.may_output_field`.
     """
     
     request_fields = True
@@ -126,15 +107,11 @@ class BaseHandler():
     default parameter name ``field`` will be used. Note that setting to (as
     opposed to "defining as") ``True`` will not work. Disable request-level
     fields selection by defining this as ``False``.
-    
-    Multiple fields can be specified by including the parameter multiple
-    times: ``?field=id&field=name`` is interpreted as the selection ``('id',
-    'name')``.
     """
     
     exclude = re.compile('^_'),
     """
-    Is used by :meth:`.is_field_allowed` to decide if a field should be
+    Is used by :meth:`.may_output_field` to decide if a field should be
     included in the result. Note that this only applies to scenarios in which
     :attr:`fields` is empty. Should be an iterable of field names and/or
     regular expression patterns. Its default setting is to exclude all field
@@ -155,6 +132,12 @@ class BaseHandler():
         account the settings for :attr:`.fields` and :attr:`.request_fields`,
         and the query string in *request*. Returns ``()`` in case no
         selection has been specified in any way.
+
+        Since a BaseHandler is a not a handler for models, the fields returned
+        by this function, basically have the sense of dictionary keys allowed
+        to be returned, IF the data of the execution of the operation(say the
+        read() method) is a dictionary. If the response is for example a
+        string, the fields returned don't have any sense.
         """
     
         # Gets the fields selection as specified in the query string if
@@ -163,7 +146,7 @@ class BaseHandler():
         # Make sure that if ``field=`` is given(without specifying value), we
         # transform it to an empty list. 
         if requested == ['']:
-            requested = []
+            requested = ()
         
         if self.fields:
             if requested:
@@ -173,7 +156,7 @@ class BaseHandler():
         else:
             # We have no handler-level fields specification to set off the
             # request-level fields specification against, so let
-            # *self.is_field_allowed* decide if a field should be included.
+            # *self.may_output_field* decide if a field should be included.
             requested = [field for field in requested if self.may_output_field(field)]
         
         return tuple(requested)
@@ -186,7 +169,6 @@ class BaseHandler():
         specification in :attr:`exclude`, ``True`` otherwise. Note that this
         method will not be consulted if :attr:`fields` is non-empty.
         """
-        
         for exclude in self.exclude:
             if isinstance(exclude, basestring):
                 if exclude == field:
@@ -210,45 +192,14 @@ class BaseHandler():
         return not field in self.exclude_in
     
     
-    model_fields = 'model_key', 'model_type', 'model_description'
-    """
-    The set of fields that is used to represent a model instance in case no
-    explicit fields set has been specified (either via :attr:`.fields` or via
-    a fields definition in the request).
-    """
-    
-    @classmethod
-    def model_key(cls, instance):
-        """
-        Returns a key identifying the provided model instance.
-        """
-        return instance.pk
-    
-    @classmethod
-    def model_type(cls, instance):
-        """
-        Returns a text string representing the type of the provided model
-        instance.
-        """
-        return instance._meta.verbose_name
-    
-    @classmethod
-    def model_description(cls, instance):
-        """
-        Returns a description of the provided model instance.
-        """
-        return unicode(instance)
-    
-    
     authentication = None
     """
-    The Piston authenticator that should be in effect on this handler. If
+    The authenticator that should be in effect on this handler. If
     defined as ``True`` (which is not the same as assigning ``True``, as this
     will not work) an instance of
     :class:`.authentication.DjangoAuthentication` is used. A value of ``None``
     implies no authentication, which is the default.
     """
-    
     
     def validate(self, request, *args, **kwargs):
         """
@@ -258,7 +209,7 @@ class BaseHandler():
         """
         
         # TODO: Will *request.data* always be ``None`` if no data was provided
-        # in the request body? Will Piston even allow for an empty request
+        # in the request body? Will IceTea even allow for an empty request
         # body?
         if request.data is None:
             # ``PUT`` requests can have an empty body because they may be used
@@ -401,7 +352,9 @@ class BaseHandler():
     def response_slice_data(self, data, request, total=None):
         """
         @param data: Dataset to slice
-        @param request: Incoming request
+        @param request: Incoming request 
+        @total: Total items in dataset (Has a value only if invoked by
+        :meth:`.ModelHandler.response_slice_data`
 
         @return: Returns a list (sliced_data, total)
          * sliced_data: The final data set, after slicing. If no slicing has
@@ -455,24 +408,19 @@ class BaseHandler():
         All requests are entering the handler here.
 
         It returns a dictionary of the result. The dictionary only contains:
-            {'data': <data result>}
-
-        The data result is simply text. The nested models, queryset and
+            {
+                'data': <data result>,
+                'total': <Number>,        # If slicing was performed
+                '<key>: <value>,          # if
+                :meth:`.ModelHandler.enrich_response` has been overwritten
+            }
+        The dictionary items are simply text. The nested models, queryset and
         everything else, have been serialized as text, within this dictionary.          
-
-        If the handler is a ModelHandler, returns:
-            <data>, <fields allowed>
-        The Emitter can then construct the data structure to be output, based
-        on these 2 pieces of information.
-
-        If the handler is a BaseHandler, returns:
-            <subset of data allowed to be output>, ()
-        The Emitter will output exactly the data that we return here, without
-        making any selection.
         """
         if request.method.upper() == 'POST' and not self.data_item(request, *args, **kwargs) is None:
             raise MethodNotAllowed('GET', 'PUT', 'DELETE')
-        
+
+        # Validate request body data
         if hasattr(request, 'data'):
             self.validate(request, *args, **kwargs)
         
@@ -481,14 +429,14 @@ class BaseHandler():
         # Run it
         result = action(request, *args, **kwargs)
 
-        # If ModelHandler, return <data>, <fields>
-        # Else, return <subset of data>, ()
+        # If ModelHandler, return <result>, <fields>
+        # Else, return <subset of result>, ()
         data, fields = self.analyze_result(request, result)
 
-        # ``data`` will now hold only the sliced data.
+        # ``sliced_data`` will now hold only the sliced data.
         sliced_data, total = self.response_slice_data(data, request)
 
-        # Construct the response dictionary.
+        # Construct the response data structure.
         response_structure = {}
         self.set_response_data(response_structure, 'data', sliced_data)
         if total:
@@ -502,6 +450,9 @@ class BaseHandler():
         # models/querysets/whatever, are transformed into raw text.
         from resource import Resource
         from emitters import Emitter
+        # The ``fields`` parameter only makes sense for ModelHandler. In the
+        # case of a BaseHandler, the emitter makes no selection based on fields
+        # or dictionary keys.
         emitter = Emitter(Resource.TYPEMAPPER, response_structure, self, fields)
         response_dictionary = emitter.construct()
 
@@ -513,7 +464,7 @@ class BaseHandler():
 
     def analyze_result(self, request, data):
         """
-        Analyzes the data result of the request execution. 
+        Analyzes the data result of the request. 
         Filters the data and returns ONLY the subset of the data that the handler is allowed to output.
 
         Since this is a BaseHandler, there are no model fields to check on.
@@ -521,12 +472,13 @@ class BaseHandler():
         or includes dictionaries, which we then filter based on their keys.
 
         We take into consideration:
-            get_requested_fields(): Fields(dictionary keys in the case of
-            BaseHandler) that have been asked implicitly or
-            explicitly, and the handler allows
-            may_output_field(): Returns True if the field(dictionary key) can be output
+         *   get_requested_fields(): Fields(dictionary keys in the case of
+             BaseHandler) that have been asked implicitly or
+             explicitly, and the handler allows.
+         *   may_output_field(): Returns True if the field(dictionary key) can
+             be output
 
-        It only makes sense for handlers that extend the BaseHandler only.
+        It only makes sense for handlers that extend the BaseHandler directly.
         It filters the data, and makes sure that only data that we allow to be
         output, are returned in the final result
         """                             
@@ -614,8 +566,7 @@ class ModelHandler(BaseHandler):
     Note that in order to prevent accidental exposure of data that was never
     intended to be public, model data fields will not be included in the
     response if they are not explicitly mentioned in
-    :attr:`~BaseHandler.fields`. If it is empty model data will be represented
-    in a generic way as specified by :attr:`.model_fields`.
+    :attr:`~BaseHandler.fields`. 
     """
     
     model = None
@@ -627,7 +578,7 @@ class ModelHandler(BaseHandler):
     exclude_nested = ()
     """
     A list of field names that should be excluded from the fields selection in
-    case of a nested representation; i.e. when the model is contained by
+    case of a nested representation; eg. when the model is contained by
     another model object.
     """
     
@@ -649,14 +600,14 @@ class ModelHandler(BaseHandler):
     def validate(self, request, *args, **kwargs):
         """
         Turns the data on the request into model instances; a new instance
-        with the ``POST``'ed data or a current instance updated with the
+        with the ``POST``'ed data or a current instance to be updated with the 
         ``PUT``'ed data.
         """
         
         super(ModelHandler, self).validate(request, *args, **kwargs)
         
         # TODO: Will *request.data* always be ``None`` if no data was provided
-        # in the request body? Will Piston even allow for an empty request
+        # in the request body? Will IceTea even allow for an empty request
         # body?
         if request.data is None:
             return
@@ -696,10 +647,25 @@ class ModelHandler(BaseHandler):
             # method of the handler.
        
     def analyze_result(self, request, data):
+        """
+        Returns the data, and a list of fields allowed to be output.
+        The fields are by the Emitter, when serializing the Model
+        instances/querysets to text.
+        """
         return data, self.get_requested_fields(request)
 
 
     def working_set(self, request, *args, **kwargs):
+        """
+        Returns the working set of the model handler. It should be the whole
+        queryset of the model instances, with filtering made only based on
+        keyword arguments.
+
+        .. note::
+            Keyword arguments are defined in the URL mapper, and are usually in
+            the form of ``/api endpoint/<id>/``.
+
+        """
         # All keyword arguments that originate from the URL pattern are
         # applied as filters to the *QuerySet*.
 
@@ -787,6 +753,8 @@ class ModelHandler(BaseHandler):
     
     def response_slice_data(self, data, request):
         """
+        Slices the ``data`` and limits it to a certain range.
+
         @param data: Dataset to slice
         @param request: Incoming request
 
@@ -813,6 +781,12 @@ class ModelHandler(BaseHandler):
     
     
     def create(self, request, *args, **kwargs):
+        """
+        Creates model instances available in ``request.data``. Returns the
+        subset of ``request.data`` which contains the successfully created
+        model instances.
+        """
+
         if isinstance(request.data, list):
             # request.data is an array of self.model instances
             
@@ -848,6 +822,11 @@ class ModelHandler(BaseHandler):
     read = True
     
     def update(self, request, *args, **kwargs):
+        """
+        Saves (updates) the model instances in ``request.data``. Returns the
+        subset of ``request.data`` which contains the successfully updated
+        model instances.
+        """
         # Returns the model instance(s) in request.data, that have been
         # successfully updated
         def persist(instance):
@@ -868,6 +847,13 @@ class ModelHandler(BaseHandler):
     
     
     def data_safe_for_delete(self, data):
+        """
+        We only run this method AFTER the result data have been serialized into
+        text. If we had ran it earlier, then the model instances of the result
+        set would have been deleted, hence their ``id `` field would have been
+        equal to ``None``, and hence their ``id`` would not be available for
+        serialization.        
+        """
         # The delete() Django method can only be called on a QuerySet or on a
         # Model instance. However, sometimes data=None (in cases where a
         # singular DELETE request has been issued, but the model instance

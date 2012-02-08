@@ -71,7 +71,7 @@ class Resource:
 
         It analyzes the request, executes it, packs and serializes the response, and
         sends it back to the caller.
-        """                         
+        """                     
         # Reset query list
         connection.queries = []
 
