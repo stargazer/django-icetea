@@ -92,35 +92,14 @@ class Resource:
         
         # Execute request
         try:          
-            data, fields = self.handler.execute_request(request, *args, **kwargs)
+            # Dictionary containing {'data': <Data results in text>}                
+            response_dictionary = self.handler.execute_request(request, *args, **kwargs)
 
-            # Creates {'data': data}
-            result_structure = self.handler.set_response_data(request, data) 
-            # Slice the result_structure
-            self.handler.response_slice_data(result_structure, request, *args, **kwargs)
-            # Transform the whole result_structure to a dictionary
-            emitter = Emitter(self.TYPEMAPPER, result_structure, self.handler, fields)
-            result_dictionary = emitter.construct()
-
-            # Delete the data if DELETE. 
-            # We can only do it now. If we had deleted them earlier, the
-            # emitter wouldn't know the IDs of the model instances.
-            if request_method == 'DELETE':
-                self.handler.data_safe_for_delete(data)
-
-            # Add ``['debug'] if needed. Includes also the DELETE query,
-            # if it happened.
-            if settings.DEBUG:
-                result_dictionary.update({ 
-                    'debug': 
-                        dict(
-                            query_log=connection.queries,
-                            query_count=len(connection.queries)
-                        )
-                })
+            # Add debug messages to response dictionary
+            self.response_add_debug(response_dictionary)
 
             # Serialize the result into JSON
-            serialized_result, content_type = self.serialize_result(result_dictionary, request, fields, *args, **kwargs) 
+            serialized_result, content_type = self.serialize_result(response_dictionary, request, (), *args, **kwargs) 
 
             # Construct HTTP response       
             response = HttpResponse(serialized_result, mimetype=content_type, status=200)
@@ -287,7 +266,17 @@ class Resource:
             # TODO: Give 500 error. Crash report.
 
         
-
-
-
+    def response_add_debug(self, response_dictionary):
+        """
+        Adds debug information to the response -- currently the database
+        queries that were performed in this operation. May be overridden to
+        extend with custom debug information.
+        """
+        if settings.DEBUG:
+            response_dictionary.update({
+                'debug': {
+                    'query_count': len(connection.queries),
+                    'query_log': connection.queries,
+                }
+            })
 
