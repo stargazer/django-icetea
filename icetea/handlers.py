@@ -429,6 +429,7 @@ class BaseHandler():
         # Run it
         result = action(request, *args, **kwargs)
 
+
         # If ModelHandler, return <result>, <fields>
         # Else, return <subset of result>, ()
         data, fields = self.analyze_result(request, result)
@@ -444,16 +445,22 @@ class BaseHandler():
 
         # Overwrite this method in your handler, in order to wrap extra
         # (meta)data within the response.
-        self.enrich_response(response_structure)
+        self.enrich_response(response_structure, data)
         
         # Transform the response_structure to a dictionary. All the nested
         # models/querysets/whatever, are transformed into raw text.
-        from resource import Resource
-        from emitters import Emitter
+        from resource import Resource; from emitters import Emitter
         # The ``fields`` parameter only makes sense for ModelHandler. In the
         # case of a BaseHandler, the emitter makes no selection based on fields
         # or dictionary keys.
-        emitter = Emitter(Resource.TYPEMAPPER, response_structure, self, fields)
+        emitter = Emitter(Resource._TYPEMAPPER, response_structure, self, fields)
+
+        # TODO: Does the action of creating a dictionary mess up the ordering
+        # of the data???
+        # No! The dictionary keys are for example 'data' and 'total'. The value
+        # of 'data' is for example a queryset. The queryset is also transformed
+        # in a dictionary recursively, but by iterating its instances. For
+        # every instance another dictionary with the field values is created.
         response_dictionary = emitter.construct()
 
         if request.method.upper() == 'DELETE':
@@ -513,7 +520,7 @@ class BaseHandler():
         return final_data, ()                   
 
 
-    def enrich_response(self, response_structure):
+    def enrich_response(self, response_structure, data):
         """
         Overwrite this method in your handler, in order to add more (meta)data
         within the response data structure.
