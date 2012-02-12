@@ -269,7 +269,7 @@ class Resource:
 
 
     def email_exception(self, reporter):
-        subject = "Piston crash report"
+        subject = "Django-IceTea crash report"
         html = reporter.get_traceback_html()
         message = EmailMessage(
             settings.EMAIL_SUBJECT_PREFIX + subject,
