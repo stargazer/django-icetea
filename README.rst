@@ -17,7 +17,15 @@ Enjoy!!
 
 Installation
 --------------
-Not available yet...
+If you use ``zc.buildout``, installing ``Django-IceTea`` is very simple. 
+
+In your Django project's ``setup.py``, add ``django-icetea`` in section
+``install_requires``. 
+
+Then from your project's buildout configuration file, use
+a tool like ``mr.developer`` to checkout the code from the github repository,
+install the python egg, and expose ``Django-IceTea`` to your project's
+namespace.
 
 Usage
 --------------
