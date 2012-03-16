@@ -71,8 +71,60 @@ the serving of API requests::
     )
 
 
-All Handler level attribures
+All Handler level attributes
 -------------------------------
+Available only for handlers that extend ModelHandler
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+``read``
+``create``
+``update``
+``delete``
+
+If any of these parameters is ``True``, then the handler allows ``GET``,
+``POST``, ``PUT`` and ``DELETE`` requests respectively.
+
+If instead they are defined as methods, eg::
+    def read(self, request, *args, **kwargs):
+        pass
+
+Then the corresponding action is enabled, and the default functionality is
+overwritten.      
+
+``request_fields``::
+
+    Indicates which querystring parameter will act as a a request-level field
+    selector. If ``True``, then the selector is ``field``. If ``False``, there will be no field selection. Default is ``True``.
+
+``order``::
+    
+    Indicates which querystring parameter will act as the order-type selector
+    on the result set of the requested operation.
+    If ``True``, then the parameter is ``order``. If ``False``, no order-type
+    selection can be performed. Default is ``False``.
+    The order logic, should be implemented in the handler's ``order_data``
+    method.
+
+``slice``::
+
+    Indicates which querystring parameter will be used to request slicing of
+    the result set of the requested operation.
+    If ``True``, then the parameter is ``slice``. If ``False``, no slicing will
+    be possible. Default is ``False``.
+    The slicing notation follows Python's ``list slice syntax``, of
+    ``start:stop:step``.   
+
+``filters``
+``authentication``:
+
+``allowed_out_fields``
+``allowed_in_fields``
+
+Available for all handlers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+``model``
+``exclude_nested``
+
+
 
 
 
