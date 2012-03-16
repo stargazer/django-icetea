@@ -28,6 +28,11 @@ We want to define API handlers, which will either act as ``Model handlers``,
 and thus giving us CRUD operations out of the box, or ``Base handlers``, for
 which we will need to define the functionality in a more manual way.
 
+Other than defining the business logic, handlers also act as means of
+representation. For example, ``ModelHandler`` classes, define how the
+corresponding model will be represented within that handler, but also in cases
+that it is nested in the responses of other handlers.
+
 foo/handlers.py
 ^^^^^^^^^^^^^^^^^^
 Here we define our API handler, which is the implementer of the business
@@ -99,7 +104,8 @@ overwritten.
     Indicates which querystring parameter will act as a a request-level field
     selector. If ``True``, then the selector is ``field``. If ``False``, there will be no field selection. Default is ``True``.
 
-``order``:
+``order``
+~~~~~~~~~~~
     
     Indicates which querystring parameter will act as the order-type selector
     on the result set of the requested operation.
@@ -108,7 +114,8 @@ overwritten.
     The order logic, should be implemented in the handler's ``order_data``
     method.
 
-``slice``:
+``slice``
+~~~~~~~~~~~
 
     Indicates which querystring parameter will be used to request slicing of
     the result set of the requested operation.
@@ -118,16 +125,53 @@ overwritten.
     ``start:stop:step``.   
 
 ``filters``
-``authentication``:
+~~~~~~~~~~~~~~
+    TODO::
+        Should only be available for ModelHandler classes!!!
+
+
+    A dictionary of ``filter name``: ``filter_operation`` couples. ``filter
+    name`` defines the querystring parameter used to apply the filtering on the
+    current request. ``filter_operation`` corresponds to a Django lookup
+    filter, which will be applied on the request's resuls data.
+
+``authentication``
+~~~~~~~~~~~~~~~~~~~~
+    
+    If ``True``, only authenticated users can access the handler. The ``Django
+    authenticataion`` is used. Default value is ``False``.
 
 ``allowed_out_fields``
+~~~~~~~~~~~~~~~~~~~~~~~
+    
+    Tuple of fields, which indicates the fields that the handler is allowed to
+    output. In the case of ``ModelHandler``, it symbolizes model fields, whereas in the case of ``BaseHandler`` classes, it only has sense if the handler returns dictionaries, or lists of dictionaries, and it indicates the dictionary keys that the handler is allowed to output.
+    
+    The actual fields that a request will eventually output, is a function of
+    this parameter, as well as the request-level field selection, indicated by
+    the ``field``.
+
 ``allowed_in_fields``
+~~~~~~~~~~~~~~~~~~~~~~~~
+    
+    Tuple of fields, which indicates the fields that the handler allowed to
+    take from the incoming request body. In the case of ``ModelHandler``
+    classes, no primary keys or related keys are allowed.
 
 Available only for handlers that extend ModelHandler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-``model``
-``exclude_nested``
 
+``model``
+~~~~~~~~~~~~~
+    
+    The database model which the Handler exposes.
+
+
+``exclude_nested``
+~~~~~~~~~~~~~~~~~~~~~~
+
+    Fields which should be excluded when the model is nested in another
+    handler's response.
 
 
 
