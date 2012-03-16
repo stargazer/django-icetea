@@ -27,7 +27,7 @@ We want to define API handlers, which will either act as ``Model handlers``,
 and thus giving us CRUD operations out of the box, or ``Base handlers``, for
 which we will need to define the functionality in a more manual way.
 
-app1/handlers.py
+foo/handlers.py
 ^^^^^^^^^^^^^^^^^^
 Here we define our API handler, which is the implementer of the business
 logic::
@@ -55,7 +55,7 @@ logic::
     
     
 
-app1/urls.py
+foo/urls.py
 ^^^^^^^^^^^^^^
 We need to create resources(equivalent to Django views), which will initiate
 the serving of API requests::
