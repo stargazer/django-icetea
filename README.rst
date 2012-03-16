@@ -73,29 +73,27 @@ the serving of API requests::
 
 All Handler level attributes
 -------------------------------
-Available only for handlers that extend ModelHandler
+Available for all handlers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-``read``
-``create``
-``update``
-``delete``
+``read``, ``create``, ``update``, ``delete``
 
 If any of these parameters is ``True``, then the handler allows ``GET``,
 ``POST``, ``PUT`` and ``DELETE`` requests respectively.
 
 If instead they are defined as methods, eg::
+
     def read(self, request, *args, **kwargs):
         pass
 
 Then the corresponding action is enabled, and the default functionality is
 overwritten.      
 
-``request_fields``::
+``request_fields``:
 
     Indicates which querystring parameter will act as a a request-level field
     selector. If ``True``, then the selector is ``field``. If ``False``, there will be no field selection. Default is ``True``.
 
-``order``::
+``order``:
     
     Indicates which querystring parameter will act as the order-type selector
     on the result set of the requested operation.
@@ -104,7 +102,7 @@ overwritten.
     The order logic, should be implemented in the handler's ``order_data``
     method.
 
-``slice``::
+``slice``:
 
     Indicates which querystring parameter will be used to request slicing of
     the result set of the requested operation.
@@ -119,7 +117,7 @@ overwritten.
 ``allowed_out_fields``
 ``allowed_in_fields``
 
-Available for all handlers
+Available only for handlers that extend ModelHandler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ``model``
 ``exclude_nested``
