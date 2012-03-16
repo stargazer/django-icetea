@@ -168,44 +168,11 @@ class Emitter:
             if nested and handler:
                 # TODO: If the request does not ask for nested representation,
                 # then give resource URI instead.
-                fields = set(handler.fields) - set(handler.exclude_nested)
+                fields = set(handler.allowed_out_fields) - set(handler.exclude_nested)
 
             
             if handler:
-                if not fields:
-                    """
-                    ``fields`` was empty or not given at all, and the model is not nested, so we could not
-                    construct it ourselves.
-                    What happens now? If fields were explicitly excluded (using
-                    the handler's ``exclude`` parameter, we exclude them. The
-                    other are shown.
-                   
-                    """
-                    # Does the handler define ``fields``?                       
-                    get_fields = set(handler.fields)
-                    # Which fields have been explicitly excluded?
-                    exclude_fields = set(handler.exclude).difference(get_fields)
-
-                    # Find all the fields of the model that corresponds to the
-                    # handler
-                    if not get_fields:
-                        get_fields = set([ f.attname.replace("_id", "", 1)
-                            for f in data._meta.fields + data._meta.virtual_fields])
-
-                    # Exclude fields that should be excluded
-                    for exclude in exclude_fields:
-                        if isinstance(exclude, basestring):
-                            get_fields.discard(exclude)
-
-                        elif isinstance(exclude, re._pattern_type):
-                            for field in get_fields.copy():
-                                if exclude.match(field):
-                                    get_fields.discard(field)
-
-                else:
-                    # Fields we need to show. They were either given as input
-                    # to the method, or deducted if the model is nested.                                                
-                    get_fields = set(fields)
+                get_fields = set(fields)
 
                 # Callable fields
                 met_fields = self.method_fields(handler, get_fields)
@@ -299,6 +266,8 @@ class Emitter:
             IF the values of the dictionary are models or querysets, they
             should appear as nested.
             """
+            if fields:
+                return dict([ (k, _any(v, fields, nested)) for k, v in data.iteritems() if k in fields])
             return dict([ (k, _any(v, fields, nested)) for k, v in data.iteritems() ])
         
 
@@ -308,6 +277,7 @@ class Emitter:
         
         # Kickstart the seralizin'. 
         return _any(self.data, self.fields, nested)
+
 
     def in_typemapper(self, model):
         """
@@ -352,7 +322,7 @@ class Emitter:
         Remove an emitter from the registry. Useful if you don't
         want to provide output in one of the built-in emitters.
         """
-        return cls.EMITTERS.pop(name, None)
+        return cls.EMITTERS.pop(name, None)        
 
 class JSONEmitter(Emitter):
     """

@@ -67,10 +67,7 @@ class Resource:
         # Exempt this view from CSRF token checks
         self.csrf_exempt = getattr(self._handler, 'csrf_exempt', True)
 
-        if not self._handler.authentication:
-            self._authentication = NoAuthentication()
-        else:
-            self._authentication = self._handler.authentication
+        self._authentication = getattr(self._handler, 'authentication')
 
         self._email_errors = getattr(settings, 'ICETEA_ERRORS', True)
         self._display_errors = getattr(settings, 'ICETEA_DISPLAY_ERRORS', True)
@@ -81,6 +78,7 @@ class Resource:
     @vary_on_headers('Authorization')
     def __call__(self, request, *args, **kwargs):
         """
+        Actual Django view
         Initiates the serving of the request that has just been received.
 
         It analyzes the request, executes it, packs and serializes the response, and
@@ -117,7 +115,7 @@ class Resource:
             # Add debug messages to response dictionary
             self.response_add_debug(response_dictionary)
 
-            # Serialize the result into JSON
+            # Serialize the result into JSON(or whatever else)
             serialized_result, content_type = self.serialize_result(response_dictionary, request, *args, **kwargs) 
 
             # Construct HTTP response       

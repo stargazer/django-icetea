@@ -5,7 +5,7 @@ Generic handlers.
 import re
 from django.core.exceptions import ValidationError
 from django.db import models
-from authentication import DjangoAuthentication
+from authentication import DjangoAuthentication, NoAuthentication
 from utils import MethodNotAllowed
 from django.core.exceptions import ValidationError
 from custom_filters import filter_to_method
@@ -75,8 +75,11 @@ class BaseHandlerMeta(type):
             cls.slice = 'slice'
         
         if cls.authentication is True:
-            cls.authentication = DjangoAuthentication()
-        
+            cls.authentication = DjangoAuthentication() 
+        else:
+            cls.authentication = NoAuthentication()        
+
+
         return cls
 
 class BaseHandler():
@@ -87,18 +90,32 @@ class BaseHandler():
     """
     
     __metaclass__ = BaseHandlerMeta
-    
-    
-    fields = ()
+            
+
+    allowed_out_fields = ()
     """
-    Specifies the fields that are allowed to be included in a response. It
-    also serves as the set of options for request-level fields selection (see
-    :attr:`request_fields`) and the base set of fields that are allowed as
-    incoming data (see :meth:`.may_input_field`). If it is an empty iterable
-    (the default) the decision whether or not a field is allowed to be
-    included in a response is taken by :meth:`.may_output_field`.
+    Specifies the set of fields that are allowed to be included in a response.
+    It's an iterable of field names.
+
+    Mandatory to declare it
+
+    In case that we wish a more flexible output field selection, we should
+    overwrite method ``get_out_fields``
+
+    It only makes sense in the case of ModelHandler classes. BaseHandler
+    classes, return whatever they want anyway.
     """
-    
+
+    allowed_in_fields = ()
+    """
+    Specifies the set of allowed incoming fields. 
+
+    Mandatory to declare it
+
+    TODO: Add check in metaclass, and make sure that no primary keys are
+    allowed. EG. no 'id' field should be allowed here.
+    """
+
     request_fields = True
     """
     Determines if request-level fields selection is enabled. Should be the
@@ -109,89 +126,6 @@ class BaseHandler():
     fields selection by defining this as ``False``.
     """
     
-    exclude = re.compile('^_'),
-    """
-    Is used by :meth:`.may_output_field` to decide if a field should be
-    included in the result. Note that this only applies to scenarios in which
-    :attr:`fields` is empty. Should be an iterable of field names and/or
-    regular expression patterns. Its default setting is to exclude all field
-    names that begin with ``_``.
-    """
-    
-    exclude_in = ()
-    """
-    A list of field names that will be filtered out of incoming data. Fields
-    that are not listed in :attr:`.fields` will never be considered either, so
-    this attribute should contain field names that are also in
-    :attr:`.fields`. Is used by :meth:`.may_input_field`.
-    """
-    
-    def get_requested_fields(self, request):
-        """
-        Returns the fields selection for this specific request. Takes into
-        account the settings for :attr:`.fields` and :attr:`.request_fields`,
-        and the query string in *request*. Returns ``()`` in case no
-        selection has been specified in any way.
-
-        Since a BaseHandler is a not a handler for models, the fields returned
-        by this function, basically have the sense of dictionary keys allowed
-        to be returned, IF the data of the execution of the operation(say the
-        read() method) is a dictionary. If the response is for example a
-        string, the fields returned don't have any sense.
-        """
-    
-        # Gets the fields selection as specified in the query string if
-        # enabled and provided, and an empty list in all other scenarios.
-        requested = request.GET.getlist(self.request_fields)
-        # Make sure that if ``field=`` is given(without specifying value), we
-        # transform it to an empty list. 
-        if requested == ['']:
-            requested = ()
-        
-        if self.fields:
-            if requested:
-                requested = set(requested).intersection(self.fields)
-            else:
-                requested = self.fields
-        else:
-            # We have no handler-level fields specification to set off the
-            # request-level fields specification against, so let
-            # *self.may_output_field* decide if a field should be included.
-            requested = [field for field in requested if self.may_output_field(field)]
-        
-        return tuple(requested)
-
-
-    def may_output_field(self, field):
-        """
-        Determines if the field named *field* should be included in the
-        response. Returns ``False`` for any field that matches the
-        specification in :attr:`exclude`, ``True`` otherwise. Note that this
-        method will not be consulted if :attr:`fields` is non-empty.
-        """
-        for exclude in self.exclude:
-            if isinstance(exclude, basestring):
-                if exclude == field:
-                    return False
-            else:
-                # Anything that is not a string is assumed to be a regular
-                # expression pattern.
-                if exclude.match(field):
-                    return False
-        return True
-    
-    def may_input_field(self, field):
-        """
-        Decides if a field should be filtered out of incoming data (in the
-        request body). The default behavior is to accept any fields that are
-        in :attr:`.fields` (if not empty) and not in :attr:`.exclude_in`.
-        """
-        if self.fields:
-            return field in set(self.fields) - set(self.exclude_in)
-        
-        return not field in self.exclude_in
-    
-    
     authentication = None
     """
     The authenticator that should be in effect on this handler. If
@@ -200,46 +134,59 @@ class BaseHandler():
     :class:`.authentication.DjangoAuthentication` is used. A value of ``None``
     implies no authentication, which is the default.
     """
+
+    def get_output_fields(self, request):
+        """
+        Returns the request specific field selection.
+
+        It takes into account the ``self.allowed_out_fields`` tuple, as well as
+        any request-level field selection that might have taken place.
+
+        Since a BaseHandler is a not a handler for models, the fields returned
+        by this function, basically have the sense of dictionary keys allowed
+        to be returned, IF the data of the execution of the operation(say the
+        read() method) is a dictionary. If the response is for example a
+        string, the fields returned don't have any sense.
+        """
+        requested = request.GET.getlist(self.request_fields)
+        # Make sure that if ``field=`` is given(without specifying value), we
+        # transform it to an empty list. 
+        if requested == ['']:
+            requested = ()              
+
+        if requested:
+            return set(requested).intersection(self.allowed_out_fields)
+        
+        return self.allowed_out_fields
+
+
     
     def validate(self, request, *args, **kwargs):
         """
-        Validates and cleanses incoming data (in the request body). Can be
-        overridden to extend this behavior with other types of request
-        validation.
+        Validates and cleanses incoming data (in the request body).
+        We discard data that the handler doesn't allow in the request body.
         """
-        
-        # TODO: Will *request.data* always be ``None`` if no data was provided
-        # in the request body? Will IceTea even allow for an empty request
-        # body?
-        if request.data is None:
-            # ``PUT`` requests can have an empty body because they may be used
-            # to trigger operations other than updating data (such as managing
-            # many-to-many relations or sending out e-mails). ``POST``
-            # requests on the other hand must be accompanied with data in
-            # their body because they always mean to create an new entry.
-            if request.method.upper() == 'POST':
-                raise ValidationError("No data provided.")
-            return
-        
-        # PUT request with array of data has no sense.
-        elif isinstance(request.data, list) and request.method.upper() == 'PUT':
-            raise ValidationError("Illegal operation: PUT request with array in request body")          
-        
-        # Should only happen in POST request with an array of data
-        elif isinstance(request.data, list):
-            new_request_data = []
-            for item in request.data:
-                new_request_data.append(dict([(field, value)
-                    for field, value in item.iteritems()
-                    if self.may_input_field(field)])                            
-                )
-            request.data = new_request_data
+        if isinstance(request.data, list):            
+            if request.method.upper() == 'PUT':
+                # PUT request with array of data has no sense.
+                raise ValidationError("Illegal operation: PUT request with array in request body")          
+
+            elif request.method.upper() == 'POST':
+                # Should only happen in POST request with an array of data
+                new_request_data = []
+
+                for item in request.data:
+                    new_request_data.append(dict(
+                        [(field, value) for field, value in item.iteritems() \
+                        if field in self.allowed_in_fields])
+                    )
+                request.data = new_request_data
         
         # Only one data item in request.data
         else:
             request.data = dict([(field, value)
                 for field, value in request.data.iteritems()
-                if self.may_input_field(field)])
+                if field in self.allowed_in_fields])
 
     
     def working_set(self, request, *args, **kwargs):
@@ -251,7 +198,6 @@ class BaseHandler():
         (and which not). This data set should not have user filters applied
         because those do not apply to item views.
         """
-        
         raise NotImplementedError
     
     def data_set(self, request, *args, **kwargs):
@@ -408,18 +354,15 @@ class BaseHandler():
         All requests are entering the handler here.
 
         It returns a dictionary of the result. The dictionary only contains:
-            {
-                'data': <data result>,
-                'total': <Number>,        # If slicing was performed
-                '<key>: <value>,          # if
-                :meth:`.ModelHandler.enrich_response` has been overwritten
-            }
-        The dictionary items are simply text. The nested models, queryset and
-        everything else, have been serialized as text, within this dictionary.          
+            'data': <data result>,
+            'total': <Number>,        # If slicing was performed
+            '<key>: <value>,          # if
+            :meth:`.ModelHandler.enrich_response` has been overwritten
+        The dictionary values are simply text. The nested models, queryset and
+        everything else, have been serialized as text, within this dictionary.       
         """
         if request.method.upper() == 'POST' and not self.data_item(request, *args, **kwargs) is None:
             raise MethodNotAllowed('GET', 'PUT', 'DELETE')
-
         # Validate request body data
         if hasattr(request, 'data'):
             self.validate(request, *args, **kwargs)
@@ -427,97 +370,30 @@ class BaseHandler():
         # Pick action to run
         action = getattr(self,  CALLMAP.get(request.method.upper()))
         # Run it
-        result = action(request, *args, **kwargs)
-
-
-        # If ModelHandler, return <result>, <fields>
-        # Else, return <subset of result>, ()
-        data, fields = self.analyze_result(request, result)
-
-        # ``sliced_data`` will now hold only the sliced data.
-        sliced_data, total = self.response_slice_data(data, request)
-
-        # Construct the response data structure.
-        response_structure = {}
-        self.set_response_data(response_structure, 'data', sliced_data)
-        if total:
-            self.set_response_data(response_structure, 'total', total)
-
-        # Overwrite this method in your handler, in order to wrap extra
-        # (meta)data within the response.
-        self.enrich_response(response_structure, data)
+        data = action(request, *args, **kwargs)
+        # Select output fields
+        fields = self.get_output_fields(request)
+        # Slice
+        data, total = self.response_slice_data(data, request)
         
-        # Transform the response_structure to a dictionary. All the nested
-        # models/querysets/whatever, are transformed into raw text.
+        # Transform the data into a dictionary. The emitter is responsible for
+        # allowing only fields in ``fields``, if such a selection makes sense.
         from resource import Resource; from emitters import Emitter
-        # The ``fields`` parameter only makes sense for ModelHandler. In the
-        # case of a BaseHandler, the emitter makes no selection based on fields
-        # or dictionary keys.
-        emitter = Emitter(Resource._TYPEMAPPER, response_structure, self, fields)
+        emitter = Emitter(Resource._TYPEMAPPER, data, self, fields)
+        dic = emitter.construct()
 
-        # TODO: Does the action of creating a dictionary mess up the ordering
-        # of the data???
-        # No! The dictionary keys are for example 'data' and 'total'. The value
-        # of 'data' is for example a queryset. The queryset is also transformed
-        # in a dictionary recursively, but by iterating its instances. For
-        # every instance another dictionary with the field values is created.
-        response_dictionary = emitter.construct()
+        # Structure the response data
+        ret = {}
+        self.set_response_data(ret, 'data', dic)
+        if total:
+            self.set_response_data(ret, 'total', total)
+        # Add extra metadata
+        self.enrich_response(ret, data)
 
         if request.method.upper() == 'DELETE':
-            self.data_safe_for_delete(result)
+            self.data_safe_for_delete(data)
 
-        return response_dictionary
-
-
-    def analyze_result(self, request, data):
-        """
-        Analyzes the data result of the request. 
-        Filters the data and returns ONLY the subset of the data that the handler is allowed to output.
-
-        Since this is a BaseHandler, there are no model fields to check on.
-        Therefore what we do is check whether the data result is a dictionary
-        or includes dictionaries, which we then filter based on their keys.
-
-        We take into consideration:
-         *   get_requested_fields(): Fields(dictionary keys in the case of
-             BaseHandler) that have been asked implicitly or
-             explicitly, and the handler allows.
-         *   may_output_field(): Returns True if the field(dictionary key) can
-             be output
-
-        It only makes sense for handlers that extend the BaseHandler directly.
-        It filters the data, and makes sure that only data that we allow to be
-        output, are returned in the final result
-        """                             
-        # Fields(dictionary keys in this case), that have been implicitly or
-        # explicitly requested        
-        fields = self.get_requested_fields(request)
-       
-        def strip_down(data):       
-            if isinstance(data, dict):
-                if fields:
-                    return dict(
-                       [(field, value) for field, value in data.items() \
-                            if self.may_output_field(field) 
-                            and field in fields]
-                    )
-                else:
-                    return dict(
-                       [(field, value) for field, value in data.items() \
-                            if self.may_output_field(field) ] 
-                    )
-
-            elif isinstance(data, (list, tuple, set, models.query.QuerySet)):
-                    return map(strip_down, data)
-
-            else:
-                return data
-
-        # Get the final data that we can output
-        final_data = strip_down(data)
-
-        # The emitter doesn't need the ``fields`` selection for a BaseHandler.
-        return final_data, ()                   
+        return ret
 
 
     def enrich_response(self, response_structure, data):
@@ -581,28 +457,12 @@ class ModelHandler(BaseHandler):
     A model class of type :class:`django.db.models.Model`.
     """
     
-    
     exclude_nested = ()
     """
     A list of field names that should be excluded from the fields selection in
     case of a nested representation; eg. when the model is contained by
     another model object.
     """
-    
-    
-    def may_input_field(self, field):
-        result = super(ModelHandler, self).may_input_field(field)
-        
-        if not result:
-            return result
-        
-        try:
-            # Don't accept primary keys, as they should generally be constant
-            # and therefore not adjustable from outside.
-            return not self.model._meta.get_field(field, many_to_many=False).primary_key
-        except models.FieldDoesNotExist:
-            return False
-            
     
     def validate(self, request, *args, **kwargs):
         """
@@ -627,7 +487,7 @@ class ModelHandler(BaseHandler):
             else:               
                 request.data = [self.model(**data_item) for data_item in request.data]
         
-        if request.method.upper() == 'PUT':
+        elif request.method.upper() == 'PUT':
             # current = model instance(s) to be updated
             current = self.data(request, *args, **kwargs)
             
@@ -653,14 +513,6 @@ class ModelHandler(BaseHandler):
             # The actual save() of model instances is done in the update()
             # method of the handler.
        
-    def analyze_result(self, request, data):
-        """
-        Returns the data, and a list of fields allowed to be output.
-        The fields are by the Emitter, when serializing the Model
-        instances/querysets to text.
-        """
-        return data, self.get_requested_fields(request)
-
 
     def working_set(self, request, *args, **kwargs):
         """
