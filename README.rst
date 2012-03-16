@@ -15,11 +15,11 @@ and easy to use, with its main focus being stability and maintainability.
 Enjoy!!
 
 Installation
-=============
+--------------
 Not available yet...
 
 Usage
-===========
+--------------
 Say we have a Project which has pulled ``Django-Icetea``. Let's assume we have
 an app called ``foo``, with a model ``foomodel``
 
@@ -71,6 +71,8 @@ the serving of API requests::
     )
 
 
+All Handler level attribures
+-------------------------------
 
 
 
