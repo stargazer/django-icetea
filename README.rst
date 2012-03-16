@@ -79,7 +79,7 @@ Available for all handlers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``read``, ``create``, ``update``, ``delete``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 If any of these parameters is ``True``, then the handler allows ``GET``,
@@ -94,7 +94,7 @@ Then the corresponding action is enabled, and the default functionality is
 overwritten.      
 
 ``request_fields``
-``````````````````````
+~~~~~~~~~~~~~~~~~~~
 
     Indicates which querystring parameter will act as a a request-level field
     selector. If ``True``, then the selector is ``field``. If ``False``, there will be no field selection. Default is ``True``.
