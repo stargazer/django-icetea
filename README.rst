@@ -6,9 +6,7 @@ Django-IceTea
 
 It has been influenced by the architecture of `django-piston
 <https://bitbucket.org/jespern/django-piston/wiki/Home>`_ and
-`piston-perfect <https://github.com/smartpr/piston-perfect>`_. The combination of these 2 packages is actually a very stable
-API infrastructure. However their code could, in my opinion at least, be way
-more clear and maintainable.
+`piston-perfect <https://github.com/smartpr/piston-perfect>`_. 
 
 For this reason, I've decided to build ``django-icetea``. It is slim, readable
 and easy to use, with its main focus being stability and maintainability.
@@ -26,6 +24,9 @@ Then from your project's buildout configuration file, use
 a tool like ``mr.developer`` to checkout the code from the github repository,
 install the python egg, and expose ``Django-IceTea`` to your project's
 namespace.
+
+TODO::
+    Add to PyPi
 
 Usage
 --------------
