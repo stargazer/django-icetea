@@ -109,32 +109,34 @@ class Resource:
 
         # Execute request
         try:          
-            # Dictionary containing {'data': <Data results in text>}                
+            # Dictionary containing {'data': <Serialized result>}                
             response_dictionary = self._handler.execute_request(request, *args, **kwargs)
-
             # Add debug messages to response dictionary
             self.response_add_debug(response_dictionary)
-
             # Serialize the result into JSON(or whatever else)
             serialized_result, content_type = self.serialize_result(response_dictionary, request, *args, **kwargs) 
-
             # Construct HTTP response       
             response = HttpResponse(serialized_result, mimetype=content_type, status=200)
-
             return response
 
         except Exception, e:
             # Create appropriate HttpResponse object, depending on the request
-            result = self.error_handler(e, request)
+            http_response, message = self.error_handler(e, request)
+            # If a Server Error (500) has occured, return it as is
+            if isinstance(http_response, HttpResponseServerError):
+                http_response.content = message
+                return http_response
+            # If there is a message, run it through the serializer
+            if message:
+                serialized_result, content_type = self.serialize_result(message, request, *args, **kwargs)
+                http_response.content = serialized_result
+                http_response.mimetype = content_type
+            else:   
+                _, content_type = self.serialize_result(message, request, *args, **kwargs)
+                http_response.content = ''
+                http_response.mimetype = content_type
 
-            if isinstance(result, HttpResponse) and not result._is_string:
-                # Only for HttpResponseBadRequest, we return data.
-                serialized_result, content_type = self.serialize_result(
-                    result, request, *args, **kwargs)
-                return HttpResponse(serialized_result, mimetype=content_type, \
-                    status=result.status_code)
-            elif isinstance(result, HttpResponse):
-                return result
+            return http_response
         
         #if 'format' in request.GET and request.GET.get('format') == 'excel':
         #   date = datetime.date.today()
@@ -220,35 +222,39 @@ class Resource:
         """
         Any exceptions that are raised within the API handler, are taken care
         of here.                   
+        
+        Returns a tuple (HttpResponseObject, message).
+        The HttpResponseObject, is simply an HttpRespone object of the
+        appropriate form, depending on the error that occured.
+        The message is any kind of message that we would like to return in the
+        response body.
 
-        Returns the HttpResponse object that indicates the kind of problem that
-        occured.
-        Takes care of the appropriate notifications, if an unexpected exception
-        has been raised.
         """
         def format_error(error):
 	        return u"Django-IceTea crash report:\n\n%s" % error
-
+        
+        http_response, message = None, None
+        
         if isinstance(e, ValidationError):
-            # HttpResponse object returned, contains the message in its
-            # ``_container`` attribute. It's the only case where we give
-            # details over what happened.
-            return HttpResponseBadRequest(dict(
+            message = dict(
                 type='Validation Error',
                 message='Invalid data provided.',
                 errors=e.messages,
-            ))
+            )
+            http_response = HttpResponseBadRequest()
 
         elif isinstance(e, (NotImplementedError, ObjectDoesNotExist)):
-            return HttpResponseGone()
+            http_response = HttpResponseGone()
 
-        elif isinstance(e, MethodNotAllowed):
-            return HttpResponseNotAllowed(e.permitted_methods)
+        elif isinstance(e, MethodNotAllowed): 
+            http_response = HttpResponseNotAllowed(e.permitted_methods)
 
         elif isinstance(e, Http404):
-            raise HttpResponseNotFound()
+            http_response = HttpResponseNotFound()
 
-        else:
+        else: 
+            # Consider it a Server Error.
+            # Send email, respond with a 500 Error code, display error.
             exc_type, exc_value, traceback = sys.exc_info()
             reporter = ExceptionReporter(
                 request, 
@@ -259,11 +265,11 @@ class Resource:
             if self._email_errors:
                 self.email_exception(reporter)
             if self._display_errors:
-                return HttpResponseServerError(
-                    format_error('\n'.join(reporter.format_exception())))
-            else:
-                raise
-            # TODO: Give 500 error. Crash report.
+                    message =  format_error('\n'.join(reporter.format_exception()))
+            
+            http_response = HttpResponseServerError()
+
+        return http_response, message            
 
 
     def email_exception(self, reporter):
