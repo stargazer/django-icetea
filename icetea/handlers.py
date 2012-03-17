@@ -173,32 +173,7 @@ class BaseHandler():
 
     
     def validate(self, request, *args, **kwargs):
-        """
-        Validates and cleanses incoming data (in the request body).
-        We discard data that the handler doesn't allow in the request body.
-        """
-        if isinstance(request.data, list):            
-            if request.method.upper() == 'PUT':
-                # PUT request with array of data has no sense.
-                raise ValidationError("Illegal operation: PUT request with array in request body")          
-
-            elif request.method.upper() == 'POST':
-                # Should only happen in POST request with an array of data
-                new_request_data = []
-
-                for item in request.data:
-                    new_request_data.append(dict(
-                        [(field, value) for field, value in item.iteritems() \
-                        if field in self.allowed_in_fields])
-                    )
-                request.data = new_request_data
-        
-        # Only one data item in request.data
-        else:
-            request.data = dict([(field, value)
-                for field, value in request.data.iteritems()
-                if field in self.allowed_in_fields])
-
+        return        
     
     def working_set(self, request, *args, **kwargs):
         """
@@ -488,13 +463,18 @@ class ModelHandler(BaseHandler):
             return
 
         if request.method.upper() == 'POST':
-            # Single data item in request body
+            # Create model instance(s) without saving them, and go through all
+            # field level validation checks.
             if not isinstance(request.data, list):
                 request.data = self.model(**request.data)
-            # Array of data items
-            else:               
-                request.data = [self.model(**data_item) for data_item in request.data]
-        
+                request.data.full_clean()
+            else:
+                request.data = [self.model(**data_item) for \
+                    data_item in request.data]
+
+                for model_instance in request.data:
+                    model_instance.full_clean()
+
         elif request.method.upper() == 'PUT':
             # current = model instance(s) to be updated
             current = self.data(request, *args, **kwargs)
@@ -505,10 +485,11 @@ class ModelHandler(BaseHandler):
                     current:         
                     for field, value in update_values:
                         setattr(instance, field, value)
+                    instance.full_clean()
 
             # update the model instances with the(but not save them)
             update(current, request.data)
-            
+                                         
             # request.data contains a model instance or a list of model instances 
             # that have been updated, but not yet saved in the database.
             request.data = current

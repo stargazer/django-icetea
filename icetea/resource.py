@@ -100,12 +100,14 @@ class Resource:
         if not request_method in self._handler.allowed_methods:
             return HttpResponseNotAllowed(self._handler.allowed_methods)
 
-        try:
-            # Cleanup the request and make sure its request body is valid.
-            self.cleanup(request, request_method)
-        except MimerDataException:
-            return HttpResponseBadRequest("Invalid request body")
-        
+        if request_method in ['PUT', 'POST']:
+            try:
+                # Cleanup the request and make sure its request body is valid.
+                self.cleanup(request, request_method)
+            except MimerDataException:
+                return HttpResponseBadRequest("Invalid request body")
+            except ValidationError, e:
+                return HttpResponseBadRequest(e.messages)
 
         # Execute request
         try:          
@@ -217,6 +219,30 @@ class Resource:
                 else:
                     request.data = request.PUT
 
+        if request_method == 'PUT' and isinstance(request.data, list):
+            raise ValidationError('Illegal Operation: PUT request with ' + \
+                'array in request body')
+
+        # Make sure only fields in self._handler.allowed_in_fields are allowed.
+        if isinstance(request.data, list):
+            # We assume it's a list of dictionaries, and reject any non dicts.
+            new_request_data = []
+            for item in request.data:
+                if not isinstance(item, dict):
+                    continue
+                
+                clean_item = dict((key, value) for key, value in item.iteritems() \
+                    if key in self._handler.allowed_in_fields)
+        
+                new_request_data.append(clean_item)
+            request.data = new_request_data                
+
+        else:
+            # Assume it's a dictionary
+            request.data = dict((
+                (key, value) for key, value in request.data.iteritems() \
+                if key in self._handler.allowed_in_fields))
+
 
     def error_handler(self, e, request):
         """
@@ -239,7 +265,8 @@ class Resource:
             message = dict(
                 type='Validation Error',
                 message='Invalid data provided.',
-                errors=e.messages,
+                errors=hasattr(e, 'message_dict') and e.message_dict or \
+                    hasattr(e, 'messages') and e.messages
             )
             http_response = HttpResponseBadRequest()
 
