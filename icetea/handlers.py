@@ -77,7 +77,18 @@ class BaseHandlerMeta(type):
         if cls.authentication is True:
             cls.authentication = DjangoAuthentication() 
         else:
-            cls.authentication = NoAuthentication()        
+            cls.authentication = NoAuthentication()      
+
+        # For ModelHandler classes, disallow incoming fields that are related
+        # fields or primary keys        
+        if 'model' in attrs and cls.model != None:
+            local_fields = [field.name for field in cls.model._meta.local_fields]
+
+            cls.allowed_in_fields = [ \
+                field for field in cls.allowed_in_fields if \
+                field in local_fields and 
+                field != 'id'
+            ]
 
 
         return cls
@@ -150,9 +161,9 @@ class BaseHandler():
         """
         requested = request.GET.getlist(self.request_fields)
         # Make sure that if ``field=`` is given(without specifying value), we
-        # transform it to an empty list. 
+        # consider that no request level field-selection has been made.
         if requested == ['']:
-            requested = ()              
+            requested = ()
 
         if requested:
             return set(requested).intersection(self.allowed_out_fields)
@@ -308,7 +319,7 @@ class BaseHandler():
          * total:       Total size of initial dataset. None if no slicing was
            performed.
         """
-
+        # Is slicing allowed, and has it been requested?
         slice = request.GET.get(self.slice, None)
         if not slice:
             return data, None
@@ -317,24 +328,19 @@ class BaseHandler():
             total = len(data)
         
         slice = slice.split(':')
-        
+
+        # Gather all slice arguments
         process = []
         for i in range(3):
             try:
-                slice_arg = slice[i]
-            except IndexError:
+                slice_arg = int(slice[i])
+            except (IndexError, ValueError):
                 slice_arg = None
-            try:
-                # A slice argument is usually a number...
-                process.append(int(slice_arg))
-            except:
-                # ... but don't choke if it's not.
-                process.append(slice_arg or None)
+            finally:
+                process.append(slice_arg)
         
-        # Slices the ``data``
-        sliced_data = self.slice_data(data, *process)
+        return self.slice_data(data, *process), total
         
-        return sliced_data, total
     
     def slice_data(self, data, start=None, stop=None, step=None):
         """
@@ -374,17 +380,19 @@ class BaseHandler():
         # Select output fields
         fields = self.get_output_fields(request)
         # Slice
-        data, total = self.response_slice_data(data, request)
+        sliced_data, total = self.response_slice_data(data, request)
         
-        # Transform the data into a dictionary. The emitter is responsible for
+        # Use the emitter to serialize the ``data``. The emitter is responsible for
         # allowing only fields in ``fields``, if such a selection makes sense.
+        # Depending on ``data``'s type, after the serialization, it becomes
+        # either a dict, list(of strings, dicts, etc) or string.
         from resource import Resource; from emitters import Emitter
-        emitter = Emitter(Resource._TYPEMAPPER, data, self, fields)
-        dic = emitter.construct()
+        emitter = Emitter(Resource._TYPEMAPPER, sliced_data, self, fields)       
+        ser_data = emitter.construct()
 
         # Structure the response data
         ret = {}
-        self.set_response_data(ret, 'data', dic)
+        self.set_response_data(ret, 'data', ser_data)
         if total:
             self.set_response_data(ret, 'total', total)
         # Add extra metadata
@@ -492,26 +500,18 @@ class ModelHandler(BaseHandler):
             current = self.data(request, *args, **kwargs)
             
             def update(current, data):
-                if not isinstance(current, self.model):
-                    map(update, current, [data] * len(current))
+                update_values = data.items()
+                for instance in isinstance(current, self.model) and [current] or \
+                    current:         
+                    for field, value in update_values:
+                        setattr(instance, field, value)
 
-                # Update the values of model instance given by `current`                
-                for field, value in data.iteritems():
-                    # TODO: Should we anticipate on errors here?
-                    setattr(current, field, value)
-            
-            # update the model instance with the 
-            # data given in the PUT request 
+            # update the model instances with the(but not save them)
             update(current, request.data)
             
-            request.data = current
             # request.data contains a model instance or a list of model instances 
             # that have been updated, but not yet saved in the database.
-            # By 'updated' we mean data that have been in the data set of the
-            # update operation, regardless of whether any of their fields have
-            # been modified or not.
-            # The actual save() of model instances is done in the update()
-            # method of the handler.
+            request.data = current
        
 
     def working_set(self, request, *args, **kwargs):
@@ -617,20 +617,18 @@ class ModelHandler(BaseHandler):
         @param data: Dataset to slice
         @param request: Incoming request
 
-        @return: Returns a list (sliced_data, total)
+        @return: Returns a tuple (sliced_data, total)
          * sliced_data: The final data set, after slicing. If no slicing has
            been performed, the initial dataset will be returned
          * total:       Total size of initial dataset. None if no slicing was
            performed.
         """
-        total = None
         # Single model instance cannot be sliced
-        if isinstance(data, self.model):
+        if isinstance(data, self.model) or not request.GET.get(self.slice, None):
             return data, None
         
-        # Optimization for lazy and potentially large query sets.
-        elif isinstance(data, models.query.QuerySet) and self.slice in request.GET:
-            total = data.count()
+        # Slicing is allowed, and has been requested, AND we have a queryset
+        total = data.count()
                  
         # ``data`` gets sliced
         sliced_data, _ = super(ModelHandler, self).response_slice_data(data, request, total)

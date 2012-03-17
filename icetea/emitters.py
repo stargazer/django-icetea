@@ -266,6 +266,7 @@ class Emitter:
             IF the values of the dictionary are models or querysets, they
             should appear as nested.
             """
+            # If there is no field selection, just output everything.
             if fields:
                 return dict([ (k, _any(v, fields, nested)) for k, v in data.iteritems() if k in fields])
             return dict([ (k, _any(v, fields, nested)) for k, v in data.iteritems() ])
