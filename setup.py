@@ -13,6 +13,7 @@ setup(
 	packages=('icetea', ),
 	install_requires=(
 		"Django>=1.3-beta,<=1.3",
+        "xlwt",
 	),
 	zip_safe=True,
 )
