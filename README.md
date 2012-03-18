@@ -70,7 +70,6 @@ goals with this project. If different applications require different semantics,
 
 Moreover, following the `Principle of the least astonishment
 <http://en.wikipedia.org/wiki/Principle_of_least_astonishment>`_ which is in
->>>>>>> beab7539b70765d06e246f9f1c3fbdee0f5bae26
 general what ``Python`` in general, and ``Django`` in particular *try* to do, I
 have tried to follow the general behavior that ``Django`` users are familiar
 with. An example of this is the ``validation`` method of ``Django-Piston``. It
@@ -102,6 +101,7 @@ foo/handlers.py
 ^^^^^^^^^^^^^^^^^^
 Here we define our API handler, which is the implementer of the business
 logic
+
     ```python
     from models import foomodel
     from icetea.handlers import ModelHandler
