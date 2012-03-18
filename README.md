@@ -102,28 +102,28 @@ foo/handlers.py
 Here we define our API handler, which is the implementer of the business
 logic
 
-    ```python
-    from models import foomodel
-    from icetea.handlers import ModelHandler
+```python
+from models import foomodel
+from icetea.handlers import ModelHandler
 
-    class FooHandler(ModelHandler):
-        authentication = True
-        model = Foo
+class FooHandler(ModelHandler):
+    authentication = True
+    model = Foo
 
-        read = True
-        create = True
+    read = True
+    create = True
 
-        allowed_out_fields = (
-            'id',
-            'field1', 
-            'field2',
-        )
+    allowed_out_fields = (
+        'id',
+        'field1', 
+        'field2',
+    )
 
-        allowed_in_fields = (
-            'field1',
-            'field2',
-        )
-    ```    
+    allowed_in_fields = (
+        'field1',
+        'field2',
+    )
+```    
     
 
 foo/urls.py
@@ -131,17 +131,17 @@ foo/urls.py
 We need to create resources(equivalent to Django views), which will initiate
 the serving of API requests
 
-    ```python
-    from djanco.conf.urls.defaults import *
-    from handlers import *
+```python
+from djanco.conf.urls.defaults import *
+from handlers import FooHandler
+from icetea.resource import Resource
 
-    from icetea.resource import Resource
-    foo_resource = Resource(FooHandler)
+foo_handler = Resource(FooHandler)
 
-    urlpatterns = patterns('',
-        url(r'^foo/$ ', foo_resource),
-    )
-    ```
+urlpatterns = patterns('',
+    url(r'^foo/$ ', foo_handler),
+)
+```
 
 
 All Handler level attributes
