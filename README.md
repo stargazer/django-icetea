@@ -89,21 +89,32 @@ validation for Django *Modelform* works.
 The means has changed (REST API instead of Forms), but the procedure is still the
 same.
 
+## Short Introduction
+
+``Django-IceTea`` offers 2 types of handlers:
+
+* ``ModelHandler``: Used to expose ``Django`` models to the API. Offers CRUD
+  functionality out of the box.
+
+* ``BaseHandler``: Used to expose data that don't map on a model. Most of the
+  functionality will need to be written manually.  
+
 ## Usage
 
 Say we have a Project which has pulled ``Django-Icetea``. Let's assume we have
-an app called ``foo``, with a model ``foomodel``
-
-We want to define API handlers, which will either act as ``Model handlers``,
-and thus giving us CRUD operations out of the box, or ``Base handlers``, for
-which we will need to define the functionality in a more manual way.
+an app called ``foo``, with a model ``foomodel``.
+                
+We want to define 2 API handlers, to expose the model ``foomodel`` to the API,
+as well as some other non-model data.
 
 Other than defining the business logic, handlers also act as means of
 representation. For example, ``ModelHandler`` classes, define how the
-corresponding model will be represented within that handler, but also in cases
-that it is nested in the responses of other handlers.
+corresponding model will be represented within that handler(which fields should
+be exposed), but also in cases that it is nested in the responses of other handlers.
 
 ### foo/handlers.py
+
+TODO: Example with a BaseHandler
 
 Here we define our API handler, which is the implementer of the business
 logic
@@ -257,24 +268,24 @@ objects in the request body were valid?
 
 I chose the following behavior:
 
-    * Any error in the request body, will return a ``Bad Request`` response.
-      For example if the data in the request body refer to Django models, if
-      even one of the models fails to validate, the response will be ``Bad
-      Request``.
+* Any error in the request body, will return a ``Bad Request`` response.
+  For example if the data in the request body refer to Django models, if
+  even one of the models fails to validate, the response will be ``Bad
+  Request``.
 
-      (Similarly a ``POST`` request for a single instance, returns ``Bad request``
-      if the request body does not contain valid data) 
+  (Similarly a ``POST`` request for a single instance, returns ``Bad request``
+  if the request body does not contain valid data) 
 
-    * If the request body is valid, the response is ``OK``, and its body
-      contains a list of all the successfully added model instances. If one model
-      instance failed to be created (due for example to a database error),
-      although it contained valid data, it will not be part of the response
-      data.
+* If the request body is valid, the response is ``OK``, and its body
+  contains a list of all the successfully added model instances. If one model
+  instance failed to be created (due for example to a database error),
+  although it contained valid data, it will not be part of the response
+  data.
 
-      (Similarly a POST request for a single instance, returns an ``OK``
-      response, and the model instance in the request body. If the model
-      instance failed to be created, although it was valid, we return an ``OK``
-      response, with ``null`` in the response body)
+  (Similarly a POST request for a single instance, returns an ``OK``
+  response, and the model instance in the request body. If the model
+  instance failed to be created, although it was valid, we return an ``OK``
+  response, with ``null`` in the response body)
 
 This is in my opinion the most intuitive behavior. However I think that it all
 depends on the requirements of each application, and the clients using the API.
