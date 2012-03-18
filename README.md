@@ -47,7 +47,7 @@ and modified at will.
 As in any project though, some assumptions have to be made, and some
 conventions need to be predefined. 
 
-For example, although *HTTP** is an
+For example, although *HTTP* is an
 application protocol, it has been built mostly for interaction with Web
 browsers. When applied in more generic request-response schemes there are
 situation where the protocol itself does not really indicate the correct way of
