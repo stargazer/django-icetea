@@ -1,20 +1,13 @@
-==================
-Django-IceTea
-==================
+# Django-IceTea
 
-``django-icetea`` is a package built on top of `Django <https://www.djangoproject.com/>`_ and provides the necessary abstractions for creating REST APIs.
+``Django-icetea`` is a package built on top of [Django](https://www.djangoproject.com/) and provides the necessary abstractions for creating REST APIs.
 
-It has been influenced by the architecture of `django-piston
-<https://bitbucket.org/jespern/django-piston/wiki/Home>`_ and
-`piston-perfect <https://github.com/smartpr/piston-perfect>`_. 
+It has been influenced by the architecture of [django-piston](https://bitbucket.org/jespern/django-piston/wiki/Home) and [piston-perfect](https://github.com/smartpr/piston-perfect).
 
-For this reason, I've decided to build ``django-icetea``. It is slim, readable
-and easy to use, with its main focus being stability and maintainability.
+I've decided to build ``Django-icetea``, in order to have an API framework with tight foundations, consistent and intuitive behaviour, *readable code*, and of course, easy to use.
 
-Enjoy!!
+## Installation
 
-Installation
---------------
 If you use ``zc.buildout``, installing ``Django-IceTea`` is very simple. 
 
 In your Django project's ``setup.py``, add ``django-icetea`` in section
@@ -28,8 +21,8 @@ namespace.
 TODO::
     Add to PyPi
 
-Philosophy
--------------
+## Philosophy
+
 ``Django-IceTea`` aims to provide the abstractions for providing out-of-the-box 
 functionality for creating APIs. It strives to keep things clear and explicit,
 without any unnecessary magic behind the scenes.
@@ -68,9 +61,8 @@ communication between the client and the server. This has been one of my main
 goals with this project. If different applications require different semantics,
 ``Django-icetea``'s code can easily be modified to support them.
 
-Moreover, following the `Principle of the least astonishment
-<http://en.wikipedia.org/wiki/Principle_of_least_astonishment>`_ which is in
-general what ``Python`` in general, and ``Django`` in particular *try* to do, I
+Moreover, following the [Principle of the least astonishment](http://en.wikipedia.org/wiki/Principle_of_least_astonishment) which is in
+general what *Python* in general, and *Django* in particular *try* to do, I
 have tried to follow the general behavior that ``Django`` users are familiar
 with. An example of this is the ``validation`` method of ``Django-Piston``. It
 cleans the data, creates model instances (without committing them to the
@@ -78,13 +70,13 @@ database) and validates them using the model's ``full-clean`` method. Once this
 is done, we are certain that we are dealing with perfectly valid model
 instances, which we can safely write to the database. This means that we don't
 have to need to do all these steps manually, since it's offered by
-``Django-IceTea`` out of the bod. It is exactly how
-validation for Django ``Modelform`` works. 
+*Django-IceTea* out of the bod. It is exactly how
+validation for Django *Modelform* works. 
 The means has changed (REST API instead of Forms), but the procedure is still the
 same.
 
-Usage
---------------
+## Usage
+
 Say we have a Project which has pulled ``Django-Icetea``. Let's assume we have
 an app called ``foo``, with a model ``foomodel``
 
@@ -97,8 +89,8 @@ representation. For example, ``ModelHandler`` classes, define how the
 corresponding model will be represented within that handler, but also in cases
 that it is nested in the responses of other handlers.
 
-foo/handlers.py
-^^^^^^^^^^^^^^^^^^
+### foo/handlers.py
+
 Here we define our API handler, which is the implementer of the business
 logic
 
@@ -126,8 +118,8 @@ class FooHandler(ModelHandler):
 ```    
     
 
-foo/urls.py
-^^^^^^^^^^^^^^
+### foo/urls.py
+
 We need to create resources(equivalent to Django views), which will initiate
 the serving of API requests
 
@@ -143,15 +135,11 @@ urlpatterns = patterns('',
 )
 ```
 
+## Handler level attributes
 
-All Handler level attributes
--------------------------------
+### Available for all handlers
 
-Available for all handlers
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-``read``, ``create``, ``update``, ``delete``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#### ``read``, ``create``, ``update``, ``delete``
 
 If any of these parameters is ``True``, then the handler allows ``GET``,
 ``POST``, ``PUT`` and ``DELETE`` requests respectively.
@@ -164,19 +152,17 @@ If instead they are defined as methods, eg::
 Then the corresponding action is enabled, and the default functionality is
 overridden.
 
-``bulk_create``
-~~~~~~~~~~~~~~~~~~~
+#### ``bulk_create``
+
 If ``True`` enables bulk-POST requests. Default is ``False``. See section `Notes <notes-label>`_ for more
 information.
 
-``request_fields``
-~~~~~~~~~~~~~~~~~~~
+#### ``request_fields``
 
     Indicates which querystring parameter will act as a a request-level field
     selector. If ``True``, then the selector is ``field``. If ``False``, there will be no field selection. Default is ``True``.
 
-``order``
-~~~~~~~~~~~
+#### ``order``
     
     Indicates which querystring parameter will act as the order-type selector
     on the result set of the requested operation.
@@ -185,8 +171,7 @@ information.
     The order logic, should be implemented in the handler's ``order_data``
     method.
 
-``slice``
-~~~~~~~~~~~
+#### ``slice``
 
     Indicates which querystring parameter will be used to request slicing of
     the result set of the requested operation.
@@ -195,8 +180,8 @@ information.
     The slicing notation follows Python's ``list slice syntax``, of
     ``start:stop:step``.                                                           section
 
-``filters``
-~~~~~~~~~~~~~~
+#### ``filters``
+
     TODO::
         Should only be available for ModelHandler classes!!!
 
@@ -206,14 +191,12 @@ information.
     current request. ``filter_operation`` corresponds to a Django lookup
     filter, which will be applied on the request's resuls data.
 
-``authentication``
-~~~~~~~~~~~~~~~~~~~~
+#### ``authentication``
     
     If ``True``, only authenticated users can access the handler. The ``Django
     authenticataion`` is used. Default value is ``False``.
 
-``allowed_out_fields``
-~~~~~~~~~~~~~~~~~~~~~~~
+#### ``allowed_out_fields``
     
     Tuple of fields, which indicates the fields that the handler is allowed to
     output. In the case of ``ModelHandler``, it symbolizes model fields, whereas in the case of ``BaseHandler`` classes, it only has sense if the handler returns dictionaries, or lists of dictionaries, and it indicates the dictionary keys that the handler is allowed to output.
@@ -222,24 +205,20 @@ information.
     this parameter, as well as the request-level field selection, indicated by
     the ``field``.
 
-``allowed_in_fields``
-~~~~~~~~~~~~~~~~~~~~~~~~
+#### ``allowed_in_fields``
     
     Tuple of fields, which indicates the fields that the handler allowed to
     take from the incoming request body. In the case of ``ModelHandler``
     classes, no primary keys or related keys are allowed.
 
-Available only for handlers that extend ModelHandler
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+### Available only for handlers that extend ModelHandler
 
-``model``
-~~~~~~~~~~~~~
+#### ``model``
     
     The database model which the Handler exposes.
 
 
-``exclude_nested``
-~~~~~~~~~~~~~~~~~~~~~~
+#### ``exclude_nested``
 
     Fields which should be excluded when the model is nested in another
     handler's response.
@@ -249,8 +228,7 @@ Available only for handlers that extend ModelHandler
 
 .. _notes-label:
 
-Notes
---------------
+## Notes
 
 Bulk POST requests
 ^^^^^^^^^^^^^^^^^^^^
