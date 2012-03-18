@@ -156,7 +156,7 @@ overridden.
 
 #### ``bulk_create``
 
-If ``True`` enables bulk-POST requests. Default is ``False``. See section [Notes](https://github.com/stargazer/django-icetea#notes) for more
+If ``True`` enables bulk-POST requests. Default is ``False``. See section [Notes](#notes) for more
 information.
 
 #### ``request_fields``
@@ -226,14 +226,12 @@ Fields which should be excluded when the model is nested in another
 handler's response.
 
 
-.. _notes-label:
-
 ## Notes
 <span class="notes" id="notes"></span>
 
 
-Bulk POST requests
-^^^^^^^^^^^^^^^^^^^^
+### Bulk POST requests
+
 ``Bulk POST requests`` refers to a single ``POST`` request which attempts to create
 multiple data objects. The specifications of ``REST`` or ``HTTP`` don't specify
 any standard behaviour for such requests, and instead discourage its use. The
