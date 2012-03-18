@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from authentication import DjangoAuthentication, NoAuthentication
 from utils import MethodNotAllowed
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from custom_filters import filter_to_method
 
 # mappings of {Http request type, method}
@@ -142,6 +142,8 @@ class BaseHandler():
     :class:`.authentication.DjangoAuthentication` is used. A value of ``None``
     implies no authentication, which is the default.
     """
+
+    bulk_create = False
 
     def get_output_fields(self, request):
         """
@@ -452,9 +454,8 @@ class ModelHandler(BaseHandler):
         with the ``POST``'ed data or a current instance to be updated with the 
         ``PUT``'ed data.
         """
-        
         super(ModelHandler, self).validate(request, *args, **kwargs)
-        
+
         # TODO: Will *request.data* always be ``None`` if no data was provided
         # in the request body? Will IceTea even allow for an empty request
         # body?
@@ -466,13 +467,27 @@ class ModelHandler(BaseHandler):
             # field level validation checks.
             if not isinstance(request.data, list):
                 request.data = self.model(**request.data)
-                request.data.full_clean()
+                try:                    
+                    request.data.full_clean()                    
+                except ObjectDoesNotExist, e:
+                    # There is a weird case, when if a Foreign Key on the model
+                    # instance is not defined, and this foreign key is used in
+                    # the __unicode__ method of the model, to derive its string
+                    # representatin, we get a ``DoesNotExist``exception.
+                    # #TODO: Is this a bug though? 
+                    # It can also be dealt with by removing the use of the FK
+                    # from the model's unicode method, but that would require a
+                    # lot of manual work
+                    raise ValidationError('Foreign Keys on model not defined')
+
             else:
                 request.data = [self.model(**data_item) for \
                     data_item in request.data]
-
-                for model_instance in request.data:
-                    model_instance.full_clean()
+                for instance in request.data:
+                    try:
+                        instance.full_clean()
+                    except ObjectDoesNotExist, e:
+                        raise ValidationError('Foreign Keys on model not defined')
 
         elif request.method.upper() == 'PUT':
             # current = model instance(s) to be updated
@@ -615,7 +630,7 @@ class ModelHandler(BaseHandler):
                             
         # Return sliced, total
         return sliced_data, total
-    
+
     
     def create(self, request, *args, **kwargs):
         """
@@ -664,6 +679,7 @@ class ModelHandler(BaseHandler):
         subset of ``request.data`` which contains the successfully updated
         model instances.
         """
+
         # Returns the model instance(s) in request.data, that have been
         # successfully updated
         def persist(instance):

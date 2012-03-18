@@ -228,11 +228,15 @@ class Resource:
                 if request_method == 'POST':
                     request.data = request.POST
                 else:
-                    request.data = request.PUT
+                    request.data = request.PUT                            
 
         if request_method == 'PUT' and isinstance(request.data, list):
             raise ValidationError('Illegal Operation: PUT request with ' + \
                 'array in request body')
+
+        if not self._handler.bulk_create and isinstance(request.data, list):
+            raise ValidationError('API Handler does not allow bulk POST ' + \
+                'requests')
 
         # Make sure only fields in self._handler.allowed_in_fields are allowed.
         if isinstance(request.data, list):
