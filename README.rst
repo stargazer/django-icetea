@@ -28,6 +28,46 @@ namespace.
 TODO::
     Add to PyPi
 
+Philosophy
+-------------
+``Django-IceTea`` aims to provide the abstractions for providing out-of-the-box 
+functionality for creating APIs. It strives to keep things clear and explicit,
+without any unnecessary magic behind the scenes.
+
+It is very extensible, and the default behaviour can be overridden, extended
+and modified at will.
+
+As in any project though, some assumptions have to be made, and some
+conventions need to be predefined. 
+
+For example, although ``HTTP`` is an
+application protocol, it has been built mostly for interaction with Web
+browsers. When applied in more generic request-response schemes there are
+situation where the protocol itself does not really indicate the correct way of
+doing things. For this reason, I mostly view ``HTTP`` as the transmission means
+for requests and responses. It is anaware of business logic, and therefore it
+lacks the means of mapping application specific business rules or error to ``HTTP
+Responses``. 
+
+A specific case in which the ``HTTP`` protocol doesn't really help, is the
+following:
+
+    Say we need to create a model instance; We issue a ``POST`` request to the
+    server API, and we expect a response which will indicate ``if`` the
+    resource has been created, and if yes, return the resource.
+
+    The server first needs to validate the data it has received. If the data
+    doesn't validate, then it needs to return a 400 Error Code. If the data
+    validates, but upon creation the database fails, what do we do? Do we
+    return ``Bad Request``? No way. This will confuse the user. The request was
+    besides validated. Do we return a Successful response with 200 status code,
+    and empty data? I chose for the latter. 
+
+In anycase developing an API is all about consistent and unambiguous
+communication between the client and the server. This has been one of my main
+goals with this project. If different applications require different semantics,
+``Django-icetea``'s code can easily be modified to support them.
+
 Usage
 --------------
 Say we have a Project which has pulled ``Django-Icetea``. Let's assume we have
@@ -95,7 +135,6 @@ Available for all handlers
 ``read``, ``create``, ``update``, ``delete``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
 If any of these parameters is ``True``, then the handler allows ``GET``,
 ``POST``, ``PUT`` and ``DELETE`` requests respectively.
 
@@ -105,7 +144,12 @@ If instead they are defined as methods, eg::
         pass
 
 Then the corresponding action is enabled, and the default functionality is
-overwritten.      
+overridden.
+
+``bulk_create``
+~~~~~~~~~~~~~~~~~~~
+If ``True`` enables bulk-POST requests. Default is ``False``. See section :ref:`notes-label` for more
+information.
 
 ``request_fields``
 ~~~~~~~~~~~~~~~~~~~
@@ -185,4 +229,47 @@ Available only for handlers that extend ModelHandler
 
 
 
+.. _notes-label:
+
+Notes
+--------------
+
+Bulk POST requests
+^^^^^^^^^^^^^^^^^^^^
+``Bulk POST requests`` refers to a single ``POST`` request which attempts to create
+multiple data objects. The specifications of ``REST`` or ``HTTP`` don't specify
+any standard behaviour for such requests, and instead discourage its use. The
+reason is the poor semantics of such requests. 
+
+For example, how would the API signal an error one one of the data objects in 
+the request body? How would it signal a database error, when all the data
+objects in the request body were valid?
+
+I chose the following behavior:
+
+    * Any error in the request body, will return a ``Bad Request`` response.
+      For example if the data in the request body refer to Django models, if
+      even one of the models fails to validate, the response will be ``Bad
+      Request``.
+
+      (Similarly a ``POST`` request for a single instance, returns ``Bad request``
+      if the request body does not contain valid data) 
+
+    * If the request body is valid, the response is ``OK``, and its body
+      contains a list of all the successfully added model instances. If one model
+      instance failed to be created (due for example to a database error),
+      although it contained valid data, it will not be part of the response
+      data.
+
+      (Similarly a POST request for a single instance, returns an ``OK``
+      response, and the model instance in the request body. If the model
+      instance failed to be created, although it was valid, we return an ``OK``
+      response, with ``null`` in the response body)
+
+This is in my opinion the most intuitive behavior. However I think that it all
+depends on the requirements of each application, and the clients using the API.
+So feel free to modify the existing behavior.
+
+By default ``bulk POST requests`` are disabled. They can be enabled by setting
+``bulk_create = True`` in the handler class.
 
