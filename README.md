@@ -146,89 +146,91 @@ If any of these parameters is ``True``, then the handler allows ``GET``,
 
 If instead they are defined as methods, eg::
 
-    def read(self, request, *args, **kwargs):
-        pass
+``` python
+def read(self, request, *args, **kwargs):
+    pass
+```
 
 Then the corresponding action is enabled, and the default functionality is
 overridden.
 
 #### ``bulk_create``
 
-If ``True`` enables bulk-POST requests. Default is ``False``. See section `Notes <notes-label>`_ for more
+If ``True`` enables bulk-POST requests. Default is ``False``. See section [Notes](https://github.com/stargazer/django-icetea#notes) for more
 information.
 
 #### ``request_fields``
 
-    Indicates which querystring parameter will act as a a request-level field
-    selector. If ``True``, then the selector is ``field``. If ``False``, there will be no field selection. Default is ``True``.
+Indicates which querystring parameter will act as a a request-level field
+selector. If ``True``, then the selector is ``field``. If ``False``, there will be no field selection. Default is ``True``.
 
 #### ``order``
     
-    Indicates which querystring parameter will act as the order-type selector
-    on the result set of the requested operation.
-    If ``True``, then the parameter is ``order``. If ``False``, no order-type
-    selection can be performed. Default is ``False``.
-    The order logic, should be implemented in the handler's ``order_data``
-    method.
+Indicates which querystring parameter will act as the order-type selector
+on the result set of the requested operation.
+If ``True``, then the parameter is ``order``. If ``False``, no order-type
+selection can be performed. Default is ``False``.
+The order logic, should be implemented in the handler's ``order_data``
+method.
 
 #### ``slice``
 
-    Indicates which querystring parameter will be used to request slicing of
-    the result set of the requested operation.
-    If ``True``, then the parameter is ``slice``. If ``False``, no slicing will
-    be possible. Default is ``False``.
-    The slicing notation follows Python's ``list slice syntax``, of
-    ``start:stop:step``.                                                           section
+Indicates which querystring parameter will be used to request slicing of
+the result set of the requested operation.
+If ``True``, then the parameter is ``slice``. If ``False``, no slicing will
+be possible. Default is ``False``.
+The slicing notation follows Python's ``list slice syntax``, of
+``start:stop:step``.                                                           section
 
 #### ``filters``
 
-    TODO::
-        Should only be available for ModelHandler classes!!!
+A dictionary of ``filter name``: ``filter_operation`` couples. ``filter
+name`` defines the querystring parameter used to apply the filtering on the
+current request. ``filter_operation`` corresponds to a Django lookup
+filter, which will be applied on the request's resuls data.
 
+TODO::
+    Should only be available for ModelHandler classes!!!
 
-    A dictionary of ``filter name``: ``filter_operation`` couples. ``filter
-    name`` defines the querystring parameter used to apply the filtering on the
-    current request. ``filter_operation`` corresponds to a Django lookup
-    filter, which will be applied on the request's resuls data.
 
 #### ``authentication``
     
-    If ``True``, only authenticated users can access the handler. The ``Django
-    authenticataion`` is used. Default value is ``False``.
+If ``True``, only authenticated users can access the handler. The ``Django
+authenticataion`` is used. Default value is ``False``.
 
 #### ``allowed_out_fields``
     
-    Tuple of fields, which indicates the fields that the handler is allowed to
-    output. In the case of ``ModelHandler``, it symbolizes model fields, whereas in the case of ``BaseHandler`` classes, it only has sense if the handler returns dictionaries, or lists of dictionaries, and it indicates the dictionary keys that the handler is allowed to output.
+Tuple of fields, which indicates the fields that the handler is allowed to
+output. In the case of ``ModelHandler``, it symbolizes model fields, whereas in the case of ``BaseHandler`` classes, it only has sense if the handler returns dictionaries, or lists of dictionaries, and it indicates the dictionary keys that the handler is allowed to output.
     
-    The actual fields that a request will eventually output, is a function of
-    this parameter, as well as the request-level field selection, indicated by
-    the ``field``.
+The actual fields that a request will eventually output, is a function of
+this parameter, as well as the request-level field selection, indicated by
+the ``field``.
 
 #### ``allowed_in_fields``
     
-    Tuple of fields, which indicates the fields that the handler allowed to
-    take from the incoming request body. In the case of ``ModelHandler``
-    classes, no primary keys or related keys are allowed.
+Tuple of fields, which indicates the fields that the handler allowed to
+take from the incoming request body. In the case of ``ModelHandler``
+classes, no primary keys or related keys are allowed.
 
 ### Available only for handlers that extend ModelHandler
 
 #### ``model``
     
-    The database model which the Handler exposes.
+The database model which the Handler exposes.
 
 
 #### ``exclude_nested``
 
-    Fields which should be excluded when the model is nested in another
-    handler's response.
-
-
+Fields which should be excluded when the model is nested in another
+handler's response.
 
 
 .. _notes-label:
 
 ## Notes
+<span class="notes" id="notes"></span>
+
 
 Bulk POST requests
 ^^^^^^^^^^^^^^^^^^^^
