@@ -13,7 +13,7 @@ import datetime
         
 from utils import coerce_put_post, translate_mime, \
     MimerDataException, MethodNotAllowed
-from emitters import Emitter
+from emitters import Emitter, JSONEmitter
                    
 from django.views.debug import ExceptionReporter   
 from django.core.mail import send_mail, EmailMessage
@@ -103,48 +103,50 @@ class Resource:
         if request_method in ['PUT', 'POST']:
             try:
                 # Cleanup the request and make sure its request body is valid.
-                self.cleanup(request, request_method)
+                self.cleanup(request, *args, **kwargs)
             except MimerDataException:
                 return HttpResponseBadRequest("Invalid request body")
             except ValidationError, e:
                 return HttpResponseBadRequest(e.messages)
+            except MethodNotAllowed, e:
+                return HttpResponseNotAllowed(e.permitted_methods)
 
         # Execute request
         try:          
             # Dictionary containing {'data': <Serialized result>}                
             response_dictionary = self._handler.execute_request(request, *args, **kwargs)
-            # Add debug messages to response dictionary
-            self.response_add_debug(response_dictionary)
-            # Serialize the result into JSON(or whatever else)
-            serialized_result, content_type = self.serialize_result(response_dictionary, request, *args, **kwargs) 
-            # Construct HTTP response       
-            response = HttpResponse(serialized_result, mimetype=content_type, status=200)
-            return response
-
         except Exception, e:
-            # Create appropriate HttpResponse object, depending on the request
+            # Create appropriate HttpResponse object, depending on the error
+            # message
             http_response, message = self.error_handler(e, request)
+
             # If a Server Error (500) has occured, return it as is
             if isinstance(http_response, HttpResponseServerError):
                 http_response.content = message
                 return http_response
-            # If there is a message, run it through the serializer
+
+            # Else return the error message as JSON
+            out = ''
             if message:
-                serialized_result, content_type = self.serialize_result(message, request, *args, **kwargs)
-                http_response.content = serialized_result
-                http_response.mimetype = content_type
-            else:   
-                _, content_type = self.serialize_result(message, request, *args, **kwargs)
-                http_response.content = ''
-                http_response.mimetype = content_type
-
+                out = JSONEmitter(self._TYPEMAPPER, message, self._handler).render(request)
+            http_response.content = out
+            http_response.mimetype = 'application/json; charset=utf-8'
             return http_response
-        
-        #if 'format' in request.GET and request.GET.get('format') == 'excel':
-        #   date = datetime.date.today()
-        #   response['Content-Disposition'] = 'attachment; filename=Smart.pr-export-%s.xls' % date
-            
 
+        else:            
+            # Add debug messages to response dictionary
+            self.response_add_debug(response_dictionary)
+            # Serialize the result into JSON(or whatever else)
+            serialized_result, content_type, emitter_format = \
+                self.serialize_result(response_dictionary, request, *args, **kwargs) 
+            # Construct HTTP response       
+            response = HttpResponse(serialized_result, mimetype=content_type,status=200)
+
+            if emitter_format == 'excel':
+                response['Content-Disposition'] = 'attachment; filename=file.xls'
+
+            return response
+        
     def serialize_result(self, result, request, *args, **kwargs):
         """
         @param result: Result of the execution of the handler, wrapped in a
@@ -153,17 +155,17 @@ class Resource:
         """
         # What's the emitter format to use?
         emitter_format = self.determine_emitter_format(request, *args, **kwargs)
-
+        
         # Based on that, find the Emitter class, and the corresponding content
         # type
-        emitter_class, content_type = Emitter.get(emitter_format)
+        emitter_class, mimetype = Emitter.get(emitter_format)
 
         # create instance of the emitter class
         serializer = emitter_class(self._TYPEMAPPER, result, self._handler, None)
         # serialize the result
         serialized_result = serializer.render(request)
 
-        return serialized_result, content_type
+        return serialized_result, mimetype, emitter_format
  
     def determine_emitter_format(self, request, *args, **kwargs):
         """
@@ -194,16 +196,25 @@ class Resource:
         else:
             return False 
 
-    def cleanup(self, request, request_method):
+    def cleanup(self, request, *args, **kwargs):
         """
         If request is PUT, transform its data to POST... Study again!
 
         If request is PUT/POST, make sure the request body conforms to its
         ``content-type``.
         """
+        request_method = request.method.upper()
+
         if request_method == 'PUT':
             # TODO: STUDY what this does exactly
             coerce_put_post(request)
+
+        elif request_method == 'POST':
+            # Check if a POST request has been attempted on a singular resource
+            # eg. /contacts/1/. This of course makes no sense at all!
+            for field in kwargs.keys(): 
+                if self._handler.model._meta.get_field(field).unique:
+                    raise MethodNotAllowed('GET', 'PUT', 'DELETE')
 
         if request_method in ('PUT', 'POST'):
             try:
