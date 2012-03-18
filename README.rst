@@ -175,7 +175,7 @@ information.
     If ``True``, then the parameter is ``slice``. If ``False``, no slicing will
     be possible. Default is ``False``.
     The slicing notation follows Python's ``list slice syntax``, of
-    ``start:stop:step``.   
+    ``start:stop:step``.                                                           section
 
 ``filters``
 ~~~~~~~~~~~~~~
@@ -230,7 +230,6 @@ Available only for handlers that extend ModelHandler
 
 
 .. _notes-label:
-
 Notes
 --------------
 
