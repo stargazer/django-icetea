@@ -79,14 +79,11 @@ class BaseHandlerMeta(type):
         else:
             cls.authentication = NoAuthentication()      
 
-        # For ModelHandler classes, disallow incoming fields that are related
-        # fields or primary keys        
+        # For ModelHandler classes, disallow incoming fields that are primary
+        # keys
         if 'model' in attrs and cls.model != None:
-            local_fields = [field.name for field in cls.model._meta.local_fields]
-
             cls.allowed_in_fields = [ \
                 field for field in cls.allowed_in_fields if \
-                field in local_fields and 
                 field != 'id'
             ]
 
@@ -153,12 +150,17 @@ class BaseHandler():
         It takes into account the ``self.allowed_out_fields`` tuple, as well as
         any request-level field selection that might have taken place.
 
+        If the selection of fields indicates that the response should contain
+        no fields at all, we instead respond with all allowed fields.
+
         Since a BaseHandler is a not a handler for models, the fields returned
         by this function, basically have the sense of dictionary keys allowed
         to be returned, IF the data of the execution of the operation(say the
         read() method) is a dictionary. If the response is for example a
         string, the fields returned don't have any sense.
         """
+        selection = ()
+
         requested = request.GET.getlist(self.request_fields)
         # Make sure that if ``field=`` is given(without specifying value), we
         # consider that no request level field-selection has been made.
@@ -166,11 +168,10 @@ class BaseHandler():
             requested = ()
 
         if requested:
-            return set(requested).intersection(self.allowed_out_fields)
+            selection = set(requested).intersection(self.allowed_out_fields)
+
+        return selection or self.allowed_out_fields            
         
-        return self.allowed_out_fields
-
-
     
     def validate(self, request, *args, **kwargs):
         return        
@@ -342,8 +343,6 @@ class BaseHandler():
         The dictionary values are simply text. The nested models, queryset and
         everything else, have been serialized as text, within this dictionary.       
         """
-        if request.method.upper() == 'POST' and not self.data_item(request, *args, **kwargs) is None:
-            raise MethodNotAllowed('GET', 'PUT', 'DELETE')
         # Validate request body data
         if hasattr(request, 'data'):
             self.validate(request, *args, **kwargs)
@@ -353,7 +352,7 @@ class BaseHandler():
         # Run it
         data = action(request, *args, **kwargs)
         # Select output fields
-        fields = self.get_output_fields(request)
+        fields = self.get_output_fields(request) 
         # Slice
         sliced_data, total = self.response_slice_data(data, request)
         
