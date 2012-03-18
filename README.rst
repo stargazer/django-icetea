@@ -230,6 +230,7 @@ Available only for handlers that extend ModelHandler
 
 
 .. _notes-label:
+
 Notes
 --------------
 
