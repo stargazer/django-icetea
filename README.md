@@ -102,7 +102,7 @@ foo/handlers.py
 Here we define our API handler, which is the implementer of the business
 logic
 
-```python
+``` python
 from models import foomodel
 from icetea.handlers import ModelHandler
 
@@ -131,7 +131,7 @@ foo/urls.py
 We need to create resources(equivalent to Django views), which will initiate
 the serving of API requests
 
-```python
+``` python
 from djanco.conf.urls.defaults import *
 from handlers import FooHandler
 from icetea.resource import Resource
