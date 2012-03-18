@@ -68,6 +68,21 @@ communication between the client and the server. This has been one of my main
 goals with this project. If different applications require different semantics,
 ``Django-icetea``'s code can easily be modified to support them.
 
+Moreover, following the *`Principle of the least astonishment
+<http://en.wikipedia.org/wiki/Principle_of_least_astonishment>`_* which is in
+general what ``Python`` in general, and ``Django`` in particular *try* to do, I
+have tried to follow the general behavior that ``Django`` users are familiar
+with. An example of this is the ``validation`` method of ``Django-Piston``. It
+cleans the data, creates model instances (without committing them to the
+database) and validates them using the model's ``full-clean`` method. Once this
+is done, we are certain that we are dealing with perfectly valid model
+instances, which we can safely write to the database. This means that we don't
+have to need to do all these steps manually, since it's offered by
+``Django-IceTea`` out of the bod. It is exactly how
+validation for Django ``Modelform`` works. 
+The means has changed (REST API instead of Forms), but the procedure is still the
+same.
+
 Usage
 --------------
 Say we have a Project which has pulled ``Django-Icetea``. Let's assume we have
@@ -85,8 +100,8 @@ that it is nested in the responses of other handlers.
 foo/handlers.py
 ^^^^^^^^^^^^^^^^^^
 Here we define our API handler, which is the implementer of the business
-logic::
-
+logic
+    ```python
     from models import foomodel
     from icetea.handlers import ModelHandler
 
@@ -107,14 +122,15 @@ logic::
             'field1',
             'field2',
         )
-    
+    ```    
     
 
 foo/urls.py
 ^^^^^^^^^^^^^^
 We need to create resources(equivalent to Django views), which will initiate
-the serving of API requests::
+the serving of API requests
 
+    ```python
     from djanco.conf.urls.defaults import *
     from handlers import *
 
@@ -124,6 +140,7 @@ the serving of API requests::
     urlpatterns = patterns('',
         url(r'^foo/$ ', foo_resource),
     )
+    ```
 
 
 All Handler level attributes
@@ -148,7 +165,7 @@ overridden.
 
 ``bulk_create``
 ~~~~~~~~~~~~~~~~~~~
-If ``True`` enables bulk-POST requests. Default is ``False``. See section :ref:`Notes <notes-label>` for more
+If ``True`` enables bulk-POST requests. Default is ``False``. See section `Notes <notes-label>`_ for more
 information.
 
 ``request_fields``
