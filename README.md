@@ -49,44 +49,44 @@ conventions need to be predefined.
 
 For example, although *HTTP* is an
 application protocol, it has been built mostly for interaction with Web
-browsers. When applied in more generic request-response schemes there are
-situation where the protocol itself does not really indicate the correct way of
+browsers. When applied in more generic request-response schemes, there are
+cases where the protocol itself does not really indicate the correct way of
 doing things. For this reason, I mostly view *HTTP* as the transmission means
-for requests and responses. It is anaware of business logic, and therefore it
-lacks the means of mapping application specific business rules or error to *HTTP
+for requests and responses. It is unaware of business logic, and therefore it
+lacks the means of mapping application specific semantice or errors to *HTTP
 Responses*. 
 
-A specific case in which the *HTTP* protocol doesn't really help, is the
-following:
+A specific case in which the *HTTP* protocol doesn't really specify the
+behaviour, is the following:
 
 > Say we need to create a model instance; We issue a *POST* request to the
 > server API, and we expect a response which will indicate *if* the
 > resource has been created, and if yes, return the resource.
 > The server first needs to validate the data it has received. If the data
-> doesn't validate, then it needs to return a ``Bad Request``. If the data
+> doesn't validate, then it needs to return a ``400 Bad Request``. If the data
 > validates, but upon creation the database fails, what do we do? Do we
-> return ``Bad Request``? No way. This will confuse the user and indicate
-> that his data are invalid. The request was
-> besides validated. Do we return a Successful response with 200 status code,
-> and empty data? I chose for the latter. 
+> return ``400 Bad Request``? No way. This will confuse the user and indicate
+> that the data provided were invalid. The request was validated successfully,
+> so this is not the case, Do we return a Successful response ``200 OK``,
+> and empty data? I choose for the latter. 
 
 In anycase developing an API is all about consistent and unambiguous
 communication between the client and the server. This has been one of my main
 goals with this project. If different applications require different semantics,
 *Django-icetea*'s code can easily be modified to support them.
 
-Moreover, following the [Principle of the least astonishment](http://en.wikipedia.org/wiki/Principle_of_least_astonishment) which is in
-general what *Python* in general, and *Django* in particular *try* to do, I
+Moreover, following the [Principle of the least astonishment](http://en.wikipedia.org/wiki/Principle_of_least_astonishment) which is what *Python* in general, and *Django* in particular *try* to do, I
 have tried to follow the general behavior that *Django* users are familiar
 with. An example of this is the ``validation`` method of ``Django-IceTea``. It
 cleans the data, creates model instances (without committing them to the
 database) and validates them using the model's ``full-clean`` method. Once this
 is done, we are certain that we are dealing with perfectly valid model
 instances, which we can safely write to the database. This means that we don't
-have to need to do all these steps manually, since it's offered by
+have the need to do all these steps manually, since they are offered by
 *Django-IceTea* out of the box. It is exactly how
-validation for Django *Modelform* works. 
-The means has changed (REST API instead of Forms), but the procedure is still the
+validation for Django *Modelform* works, and how most *Django* developers are
+used to doing things.. 
+The means have changed (REST API instead of Forms), but the procedure is still the
 same.
 
 ## Short Introduction
