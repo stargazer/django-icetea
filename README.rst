@@ -148,7 +148,7 @@ overridden.
 
 ``bulk_create``
 ~~~~~~~~~~~~~~~~~~~
-If ``True`` enables bulk-POST requests. Default is ``False``. See section :ref:`notes-label` for more
+If ``True`` enables bulk-POST requests. Default is ``False``. See section :ref:`Notes <notes-label>` for more
 information.
 
 ``request_fields``
