@@ -10,12 +10,26 @@ I've decided to build ``Django-icetea``, in order to have an API framework with 
 
 If you use ``zc.buildout``, installing ``Django-IceTea`` is very simple. 
 
-In your Django project's ``setup.py``, add ``django-icetea`` in section
-``install_requires``. 
+In your Django project's ``setup.py``, add  ``django-icetea`` in section
+``install_requires``: 
+
+``` python
+setup(
+    ...
+    ...
+    install_requires=(
+        ...
+        ...
+        "django-icetea",
+    )
+    ...
+)
+
+```
 
 Then from your project's buildout configuration file, use
 a tool like ``mr.developer`` to checkout the code from the github repository,
-install the python egg, and expose ``Django-IceTea`` to your project's
+install the python egg, and expose *Django-IceTea* to your project's
 namespace.
 
 TODO::
