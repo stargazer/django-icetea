@@ -1,12 +1,5 @@
-"""
-Generic handlers.
-"""
-
-import re
-from django.core.exceptions import ValidationError
 from django.db import models
 from authentication import DjangoAuthentication, NoAuthentication
-from utils import MethodNotAllowed
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from custom_filters import filter_to_method
 
@@ -155,6 +148,26 @@ class BaseHandler():
     requests are allowed.
     """
 
+    filters = False
+    """
+    User filter data query string parameter, or ``True`` if the default
+    (``filter``) should be used. Disabled (``False``) by default.
+    """
+                          
+    order = False
+    """
+    Order data query string parameter, or ``True`` if the default (``order``)
+    should be used. Disabled (``False``) by default.
+    """
+
+    slice = False
+    """
+    Slice data query string parameter, or ``True`` if the default (``slice``)
+    should be used. Disabled (``False``) by default.
+    """
+
+    
+
     def get_output_fields(self, request):
         """
         Returns the fields that the handler can output, for the current request
@@ -163,7 +176,7 @@ class BaseHandler():
         any request-level field selection that might have taken place.
 
         If the selection of fields indicates that the response should contain
-        no fields at all(which doesn't really make sense), we instead responsd
+        no fields at all(which doesn't really make sense), we instead respond
         with all fields in ``allowed_out_fields``.
 
         In the case of a BaseHandler, the fields returned
@@ -190,19 +203,28 @@ class BaseHandler():
         Should be overwritten if we need any specific validation of the
         request body
         """
-        return        
+        pass        
     
-    def working_set(self, request, *args, **kwargs):
+    def data(self, request, *args, **kwargs):
         """
-        Returns the operation's base data set. No data beyond this set will be
-        accessed or modified. The reason why we need this one in addition to
-        :meth:`.data_set` is that :meth:`.data_item` needs to have a data set
-        to pick from -- we need to define which items it is allowed to obtain
-        (and which not). This data set should not have user filters applied
-        because those do not apply to item views.
+        Returns the data that is the result of the current operation, without
+        having to specify if the request is singular or plural.
         """
-        raise NotImplementedError
-    
+        
+        data = self.data_item(request, *args, **kwargs)
+        if data is None:
+            data = self.data_set(request, *args, **kwargs)
+        return data
+                              
+    def data_item(self, request, *args, **kwargs):
+        """
+        Returns the data item that is being worked on. This is how the handler
+        decides if the requested data is singular or not. By returning
+        ``None`` we signal that this request should be handled as a request
+        for a set of data, as opposed to a request for a single record.
+        """
+        return None
+     
     def data_set(self, request, *args, **kwargs):
         """
         Returns the operation's result data set, which is always an iterable.
@@ -229,30 +251,20 @@ class BaseHandler():
             data = self.order_data(data, *order)
         
         return data
-    
-    def data_item(self, request, *args, **kwargs):
-        """
-        Returns the data item that is being worked on. This is how the handler
-        decides if the requested data is singular or not. By returning
-        ``None`` we signal that this request should be handled as a request
-        for a set of data, as opposed to a request for a single record.
-        """
-        return None
-    
-    def data(self, request, *args, **kwargs):
-        """
-        Returns the data that is the result of the current operation, without
-        having to specify if the request is singular or plural.
-        """
-        
-        data = self.data_item(request, *args, **kwargs)
 
-        if data is None:
-            data = self.data_set(request, *args, **kwargs)
-
-        return data
-    
-    
+    def working_set(self, request, *args, **kwargs):
+        """                                                          
+        Returns the operation's base dataset. No data beyond this set will be
+        accessed or modified.
+        Returns the operation's base data set. No data beyond this set will be
+        accessed or modified. The reason why we need this one in addition to
+        :meth:`.data_set` is that :meth:`.data_item` needs to have a data set
+        to pick from -- we need to define which items it is allowed to obtain
+        (and which not). This data set should not have user filters applied
+        because those do not apply to item views.
+        """
+        raise NotImplementedError
+  
     def set_response_data(self, response, key, data):
         """
         Sets data onto a response structure. 
@@ -262,13 +274,6 @@ class BaseHandler():
         """
         response.update({key: data})
     
-    
-    filters = False
-    """
-    User filter data query string parameter, or ``True`` if the default
-    (``filter``) should be used. Disabled (``False``) by default.
-    """
-    
     def filter_data(self, data, definition, values):
         """
         Applies user filters (as specified in :attr:`.filters`) to the
@@ -277,13 +282,6 @@ class BaseHandler():
         """
         return data
     
-    
-    order = False
-    """
-    Order data query string parameter, or ``True`` if the default (``order``)
-    should be used. Disabled (``False``) by default.
-    """
-    
     def order_data(self, data, *order):
         """
         Orders the provided data. Does nothing unless overridden with a method
@@ -291,25 +289,18 @@ class BaseHandler():
         """
         return data
     
-    
-    slice = False
-    """
-    Slice data query string parameter, or ``True`` if the default (``slice``)
-    should be used. Disabled (``False``) by default.
-    """
-    
     def response_slice_data(self, data, request, total=None):
         """
         @param data: Dataset to slice
-        @param request: Incoming request 
+        @param request: Incoming request object 
         @total: Total items in dataset (Has a value only if invoked by
         :meth:`.ModelHandler.response_slice_data`
 
         @return: Returns a list (sliced_data, total)
-         * sliced_data: The final data set, after slicing. If no slicing has
-           been performed, the initial dataset will be returned
-         * total:       Total size of initial dataset. None if no slicing was
-           performed.
+            * ``sliced_data``: The final data set, after slicing. If no slicing has
+              been performed, the initial dataset will be returned
+            * ``total``:  Total size of initial dataset. None if no slicing was
+              performed.
         """
         # Is slicing allowed, and has it been requested?
         slice = request.GET.get(self.slice, None)
@@ -333,7 +324,6 @@ class BaseHandler():
         
         return self.slice_data(data, *process), total
         
-    
     def slice_data(self, data, start=None, stop=None, step=None):
         """
         Slices and returns the provided data according to *start*, *stop* and *step*.
@@ -345,7 +335,6 @@ class BaseHandler():
             # Allows us to run *response_slice_data* without having to worry
             # about if the data is actually sliceable.
             return data
-    
     
     def execute_request(self, request, *args, **kwargs):
         """
@@ -392,7 +381,6 @@ class BaseHandler():
             self.data_safe_for_delete(data)
 
         return ret
-
 
     def enrich_response(self, response_structure, data):
         """
@@ -447,9 +435,8 @@ class ModelHandler(BaseHandler):
     Note that in order to prevent accidental exposure of data that was never
     intended to be public, model data fields will not be included in the
     response if they are not explicitly mentioned in
-    :attr:`~BaseHandler.fields`. 
-    """
-    
+    :attr:`~BaseHandler.allowed_in_fields`. 
+    """    
     model = None
     """
     A model class of type :class:`django.db.models.Model`.
@@ -461,7 +448,12 @@ class ModelHandler(BaseHandler):
     case of a nested representation; eg. when the model is contained by
     another model object.
     """
-    
+
+    read = True
+    create = True
+    update = True
+    delete = True
+
     def validate(self, request, *args, **kwargs):
         """
         Turns the data on the request into model instances; a new instance
@@ -469,20 +461,13 @@ class ModelHandler(BaseHandler):
         ``PUT``'ed data.
         The model instances have been validated using Django's ``full_clean()``
         method, so we can be sure that they are valid model instances, ready to
-        hit the database.
-        This can be seen as something totally similar to Django ModelForm
-        validation. 
+        hit the database. This can be seen as something totally similar to Django ModelForm
+        validation.         
         
         After this method, we shouldn't perform modifications on the model
         instances, since any modifications might make the data models invalid.
         """
         super(ModelHandler, self).validate(request, *args, **kwargs)
-
-        # TODO: Will *request.data* always be ``None`` if no data was provided
-        # in the request body? Will IceTea even allow for an empty request
-        # body?
-        if request.data is None:
-            return
 
         if request.method.upper() == 'POST':
             # Create model instance(s) without saving them, and go through all
@@ -523,7 +508,7 @@ class ModelHandler(BaseHandler):
                         setattr(instance, field, value)
                     instance.full_clean()
 
-            # update the model instances with the(but not save them)
+            # update the model instances (but not save them)
             update(current, request.data)
                                          
             # request.data contains a model instance or a list of model instances 
@@ -541,39 +526,19 @@ class ModelHandler(BaseHandler):
             Keyword arguments are defined in the URL mapper, and are usually in
             the form of ``/api endpoint/<id>/``.
 
+            For faster query execution, consider the
+            use of `select_related
+            <https://docs.djangoproject.com/en/dev/ref/models/querysets/#select-related>`
+            Be aware though, that it is very `memory-intensive
+            <https://code.djangoproject.com/ticket/17>`. A middle-of-the-way
+            solution would probably be to use it with the ``depth`` parameter.
         """
-        # All keyword arguments that originate from the URL pattern are
-        # applied as filters to the *QuerySet*.
-
-        # We were using select_related() but decided to skip it. As we `found
-        # out <https://code.djangoproject.com/ticket/17>_`, the use of
-        # select_related() causes the WSGI process to use a lot of memory to
-        # reference the same database records. There are cases when this is
-        # catastrophic, and crashed the server due to memory problems.
-
-        # eg.    
-        # A query selects the recipients of a Mailing m, of NewsRelease n.
-        # The use of select_related() causes every recipient instance, to
-        # reference the Mailing, which references the NewsRelease. If there are
-        # X recipients, every one of them references a separate copy of m, and every 
-        # copy of m references a separate copy of y. If there are 1000
-        # recipients, and n is a huge NewsRelease, then we are in big trouble.
-
-        # On the other hand, if we don't use select_related(), references from
-        # a recipient to a Mailing, and from the Mailing to a NewsRelease, are
-        # done in a lazy fashion (only when asked), so we don't have this huge
-        # memory overhead to deal with.              
-
-        # Wait a minute... Lazy or not, still the data all have to be populated
-        # before constructing the response. So we will still need the same
-        # memory, right?
-        
-        # Update 5/1/2012: Using ``depth=1`` forces the select_related to go up
-        # to a depth of 1 to retrieve foreign keys.
-
         return self.model.objects.filter(**kwargs)
     
     def data_item(self, request, *args, **kwargs):
+        """
+        Returns a queryset with one item
+        """
         # First we check if we have been provided with conditions that are
         # capable of denoting a single item. If we would try to ``get`` an
         # instance based on *kwargs* right away, things would go wrong in case
@@ -584,9 +549,8 @@ class ModelHandler(BaseHandler):
                 if self.model._meta.get_field(field).unique:
                     # We found a parameter that identifies a single item, so
                     # we assume that singular data was requested. If the data
-                    # turns out not to be there, the raised exception will
-                    # automatically be handled by the error handler in
-                    # Resource.
+                    # turns out not to be there, an ``ObjectDoesNotExist``
+                    # exception will be raised.
                     return self.working_set(request, *args, **kwargs).get(**{ field: kwargs.get(field) })
             except models.FieldDoesNotExist:
                 # No field named *field* on *self.model*, try next field.
@@ -604,7 +568,6 @@ class ModelHandler(BaseHandler):
           in this list.
         
         """
-        
         if isinstance(definition, basestring):
             # If the definition's suffix is equal to the name of a custom
             # lookup filter, call the corresponding method.
@@ -635,10 +598,10 @@ class ModelHandler(BaseHandler):
         @param request: Incoming request
 
         @return: Returns a tuple (sliced_data, total)
-         * sliced_data: The final data set, after slicing. If no slicing has
-           been performed, the initial dataset will be returned
-         * total:       Total size of initial dataset. None if no slicing was
-           performed.
+            * sliced_data: The final data set, after slicing. If no slicing has
+              been performed, the initial dataset will be returned
+            * total:       Total size of initial dataset. None if no slicing was
+              performed.
         """
         # Single model instance cannot be sliced
         if isinstance(data, self.model) or not request.GET.get(self.slice, None):
@@ -653,38 +616,26 @@ class ModelHandler(BaseHandler):
         # Return sliced, total
         return sliced_data, total
 
-    
     def create(self, request, *args, **kwargs):
         """
-        Creates model instances available in ``request.data``. Returns the
+        Saves the model instances available in ``request.data``. Returns the
         subset of ``request.data`` which contains the successfully created
         model instances.
         """
-
-        if isinstance(request.data, list):
-            # request.data is an array of self.model instances
-            
+        if not isinstance(request.data, self.model):
             unsuccessful = []
             for instance in request.data:
                 try:
                     instance.save(force_insert=True)
                 except:
                     unsuccessful.append(instance)
-
             if unsuccessful:
                 # Remove model instances that were not saved successfully, from
                 # ``request.data``
                 request.data = set(request.data) - set(unsuccessful)
-            else:
-                # All instances have been saved successfully:
-                pass
-
         else:
             # request.data is a single self.model instance
             try:
-                # The *force_insert* should not be necessary here, but look at it
-                # as the ultimate guarantee that we are not messing with existing
-                # records.
                 request.data.save(force_insert=True)
             except:
                 # Not sure what errors we could get, but I think it's safe to just
@@ -693,17 +644,12 @@ class ModelHandler(BaseHandler):
         
         return super(ModelHandler, self).create(request, *args, **kwargs)
     
-    read = True
-    
     def update(self, request, *args, **kwargs):
         """
         Saves (updates) the model instances in ``request.data``. Returns the
         subset of ``request.data`` which contains the successfully updated
         model instances.
         """
-
-        # Returns the model instance(s) in request.data, that have been
-        # successfully updated
         def persist(instance):
             try:
                 instance.save(force_update=True)
@@ -718,9 +664,6 @@ class ModelHandler(BaseHandler):
         
         return super(ModelHandler, self).update(request, *args, **kwargs)
     
-    delete = True
-    
-    
     def data_safe_for_delete(self, data):
         """
         We only run this method AFTER the result data have been serialized into
@@ -729,12 +672,6 @@ class ModelHandler(BaseHandler):
         equal to ``None``, and hence their ``id`` would not be available for
         serialization.        
         """
-        # The delete() Django method can only be called on a QuerySet or on a
-        # Model instance. However, sometimes data=None (in cases where a
-        # singular DELETE request has been issued, but the model instance
-        # specified cannot be deleted because of some dependencies), and the 
-        # delete() cannot be applied on a None object. 
-        # Therefore, we need the check `if data`
         if data:
             data.delete()
 
