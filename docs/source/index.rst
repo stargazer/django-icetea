@@ -6,6 +6,13 @@
 Welcome to Django-IceTea's documentation!
 =========================================
 
+Framework for creating RESTful APIs, in an intuitive, maintainable secure way.
+Aims at providing a lot of functionality out of the box, so that the developer
+can lay the foundation of the API quickly, and focus on the business logic of
+the application.
+
+Please refer to the project's `Github repository <https://github.com/stargazer/django-icetea>`_ for code and detailed documentation.
+
 .. automodule:: icetea
     :members:
 
