@@ -102,9 +102,9 @@ same.
 ## Usage
 
 Say we have a Project which has pulled ``Django-Icetea``. Let's assume we have
-an app called ``foo``, with a model ``foomodel``.
+an app called ``foo``, with a model ``Foomodel``.
                 
-We want to define 2 API handlers, to expose the model ``foomodel`` to the API,
+We want to define 2 API handlers, to expose the model ``Foomodel`` to the API,
 as well as some other non-model data.
 
 Other than defining the business logic, handlers also act as means of
@@ -125,7 +125,7 @@ from icetea.handlers import ModelHandler
 
 class FooHandler(ModelHandler):
     authentication = True
-    model = Foo
+    model = Foomodel
 
     read = True
     create = True
