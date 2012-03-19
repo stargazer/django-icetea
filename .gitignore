@@ -7,4 +7,5 @@
 *.pycf
 *.pyo
 *.orig
-build/*
+docs/build/*
+

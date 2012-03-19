@@ -228,7 +228,7 @@ class BaseHandler():
     def data_set(self, request, *args, **kwargs):
         """
         Returns the operation's result data set, which is always an iterable.
-        The difference with :meth:`.working_set` is that it returns the data
+        The difference with :meth:`~working_set` is that it returns the data
         *after* all filters and ordering (not slicing) are applied.
         """
         
@@ -258,7 +258,7 @@ class BaseHandler():
         accessed or modified.
         Returns the operation's base data set. No data beyond this set will be
         accessed or modified. The reason why we need this one in addition to
-        :meth:`.data_set` is that :meth:`.data_item` needs to have a data set
+        :meth:`~data_set` is that :meth:`~data_item` needs to have a data set
         to pick from -- we need to define which items it is allowed to obtain
         (and which not). This data set should not have user filters applied
         because those do not apply to item views.
@@ -343,8 +343,8 @@ class BaseHandler():
         It returns a dictionary of the result. The dictionary only contains:
             'data': <data result>,
             'total': <Number>,        # If slicing was performed
-            '<key>: <value>,          # if
-            :meth:`.ModelHandler.enrich_response` has been overwritten
+            '<key>: <value>,          # if  :meth:`.ModelHandler.enrich_response` has been overwritten
+
         The dictionary values are simply text. The nested models, queryset and
         everything else, have been serialized as text, within this dictionary.       
         """
@@ -528,9 +528,9 @@ class ModelHandler(BaseHandler):
 
             For faster query execution, consider the
             use of `select_related
-            <https://docs.djangoproject.com/en/dev/ref/models/querysets/#select-related>`
+            <https://docs.djangoproject.com/en/dev/ref/models/querysets/#select-related>`_
             Be aware though, that it is very `memory-intensive
-            <https://code.djangoproject.com/ticket/17>`. A middle-of-the-way
+            <https://code.djangoproject.com/ticket/17>`_. A middle-of-the-way
             solution would probably be to use it with the ``depth`` parameter.
         """
         return self.model.objects.filter(**kwargs)

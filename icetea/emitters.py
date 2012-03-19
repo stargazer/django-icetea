@@ -16,7 +16,14 @@ from django.core.serializers.json import DateTimeAwareJSONEncoder
 from django.http import HttpResponse
 from django.core import serializers
 
-import xlwt, StringIO
+
+try:
+	import xlwt
+except ImportError:
+	# Needed for sphinx documentation
+	# WTF
+	pass
+import StringIO
 
 # Class which will register MimeTypes to methods which will decode the
 # corresponding MimeType to python data structures.
