@@ -9,7 +9,7 @@ setup(
 	author="Pambo Paschalides",
 	author_email="already.late@gmail.com",
 	url="http://github.com/stargazer/django-icetea", 
-	long_description=open('README.rst').read(),
+	long_description=open('README.md').read(),
 	packages=('icetea', ),
 	install_requires=(
 		"Django>=1.3-beta,<=1.3",
