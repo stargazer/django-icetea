@@ -10,7 +10,7 @@ from utils import MethodNotAllowed
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from custom_filters import filter_to_method
 
-# mappings of {Http request type, method}
+# mappings of {HTTP Request: API Handler method}
 CALLMAP = {
     'GET': 'read',
     'PUT': 'update',
@@ -22,43 +22,33 @@ class BaseHandlerMeta(type):
     """
     Allows a handler class definition to be different from a handler class
     type. This is useful because it enables us to set attributes to default
-    values without requiring an explicit value in their definition. See for
-    example :attr:`BaseHandler.request_fields`.
+    values without requiring an explicit value in their definition. 
     """
     
     def __new__(meta, name, bases, attrs):
         
-        # Operations should not be allowed unless explicitly enabled. At the
-        # same time we want to be able to define inheritable default
-        # implementations of *create*, *read*, *update* and *delete*. We marry
-        # the two requirements by disabling operations (overriding them with
-        # ``False``) at the last minute, just before the class is being
-        # constructed.
-        # Basically we get rid of the attrs that are of the form:
-        #    <operation> = True,
-        # so that they don't overwrite the function calls for the
-        # respective operations.
+        # For operations which have been declared in a handler with
+        # ``operation=True``, eg ``read=True``, we remove the operation from
+        # the handler's attributes, so that the attribute instead points to the
+        # method that implements the operation
         for operation in CALLMAP.values():
             attrs.setdefault(operation, False)
             if attrs.get(operation) is True:
                 del attrs[operation]
-        
-        cls = type.__new__(meta, name, bases, attrs)
         
         # At this point, the  enabled operations are:
         #       - those that have been enabled as <operation> = True. These keep    
         #         the default implementation of the superclass.
         #       - the ones that have been overwritten explicitly in the handler.
 
-        # We always auto-generate (and thus overwrite) *allowed_methods*
-        # because the definition of which methods are allowed is now done via
-        # *create*, *read*, *update* and *delete* and *allowed_methods* should
-        # therefore always reflect their settings.
+        cls = type.__new__(meta, name, bases, attrs)
+        
+        # Construct the `allowed_methods`` attribute
         cls.allowed_methods = tuple([method
             for method, operation in CALLMAP.iteritems()
             if callable(getattr(cls, operation))])
 
-        # Construct class attribute ``allowed_plural``, which indicates which plural methods
+        # Construct the ``allowed_plural`` attribute, which indicates which plural methods
         # will be permitted.
         cls.allowed_plural = list(cls.allowed_methods[:])
         if not cls.plural_update and 'PUT' in cls.allowed_plural:            
@@ -66,9 +56,6 @@ class BaseHandlerMeta(type):
         if not cls.plural_delete and 'DELETE' in cls.allowed_plural:
             cls.allowed_plural.remove('DELETE')
 
-        # The general idea is that an attribute with value ``True`` indicates
-        # that we want to enable it with its default value.
-        
         # Indicates which querystring parameter will make the field selection
         if cls.request_fields is True:
             cls.request_fields = 'field'
@@ -80,20 +67,22 @@ class BaseHandlerMeta(type):
         # Indicates which querystring parameter will request data slicing
         if cls.slice is True:
             cls.slice = 'slice'
-        
+
+        # Indicates Authentication method.
         if cls.authentication is True:
             cls.authentication = DjangoAuthentication() 
         else:
             cls.authentication = NoAuthentication()      
 
-        # For ModelHandler classes, disallow incoming fields that are primary
-        # keys
+        # For ``ModelHandler`` classes, forbid incoming fields that are primary
+        # keys. We wouldn't like anyone to try to alter a primary key of any
+        # model instance. 
+        # TODO: Is it enough to just forbid the ``id`` field?
         if 'model' in attrs and cls.model != None:
             cls.allowed_in_fields = [ \
                 field for field in cls.allowed_in_fields if \
                 field != 'id'
             ]
-
 
         return cls
 
@@ -103,7 +92,6 @@ class BaseHandler():
     public attributes and methods were designed with extensibility in mind, so
     don't hesitate to override.
     """
-    
     __metaclass__ = BaseHandlerMeta
             
 
@@ -115,7 +103,7 @@ class BaseHandler():
     Mandatory to declare it
 
     In case that we wish a more flexible output field selection, we should
-    overwrite method ``get_out_fields``
+    overwrite method :meth:`.get_output_fields`
 
     It only makes sense in the case of ModelHandler classes. BaseHandler
     classes, return whatever they want anyway.
@@ -125,7 +113,7 @@ class BaseHandler():
     """
     Specifies the set of allowed incoming fields. 
 
-    Mandatory to declare it
+    Mandatory to declare it.
 
     TODO: Add check in metaclass, and make sure that no primary keys are
     allowed. EG. no 'id' field should be allowed here.
@@ -169,23 +157,24 @@ class BaseHandler():
 
     def get_output_fields(self, request):
         """
-        Returns the request specific field selection.
-
-        It takes into account the ``self.allowed_out_fields`` tuple, as well as
+        Returns the fields that the handler can output, for the current request
+        being served.
+        It takes into account the ``allowed_out_fields`` tuple, as well as
         any request-level field selection that might have taken place.
 
         If the selection of fields indicates that the response should contain
-        no fields at all, we instead respond with all allowed fields.
+        no fields at all(which doesn't really make sense), we instead responsd
+        with all fields in ``allowed_out_fields``.
 
-        Since a BaseHandler is a not a handler for models, the fields returned
+        In the case of a BaseHandler, the fields returned
         by this function, basically have the sense of dictionary keys allowed
-        to be returned, IF the data of the execution of the operation(say the
+        to be returned, If the data which is resulf ot the execution of the operation(say the
         read() method) is a dictionary. If the response is for example a
-        string, the fields returned don't have any sense.
+        string, the fields returned by this method have no sense at all..
         """
         selection = ()
-
         requested = request.GET.getlist(self.request_fields)
+
         # Make sure that if ``field=`` is given(without specifying value), we
         # consider that no request level field-selection has been made.
         if requested == ['']:
@@ -195,9 +184,12 @@ class BaseHandler():
             selection = set(requested).intersection(self.allowed_out_fields)
 
         return selection or self.allowed_out_fields            
-        
     
     def validate(self, request, *args, **kwargs):
+        """
+        Should be overwritten if we need any specific validation of the
+        request body
+        """
         return        
     
     def working_set(self, request, *args, **kwargs):

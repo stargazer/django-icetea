@@ -185,7 +185,7 @@ If ``True`` enables bulk-POST requests. Default is ``False``. See section [Notes
 information.
 
 #### ``plural_update``
-If ``True``, enables plural UPDATE requests, which means updating multiple
+If ``True``, enables plural PUT requests, which means updating multiple
 resources in one request. It is a potentially catastrophic operation, and for
 this reason is should be explicitly allowed. Default is ``False``.
 
