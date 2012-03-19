@@ -95,21 +95,17 @@ class Resource:
         if not self.authenticate(request):
             return HttpResponseForbidden()
 
-        # Is this HTTP method allowed?
-        request_method = request.method.upper()
-        if not request_method in self._handler.allowed_methods:
-            return HttpResponseNotAllowed(self._handler.allowed_methods)
-
-        if request_method in ['PUT', 'POST']:
-            try:
-                # Cleanup the request and make sure its request body is valid.
-                self.cleanup(request, *args, **kwargs)
-            except MimerDataException:
-                return HttpResponseBadRequest("Invalid request body")
-            except ValidationError, e:
-                return HttpResponseBadRequest(e.messages)
-            except MethodNotAllowed, e:
-                return HttpResponseNotAllowed(e.permitted_methods)
+        try:
+            # Cleanup the request, make sure its request body is valid, and
+            # make sure that the given request can be applied on the given
+            # resource.
+            self.cleanup(request, *args, **kwargs)
+        except MimerDataException:
+            return HttpResponseBadRequest("Invalid request body")
+        except ValidationError, e:
+            return HttpResponseBadRequest(e.messages)
+        except MethodNotAllowed, e:
+            return HttpResponseNotAllowed(e.permitted_methods)
 
         # Execute request
         try:          
@@ -190,6 +186,8 @@ class Resource:
         True if the handler is authenticated(or the handler request no
         authentication).
         False otherwise.
+
+        Assumes that `id` keyword argumen inidicates singular requests on all handlers
         """
         if self._authentication.is_authenticated(request):
             return True
@@ -198,65 +196,99 @@ class Resource:
 
     def cleanup(self, request, *args, **kwargs):
         """
+        Validates incoming request, in the following ways:
+        - Makes sure that the type of request is allowed.
+        - Makes sure that if it's bulk or plural, it is allowed
+        - Makes sure that only allowed incoming fields are accepted.
         If request is PUT, transform its data to POST... Study again!
 
         If request is PUT/POST, make sure the request body conforms to its
         ``content-type``.
         """
         request_method = request.method.upper()
+         
+         # Is this HTTP method allowed?
+        if not request_method in self._handler.allowed_methods:
+            raise MethodNotAllowed(*self._handler.allowed_methods)
 
-        if request_method == 'PUT':
-            # TODO: STUDY what this does exactly
-            coerce_put_post(request)
-
-        elif request_method == 'POST':
-            # Check if a POST request has been attempted on a singular resource
-            # eg. /contacts/1/. This of course makes no sense at all!
-            for field in kwargs.keys(): 
-                if self._handler.model._meta.get_field(field).unique:
-                    raise MethodNotAllowed('GET', 'PUT', 'DELETE')
-
+        # Construct the request.data dictionary, if the request is PUT/POST
         if request_method in ('PUT', 'POST'):
-            try:
-                translate_mime(request)
-            except MimerDataException:
-                raise
-                
-            # Check whether the data have the correct format, according to
-            # their 'Content/Type' header
-            if not hasattr(request, 'data'):
-                if request_method == 'POST':
-                    request.data = request.POST
-                else:
-                    request.data = request.PUT                            
+            if request_method == 'PUT':
+                # TODO: STUDY what this does exactly
+                coerce_put_post(request)
+            # Check whether data has the correct format, according to
+            # ``Content-Type``          
+            if request_method in ('PUT', 'POST'):
+                try:
+                    translate_mime(request)
+                except MimerDataException:
+                    raise
+                if not hasattr(request, 'data'):
+                    if request_method == 'POST':
+                        request.data = request.POST
+                    else:
+                        request.data = request.PUT  
+                if request.data is None:
+                    # In the case when Content-Type is not given
+                    raise ValidationError('Please provide the ``Content-type`` header')
 
+        # Checks start at this point:
+
+        # 1. Singular POST request? (eg contacts/1/)
+        #    This makes no sense at all.
+        #    Note: We assume that any ``id`` keyword argument in the request, indicates a
+        #    singular request.       
+        if request_method == 'POST':
+            if 'id' in kwargs.keys():
+                raise MethodNotAllowed(*self._handler.allowed_methods)
+ 
+        # 2. Check if the request is a plural PUT or DELETE. Allow only if
+        #    explicitly enabled through ``plural_update`` and ``plural_delete``. 
+        #    Note: We assume that any ``id`` keyword argument in the request, indicates a
+        #    singular request.       
+        if request_method == 'PUT' and \
+            not self._handler.plural_update and \
+            not 'id' in kwargs.keys():
+            raise MethodNotAllowed(*self._handler.allowed_plural)
+        if request_method == 'DELETE' and \
+            not self._handler.plural_delete and \
+            not 'id' in kwargs.keys():
+            raise MethodNotAllowed(*self._handler.allowed_plural)
+ 
+        # 3. Check for Bulk-PUT and Bulk-POST requests.
+        #    Bulk-PUT makes no sense at all, so it gives a ValidationError.
+        #    Bulk-POST should only be allowed if it has been explicitly enabled
+        #    by the ``bulk_create`` parameter.
         if request_method == 'PUT' and isinstance(request.data, list):
             raise ValidationError('Illegal Operation: PUT request with ' + \
                 'array in request body')
-
-        if not self._handler.bulk_create and isinstance(request.data, list):
+        if request_method =='POST' and \
+            not self._handler.bulk_create and \
+            isinstance(request.data, list):
             raise ValidationError('API Handler does not allow bulk POST ' + \
                 'requests')
 
-        # Make sure only fields in self._handler.allowed_in_fields are allowed.
-        if isinstance(request.data, list):
-            # We assume it's a list of dictionaries, and reject any non dicts.
-            new_request_data = []
-            for item in request.data:
-                if not isinstance(item, dict):
-                    continue
+        # Ok, the request has survived all the checks. At this point we strip
+        # off the disallowed fields from the request body.
+        if request_method in ('POST', 'PUT'):
+            if isinstance(request.data, list):
+                # We assume it's a list of dictionaries, and reject any non dicts.
+                new_request_data = []
+                for item in request.data:
+                    if not isinstance(item, dict):
+                        continue
                 
-                clean_item = dict((key, value) for key, value in item.iteritems() \
-                    if key in self._handler.allowed_in_fields)
+                    clean_item = dict((key, value) for key, value in item.iteritems() \
+                        if key in self._handler.allowed_in_fields)
         
-                new_request_data.append(clean_item)
-            request.data = new_request_data                
+                    new_request_data.append(clean_item)
+                request.data = new_request_data                
 
-        else:
-            # Assume it's a dictionary
-            request.data = dict((
-                (key, value) for key, value in request.data.iteritems() \
-                if key in self._handler.allowed_in_fields))
+            else:
+                # Assume it's a dictionary
+                request.data = dict((
+                    (key, value) for key, value in request.data.iteritems() \
+                    if key in self._handler.allowed_in_fields))
 
 
     def error_handler(self, e, request):
@@ -272,7 +304,7 @@ class Resource:
 
         """
         def format_error(error):
-	        return u"Django-IceTea crash report:\n\n%s" % error
+            return u"Django-IceTea crash report:\n\n%s" % error
         
         http_response, message = None, None
         

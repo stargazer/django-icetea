@@ -102,9 +102,9 @@ same.
 ## Usage
 
 Say we have a Project which has pulled ``Django-Icetea``. Let's assume we have
-an app called ``foo``, with a model ``foomodel``.
+an app called ``foo``, with a model ``Foomodel``.
                 
-We want to define 2 API handlers, to expose the model ``foomodel`` to the API,
+We want to define 2 API handlers, to expose the model ``Foomodel`` to the API,
 as well as some other non-model data.
 
 Other than defining the business logic, handlers also act as means of
@@ -125,7 +125,7 @@ from icetea.handlers import ModelHandler
 
 class FooHandler(ModelHandler):
     authentication = True
-    model = Foo
+    model = Foomodel
 
     read = True
     create = True
@@ -183,6 +183,16 @@ overridden.
 
 If ``True`` enables bulk-POST requests. Default is ``False``. See section [Notes](#notes) for more
 information.
+
+#### ``plural_update``
+If ``True``, enables plural PUT requests, which means updating multiple
+resources in one request. It is a potentially catastrophic operation, and for
+this reason is should be explicitly allowed. Default is ``False``.
+
+#### ``plural_delete``
+If ``True`` enables plural DELETE requests, which means deleting multiple
+resources in one request. It is a potentially catastrophic operation, and for
+this reason it should be explicitly allowed. Default is ``False``.
 
 #### ``request_fields``
 

@@ -101,20 +101,23 @@ def in_list_filter(data, definition, values):
 	"""
 	``@param data``:		The queryset on which the filter will be applied on
 
-	``@param definition``:	A string representing ``<field> + __in_list`', eg
+	``@param definition``:	A string representing ``<field> + __in_list``, eg
 	``emails__in_list``
 
 	``@param values``:      Tuple with the values that will be applied on the
 	lookup filters.
 	
-	``@return``:	        Remaining queryset after the filters have been
+	``@return``:	        Remaining queryset after the filter has been
+	applied.
 
-	Handles the ``in_list`` lookup filter, which performs case sensitive
-	search for all values in ``values``, with an OR operator in between.
+	Handles the ``in_list`` lookup filter, which performs case insensitive
+	search on the queryset ``data``. The search returns the subset of the
+	queryset, for which every record's field ``field`` contains any of the
+	values in ``values``.
 
-	It should only be performed on fields that on Python level are represented
-	by lists (say a Django JSONField).                                     
-	
+	It should only be performed on fields of type JSONField, which on Django level are
+	represented as lists.
+
 	.. rubric:: Example
 	
 	Query on the ContactHandler:
@@ -128,39 +131,26 @@ def in_list_filter(data, definition, values):
 
 	.. note::
 
-		A smart way to find this is:
-		(First keep in mind that a JSONField is on MySQL level, a text field)
+		A smart way to find this is:				
+			First keep in mind that a JSONField is on MySQL level, a text field,
+			and has the form::
+				
+				[ "email1",
+				  "email2",
+				  "email3",
+				  ...	   ]
 
-			*	Find all the Contact instances that contain a string which is LIKE at least one of  the strings in
-				``values``. This has 2 benefits:
-
-				* Directly translated to SQL, so its fast.
-				* Limits the size of the QuerySet drastically. 
-
-			* Iterate on the queryset and find the Contact instances that contain
-			  at least an entry EXACTLY as it is in the ``values`` list. This step is
-			  very fast and light in terms of memory, since the size of the queryset is
-			  really small.
- 
+			Since the JSONField basically has comma-separated quoted values, we
+			need to search it for every:
+				"value" (including the quotes), within ``values``.
 	""" 
-	# First I issue a much more generic query, and find the model instances
-	# that *contain* any of the the values in ``values``. By ``contain`` we
-	# mean, a LIKE SQL query.
 	field = definition[:-9]
+	
 	query = Q()
 	for term in values:
-		query |= Q(**{'%s__contains' % field: term})
-	data = data.filter(query)
+		query |= Q(**{'%s__icontains' % field: '"' + term + '"'})
+	return data.filter(query)
 
-	# Since I got rid of the biggest part of the queryset, I can now run the
-	# more specific query. Here I load the whole queryset into memory, so its
-	# vital that its as small as possible. That's why the previous step took
-	# place.							 
-	data = [instance for instance in data if set(values).intersection(
-		set(getattr(instance, field)))
-	]
-
-	return data
 
 # Maps custom lookups to their handler methods
 filter_to_method = {
