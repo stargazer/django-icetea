@@ -58,6 +58,13 @@ class BaseHandlerMeta(type):
             for method, operation in CALLMAP.iteritems()
             if callable(getattr(cls, operation))])
 
+        # Construct class attribute ``allowed_plural``, which indicates which plural methods
+        # will be permitted.
+        cls.allowed_plural = list(cls.allowed_methods[:])
+        if not cls.plural_update and 'PUT' in cls.allowed_plural:            
+            cls.allowed_plural.remove('PUT')
+        if not cls.plural_delete and 'DELETE' in cls.allowed_plural:
+            cls.allowed_plural.remove('DELETE')
 
         # The general idea is that an attribute with value ``True`` indicates
         # that we want to enable it with its default value.
@@ -144,6 +151,21 @@ class BaseHandler():
     """
 
     bulk_create = False
+    """
+    Indicates whether bulk POST(creating multiple items with one request) requests are allowed.
+    """
+
+    plural_update = False
+    """
+    Indicates whether plural PUT(updating multiple resources at once) requests
+    are allowed.
+    """
+
+    plural_delete = False
+    """
+    Indicates whether plural DELETE(Deleting multiple resources at once)
+    requests are allowed.
+    """
 
     def get_output_fields(self, request):
         """
@@ -346,7 +368,7 @@ class BaseHandler():
         everything else, have been serialized as text, within this dictionary.       
         """
         # Validate request body data
-        if hasattr(request, 'data'):
+        if hasattr(request, 'data') and request.data is not None:
             self.validate(request, *args, **kwargs)
         
         # Pick action to run

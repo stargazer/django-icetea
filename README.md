@@ -184,6 +184,16 @@ overridden.
 If ``True`` enables bulk-POST requests. Default is ``False``. See section [Notes](#notes) for more
 information.
 
+#### ``plural_update``
+If ``True``, enables plural UPDATE requests, which means updating multiple
+resources in one request. It is a potentially catastrophic operation, and for
+this reason is should be explicitly allowed. Default is ``False``.
+
+#### ``plural_delete``
+If ``True`` enables plural DELETE requests, which means deleting multiple
+resources in one request. It is a potentially catastrophic operation, and for
+this reason it should be explicitly allowed. Default is ``False``.
+
 #### ``request_fields``
 
 Indicates which querystring parameter will act as a a request-level field
