@@ -176,6 +176,12 @@ class BaseHandler():
         
     
     def validate(self, request, *args, **kwargs):
+        """
+        BaseHandler's validation has no real sense.
+        The incoming data has been cleaned by the Resource.cleanup() class, so
+        there's nothing left to do.
+        Override for additional functionality
+        """
         return        
     
     def working_set(self, request, *args, **kwargs):
@@ -453,6 +459,14 @@ class ModelHandler(BaseHandler):
         Turns the data on the request into model instances; a new instance
         with the ``POST``'ed data or a current instance to be updated with the 
         ``PUT``'ed data.
+        The model instances have been validated using Django's ``full_clean()``
+        method, so we can be sure that they are valid model instances, ready to
+        hit the database.
+        This can be seen as something totally similar to Django ModelForm
+        validation. 
+        
+        After this method, we shouldn't perform modifications on the model
+        instances, since any modifications might make the data models invalid.
         """
         super(ModelHandler, self).validate(request, *args, **kwargs)
 
