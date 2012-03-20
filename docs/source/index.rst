@@ -1,9 +1,9 @@
-.. Django-IceTea documentation master file, created by
+.. django-icetea documentation master file, created by
    sphinx-quickstart on Mon Mar 19 12:07:32 2012.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Django-IceTea's documentation!
+Welcome to django-icetea's documentation!
 =========================================
 
 Framework for creating RESTful APIs, in an intuitive, maintainable secure way.
@@ -16,6 +16,16 @@ Please refer to the project's `Github repository <https://github.com/stargazer/d
 .. automodule:: icetea
     :members:
 
+
+:mod:`~icetea.resource`
+-------------------------
+
+.. autoclass:: icetea.resource.Resource
+    :members:
+    :undoc-members:
+    :member-order: bysource
+ 
+
 :mod:`~icetea.handlers`
 -----------------------
 
@@ -26,15 +36,14 @@ Please refer to the project's `Github repository <https://github.com/stargazer/d
 
 .. autoclass:: icetea.handlers.ModelHandler
     :members:
+    :member-order: bysource
+
+  
+:mod:`~icetea.custom_filters`
+-------------------------------
+.. automodule:: icetea.custom_filters
+    :members:
     :undoc-members:
     :member-order: bysource
 
-:mod:`~icetea.resource`
--------------------------
-
-.. autoclass:: icetea.resource.Resource
-   :members:
-   :undoc-members:
-   :member-order: bysource
-   
 

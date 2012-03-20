@@ -145,9 +145,9 @@ class Resource:
         
     def serialize_result(self, result, request, *args, **kwargs):
         """
-        @param result: Result of the execution of the handler, wrapped in a
+        ``@param result``: Result of the execution of the handler, wrapped in a
         dictionary where keys and values are simply text.
-        @param request: Request object
+        ``@param request``: Request object
         """
         # What's the emitter format to use?
         emitter_format = self.determine_emitter_format(request, *args, **kwargs)
@@ -183,11 +183,9 @@ class Resource:
 
     def authenticate(self, request):
         """
-        True if the handler is authenticated(or the handler request no
-        authentication).
-        False otherwise.
-
-        Assumes that `id` keyword argumen inidicates singular requests on all handlers
+        ``True`` if the handler is authenticated(or the handler hasn't overwritten
+        the default ``authentication`` parameter).
+        ``False`` otherwise.
         """
         if self._authentication.is_authenticated(request):
             return True
@@ -196,14 +194,20 @@ class Resource:
 
     def cleanup(self, request, *args, **kwargs):
         """
-        Validates incoming request, in the following ways:
-        - Makes sure that the type of request is allowed.
-        - Makes sure that if it's bulk or plural, it is allowed
-        - Makes sure that only allowed incoming fields are accepted.
-        If request is PUT, transform its data to POST... Study again!
+        Cleanes the incoming request, and makes sure that it is allowed. The
+        checks performed are the folowing:
+        
+        * If the request is ``PUT``, transform its data to POST.
+        * If request is ``PUT`` or ``POST``, make sure the request body
+          conforms to the ``Content-Type`` header.
+        * Makes sure that the type of request is allowed.
+        * Makes sure that if it is a bulk or plural request, it is allowed.
+        * Makes sure that non-allowed incoming fields, are cut off the request
+          body.
 
-        If request is PUT/POST, make sure the request body conforms to its
-        ``content-type``.
+        .. note::
+
+            Assumes that the `id` keyword argument inidicates singular requests on all handlers
         """
         request_method = request.method.upper()
          
@@ -304,7 +308,7 @@ class Resource:
 
         """
         def format_error(error):
-            return u"Django-IceTea crash report:\n\n%s" % error
+            return u'django-icetea crash report:\n\n%s' % error
         
         http_response, message = None, None
         
@@ -347,7 +351,7 @@ class Resource:
 
 
     def email_exception(self, reporter):
-        subject = "Django-IceTea crash report"
+        subject = 'django-icetea crash report'
         html = reporter.get_traceback_html()
         message = EmailMessage(
             settings.EMAIL_SUBJECT_PREFIX + subject,

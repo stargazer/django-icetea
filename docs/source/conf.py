@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Django-IceTea documentation build configuration file, created by
+# django-icetea documentation build configuration file, created by
 # sphinx-quickstart on Mon Mar 19 12:07:32 2012.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -45,7 +45,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Django-IceTea'
+project = u'django-icetea'
 copyright = u'2012, C. Paschalides'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -169,7 +169,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Django-IceTeadoc'
+htmlhelp_basename = 'django-iceteadoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -188,7 +188,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'Django-IceTea.tex', u'Django-IceTea Documentation',
+  ('index', 'django-icetea.tex', u'django-icetea Documentation',
    u'C. Paschalides', 'manual'),
 ]
 
@@ -218,7 +218,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'django-icetea', u'Django-IceTea Documentation',
+    ('index', 'django-icetea', u'django-icetea Documentation',
      [u'C. Paschalides'], 1)
 ]
 
@@ -232,8 +232,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'Django-IceTea', u'Django-IceTea Documentation',
-   u'C. Paschalides', 'Django-IceTea', 'One line description of project.',
+  ('index', 'django-icetea', u'django-icetea Documentation',
+   u'C. Paschalides', 'django-icetea', 'One line description of project.',
    'Miscellaneous'),
 ]
 

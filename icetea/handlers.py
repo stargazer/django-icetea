@@ -147,13 +147,7 @@ class BaseHandler():
     Indicates whether plural DELETE(Deleting multiple resources at once)
     requests are allowed.
     """
-
-    filters = False
-    """
-    User filter data query string parameter, or ``True`` if the default
-    (``filter``) should be used. Disabled (``False``) by default.
-    """
-                          
+                         
     order = False
     """
     Order data query string parameter, or ``True`` if the default (``order``)
@@ -267,10 +261,11 @@ class BaseHandler():
   
     def set_response_data(self, response, key, data):
         """
-        Sets data onto a response structure. 
-        @param: Dictionary that represents response
-        @param key: New key added to the dictinary
-        @param data: Value added under key
+        ``@param response``: Dictionary that represents response
+        ``@param key``: New key added to the dictinary
+        ``@param data``: Value added under key
+        
+        Adds the ``key: data`` pair onto the response structure dictionary.
         """
         response.update({key: data})
     
@@ -291,16 +286,17 @@ class BaseHandler():
     
     def response_slice_data(self, data, request, total=None):
         """
-        @param data: Dataset to slice
-        @param request: Incoming request object 
-        @total: Total items in dataset (Has a value only if invoked by
+        ``@param data``: Dataset to slice
+        ``@param request``: Incoming request object 
+        ``@total``: Total items in dataset (Has a value only if invoked by
         :meth:`.ModelHandler.response_slice_data`
 
-        @return: Returns a list (sliced_data, total)
-            * ``sliced_data``: The final data set, after slicing. If no slicing has
-              been performed, the initial dataset will be returned
-            * ``total``:  Total size of initial dataset. None if no slicing was
-              performed.
+        ``@return``: Returns a list (sliced_data, total):
+        
+        * ``sliced_data``: The final data set, after slicing. If no slicing has
+          been performed, the initial dataset will be returned
+        * ``total``:  Total size of initial dataset. None if no slicing was
+          performed.
         """
         # Is slicing allowed, and has it been requested?
         slice = request.GET.get(self.slice, None)
@@ -341,9 +337,11 @@ class BaseHandler():
         All requests are entering the handler here.
 
         It returns a dictionary of the result. The dictionary only contains:
-            'data': <data result>,
-            'total': <Number>,        # If slicing was performed
-            '<key>: <value>,          # if  :meth:`.ModelHandler.enrich_response` has been overwritten
+
+        * ``data: <data result>``: ``data result`` is a dictionary, if that was
+          possible.
+        * ``total: <Number>``: if slicing was performed
+        * ``<key>: <value>``: if  :meth:`.ModelHandler.enrich_response` has been overwritten
 
         The dictionary values are simply text. The nested models, queryset and
         everything else, have been serialized as text, within this dictionary.       
@@ -448,6 +446,22 @@ class ModelHandler(BaseHandler):
     case of a nested representation; eg. when the model is contained by
     another model object.
     """
+ 
+    filters = False
+    """
+    Dictionary specifying data filters, in pairs of ``name: filter``. 
+    
+    ``name`` is the querystring parameter used to trigger the filter.
+
+    ``filter`` defines the field on  which the filter will be applied on, as well as (implicitly or explicitly)
+    the type of field lookup.
+
+    For example, ``filters = dict(id=id__in)``, defines that the querystring
+    parameter ``id``, will trigger the Django field lookup ``id__in``, with the
+    value given to ``id``. So, the querystring ``?id=12&id=14``, will perform
+    the filter ``filter(id__in=[12, 14]``), on the corresponding model.
+    """
+ 
 
     read = True
     create = True
@@ -559,14 +573,22 @@ class ModelHandler(BaseHandler):
     
     def filter_data(self, data, definition, values):
         """
-        Recognizes and applies two types of filters:
+        ``@param data``: Data on which the filter will be applied
+
+        ``@param definition``: Filter definition. Could be:
         
-        * If its *definition* (the value of the filter in :attr:`.filters`) is
-          a text string, it will be interpreted as a filter on the *QuerySet*.
-        * If its definition is a list (or tuple or set), it will be
-          interpreted as a search operation on all fields that are mentioned
-          in this list.
-        
+        * A Django `field lookup
+          <https://docs.djangoproject.com/en/dev/topics/db/queries/#field-lookups>`_,
+          defining both the field and the lookup. For example ``id__in``, which
+          defines the field ``id`` and the lookup filter to be applied upon it.
+        * A `a custom filter` as defined in :mod:`~custom_filters`, defining
+          both the field and the filter. For example, ``emails__in_list``,
+          which defines the field ``emails`` and the filter ``__in_list`` to be
+          applied upon it.
+        * A tuple defining the fields on which an OR based Full Text search will be performed.
+          For example ``('name', 'surname')``.
+
+        ``@param values``: The values to be applied on the filter.
         """
         if isinstance(definition, basestring):
             # If the definition's suffix is equal to the name of a custom
@@ -594,14 +616,15 @@ class ModelHandler(BaseHandler):
         """
         Slices the ``data`` and limits it to a certain range.
 
-        @param data: Dataset to slice
-        @param request: Incoming request
+        ``@param data``: Dataset to slice
+        ``@param request``: Incoming request
 
-        @return: Returns a tuple (sliced_data, total)
-            * sliced_data: The final data set, after slicing. If no slicing has
-              been performed, the initial dataset will be returned
-            * total:       Total size of initial dataset. None if no slicing was
-              performed.
+        ``@return``: Returns a tuple (sliced_data, total)
+
+         * sliced_data: The final data set, after slicing. If no slicing has
+           been performed, the initial dataset will be returned
+         * total:       Total size of initial dataset. None if no slicing was
+           performed.
         """
         # Single model instance cannot be sliced
         if isinstance(data, self.model) or not request.GET.get(self.slice, None):

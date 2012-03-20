@@ -1,6 +1,6 @@
-# Django-IceTea
+# django-icetea
 
-``Django-icetea`` is a package built on top of [Django](https://www.djangoproject.com/) and provides the necessary abstractions for creating REST APIs.
+``django-icetea`` is a package built on top of [Django](https://www.djangoproject.com/) and provides the necessary abstractions for creating REST APIs.
 
 It has been influenced by the architecture of [django-piston](https://bitbucket.org/jespern/django-piston/wiki/Home) and [piston-perfect](https://github.com/smartpr/piston-perfect).
 
@@ -8,7 +8,7 @@ I've decided to build ``Django-icetea``, in order to have an API framework with 
 
 ## Installation
 
-If you use ``zc.buildout``, installing ``Django-IceTea`` is very simple. 
+If you use ``zc.buildout``, installing ``django-icetea`` is very simple. 
 
 In your Django project's ``setup.py``, add  ``django-icetea`` in section
 ``install_requires``: 
@@ -29,7 +29,7 @@ setup(
 
 Then from your project's buildout configuration file, use
 a tool like ``mr.developer`` to checkout the code from the github repository,
-install the python egg, and expose *Django-IceTea* to your project's
+install the python egg, and expose *django-icetea* to your project's
 namespace.
 
 TODO::
@@ -37,7 +37,7 @@ TODO::
 
 ## Philosophy
 
-``Django-IceTea`` aims to provide the abstractions for providing out-of-the-box 
+``django-icetea`` aims to provide the abstractions for providing out-of-the-box 
 functionality for creating APIs. It strives to keep things clear and explicit,
 without any unnecessary magic behind the scenes.
 
@@ -77,13 +77,13 @@ goals with this project. If different applications require different semantics,
 
 Moreover, following the [Principle of the least astonishment](http://en.wikipedia.org/wiki/Principle_of_least_astonishment) which is what *Python* in general, and *Django* in particular *try* to do, I
 have tried to follow the general behavior that *Django* users are familiar
-with. An example of this is the ``validation`` method of ``Django-IceTea``. It
+with. An example of this is the ``validation`` method of ``django-icetea``. It
 cleans the data, creates model instances (without committing them to the
 database) and validates them using the model's ``full-clean`` method. Once this
 is done, we are certain that we are dealing with perfectly valid model
 instances, which we can safely write to the database. This means that we don't
 have the need to do all these steps manually, since they are offered by
-*Django-IceTea* out of the box. It is exactly how
+*django-icetea* out of the box. It is exactly how
 validation for Django *Modelform* works, and how most *Django* developers are
 used to doing things.. 
 The means have changed (REST API instead of Forms), but the procedure is still the
@@ -91,7 +91,7 @@ same.
 
 ## Short Introduction
 
-``Django-IceTea`` offers 2 types of handlers:
+``django-icetea`` offers 2 types of handlers:
 
 * ``ModelHandler``: Used to expose ``Django`` models to the API. Offers CRUD
   functionality out of the box.
@@ -162,7 +162,7 @@ urlpatterns = patterns('',
 
 ## Handler level attributes
 
-### Available for all handlers
+### Relevant for all handlers
 
 #### ``read``, ``create``, ``update``, ``delete``
 
@@ -217,16 +217,6 @@ be possible. Default is ``False``.
 The slicing notation follows Python's ``list slice syntax``, of
 ``start:stop:step``.                                                           section
 
-#### ``filters``
-
-A dictionary of ``filter name``: ``filter_operation`` couples. ``filter
-name`` defines the querystring parameter used to apply the filtering on the
-current request. ``filter_operation`` corresponds to a Django lookup
-filter, which will be applied on the request's resuls data.
-
-TODO::
-    Should only be available for ModelHandler classes!!!
-
 
 #### ``authentication``
     
@@ -248,12 +238,18 @@ Tuple of fields, which indicates the fields that the handler allowed to
 take from the incoming request body. In the case of ``ModelHandler``
 classes, no primary keys or related keys are allowed.
 
-### Available only for handlers that extend ModelHandler
+### Relevant only handlers extending ModelHandler
 
 #### ``model``
     
 The database model which the Handler exposes.
+                       
+#### ``filters``
 
+A dictionary of ``filter name``: ``filter_operation`` couples. ``filter
+name`` defines the querystring parameter used to apply the filtering on the
+current request. ``filter_operation`` corresponds to a Django lookup
+filter, which will be applied on the request's resuls data. 
 
 #### ``exclude_nested``
 
