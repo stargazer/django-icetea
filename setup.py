@@ -10,7 +10,7 @@ setup(
     description="REST API Framework",
 	author="C. Paschalides",
 	author_email="already.late@gmail.com",
-    license="WTFGL",
+    license="WTFPL",
 	url="http://github.com/stargazer/django-icetea",
     keywords=("rest", "restful", "api", "crud"),
 	install_requires=(
