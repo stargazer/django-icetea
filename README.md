@@ -104,10 +104,10 @@ same.
 ``Singular Request``: A request that refers to a single resource. 
 
 ``Plural Request``: A request that refers to a group of resource instances (usually the
-instances that the client has the right to view)
+instances that the client has the right to view).
 
 ``Bulk Request``: Request with an array of data in its request body. It only makes
-sense for POST requests, and aims to create multiple instance
+sense for POST requests, and aims to create multiple instances in one request.
 
 ### Assumptions
 
