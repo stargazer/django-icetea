@@ -8,7 +8,7 @@ I have decided to build ``django-icetea``, in order to have an API framework wit
 
 ## Installation
 
-``django-icetea`` is registered in [PyPI](http://pypi.python.org/pypi/django-icetea/0.2), so 
+``django-icetea`` is registered in [PyPI](http://pypi.python.org/pypi/django-icetea/), so 
 installing it is as easy as listing it under your project's dependencies, and pulling it on build time.
 
 If you use ``zc.buildout``, you only need to do the following: 
