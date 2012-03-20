@@ -368,8 +368,38 @@ class DjangoEmitter(Emitter):
             response = serializers.serialize(format, self.data, indent=True)
 
         return response
-
 Emitter.register('django', DjangoEmitter, 'text/xml; charset=utf-8')
+
+class XMLEmitter(Emitter):
+    def _to_xml(self, xml, data):
+        if isinstance(data, (list, tuple)):
+            for item in data:
+                xml.startElement("resource", {})
+                self._to_xml(xml, item)
+                xml.endElement("resource")
+        elif isinstance(data, dict):
+            for key, value in data.iteritems():
+                xml.startElement(key, {})
+                self._to_xml(xml, value)
+                xml.endElement(key)
+        else:
+            xml.characters(smart_unicode(data))
+
+    def render(self, request):
+        stream = StringIO.StringIO()
+
+        xml = SimplerXMLGenerator(stream, "utf-8")
+        xml.startDocument()
+        xml.startElement("response", {})
+
+        self._to_xml(xml, self.construct())
+
+        xml.endElement("response")
+        xml.endDocument()
+
+        return stream.getvalue()
+Emitter.register('xml', XMLEmitter, 'text/xml; charset=utf-8')
+
 
 class ExcelEmitter(Emitter):
     def render(self, request):
@@ -389,7 +419,7 @@ class ExcelEmitter(Emitter):
         # In the case of the ExcelEmitter, we want only the actual data. No
         # debug messages and shit
         data = self.data['data']
-        # Fields that we should output. In theory, these should be the only
+        # Fields that we should output. In theory, these should be the *only*
         # keys in the dictionary ``data``.
         fields = self.handler.get_output_fields(request)
 
@@ -420,9 +450,11 @@ class ExcelEmitter(Emitter):
                 field_value = record[key]
                 
                 # I merge lists or dicts to "\r\n"-separated strings
-                # Why? 
-                # 1. They look better (i think)
-                # 2. They non-ASCII chars appear correctly
+                # Why?                                      
+                # 2. There's not really any reasonable way to represent nested
+                # fields/dics in excel.
+                # 1. They look better thatn simply dumping them as
+                # dictionaries.
                 if isinstance(field_value, list):
                     if field_value:
                         field_value = [to_utf8(item) for item in field_value]

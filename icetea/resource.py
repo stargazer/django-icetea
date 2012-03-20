@@ -233,8 +233,9 @@ class Resource:
                     else:
                         request.data = request.PUT  
                 if request.data is None:
-                    # In the case when Content-Type is not given
-                    raise ValidationError('Please provide the ``Content-type`` header')
+                    # In the case when Content-Type is not given or is invalid
+                    raise ValidationError('Please make sure the header '+ \
+                    '"Content-Type: application/json" is given')
 
         # Checks start at this point:
 
