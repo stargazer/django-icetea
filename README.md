@@ -4,7 +4,7 @@
 
 It has been influenced by the architecture of [django-piston](https://bitbucket.org/jespern/django-piston/wiki/Home) and [piston-perfect](https://github.com/smartpr/piston-perfect).
 
-I've decided to build ``Django-icetea``, in order to have an API framework with tight foundations, consistent and intuitive behaviour, *readable code*, and of course, easy to use.
+I have decided to build ``django-icetea``, in order to have an API framework with tight foundations, consistent and intuitive behaviour, *readable code*, and of course, easy to use.
 
 ## Installation
 
@@ -73,7 +73,7 @@ behaviour, is the following:
 In anycase developing an API is all about consistent and unambiguous
 communication between the client and the server. This has been one of my main
 goals with this project. If different applications require different semantics,
-*Django-icetea*'s code can easily be modified to support them.
+*django-icetea*'s code can easily be modified to support them.
 
 Moreover, following the [Principle of the least astonishment](http://en.wikipedia.org/wiki/Principle_of_least_astonishment) which is what *Python* in general, and *Django* in particular *try* to do, I
 have tried to follow the general behavior that *Django* users are familiar
@@ -101,7 +101,7 @@ same.
 
 ## Usage
 
-Say we have a Project which has pulled ``Django-Icetea``. Let's assume we have
+Say we have a Project which has pulled ``django-Icetea``. Let's assume we have
 an app called ``foo``, with a model ``Foomodel``.
                 
 We want to define 2 API handlers, to expose the model ``Foomodel`` to the API,
