@@ -5,15 +5,27 @@ except ImportError:
 
 setup(
 	name="django-icetea",
-	version="0.1dev",
+	packages=('icetea', ),
+	version="0.2.2",
+    description="REST API Framework",
 	author="C. Paschalides",
 	author_email="already.late@gmail.com",
-	url="http://github.com/stargazer/django-icetea", 
-	long_description=open('README.md').read(),
-	packages=('icetea', ),
+    license="WTFGL",
+	url="http://github.com/stargazer/django-icetea",
+    keywords=("rest", "restful", "api", "crud"),
 	install_requires=(
 		"Django>=1.3-beta,<=1.3",
         "xlwt",
 	),
-	zip_safe=True,
-)
+    zip_safe=False,
+    classifiers=(
+        "Programming Language :: Python",
+        "Operating System :: OS Independent",
+        "Topic :: Internet :: WWW/HTTP",
+        "Framework :: Django",
+        "Intended Audience :: Developers",
+        "License :: Freely Distributable",
+        "Development Status :: 3 - Alpha",
+    ),
+)                                                    
+

@@ -8,4 +8,5 @@
 *.pyo
 *.orig
 docs/build/*
+dist
 

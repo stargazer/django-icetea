@@ -8,10 +8,13 @@ I have decided to build ``django-icetea``, in order to have an API framework wit
 
 ## Installation
 
-If you use ``zc.buildout``, installing ``django-icetea`` is very simple. 
+``django-icetea`` is registered in [PyPI](http://pypi.python.org/pypi/django-icetea/0.2), so 
+installing it is as easy as listing it under your project's dependencies, and pulling it on build time.
 
-In your Django project's ``setup.py``, add  ``django-icetea`` in section
-``install_requires``: 
+If you use ``zc.buildout``, you only need to do the following: 
+
+> In your Django project's ``setup.py``, add  ``django-icetea`` in section
+> ``install_requires``: 
 
 ``` python
 setup(
@@ -27,13 +30,7 @@ setup(
 
 ```
 
-Then from your project's buildout configuration file, use
-a tool like ``mr.developer`` to checkout the code from the github repository,
-install the python egg, and expose *django-icetea* to your project's
-namespace.
-
-TODO::
-    Add to PyPi
+Running the buildout should take care of everything.
 
 ## Philosophy
 
@@ -201,7 +198,7 @@ overridden.
 
 #### bulk_create
 
-If ``True`` enables bulk-POST requests. Default is ``False``. See section [Notes](#notes) for more
+If ``True`` enables bulk-POST requests. Default is ``False``. See section *Notes* for more
 information.
 
 #### plural_update
@@ -277,8 +274,6 @@ handler's response.
 
 
 ## Notes
-<span class="notes" id="notes"></span>
-
 
 ### Bulk POST requests
 
