@@ -184,7 +184,7 @@ urlpatterns = patterns('',
 
 ### Relevant for all handlers
 
-#### ``read``, ``create``, ``update``, ``delete``
+#### read, create, update, delete
 
 If any of these parameters is ``True``, then the handler allows ``GET``,
 ``POST``, ``PUT`` and ``DELETE`` requests respectively.
@@ -199,27 +199,27 @@ def read(self, request, *args, **kwargs):
 Then the corresponding action is enabled, and the default functionality is
 overridden.
 
-#### ``bulk_create``
+#### bulk_create
 
 If ``True`` enables bulk-POST requests. Default is ``False``. See section [Notes](#notes) for more
 information.
 
-#### ``plural_update``
+#### plural_update
 If ``True``, enables plural PUT requests, which means updating multiple
 resources in one request. It is a potentially catastrophic operation, and for
 this reason is should be explicitly allowed. Default is ``False``.
 
-#### ``plural_delete``
+#### plural_delete
 If ``True`` enables plural DELETE requests, which means deleting multiple
 resources in one request. It is a potentially catastrophic operation, and for
 this reason it should be explicitly allowed. Default is ``False``.
 
-#### ``request_fields``
+#### request_fields
 
 Indicates which querystring parameter will act as a a request-level field
 selector. If ``True``, then the selector is ``field``. If ``False``, there will be no field selection. Default is ``True``.
 
-#### ``order``
+#### order
     
 Indicates which querystring parameter will act as the order-type selector
 on the result set of the requested operation.
@@ -228,22 +228,21 @@ selection can be performed. Default is ``False``.
 The order logic, should be implemented in the handler's ``order_data``
 method.
 
-#### ``slice``
+#### slice
 
 Indicates which querystring parameter will be used to request slicing of
 the result set of the requested operation.
 If ``True``, then the parameter is ``slice``. If ``False``, no slicing will
 be possible. Default is ``False``.
 The slicing notation follows Python's ``list slice syntax``, of
-``start:stop:step``.                                                           section
+``start:stop:step``.                                                          
 
-
-#### ``authentication``
+#### authentication
     
 If ``True``, only authenticated users can access the handler. The ``Django
 authenticataion`` is used. Default value is ``False``.
 
-#### ``allowed_out_fields``
+#### allowed_out_fields
     
 Tuple of fields, which indicates the fields that the handler is allowed to
 output. In the case of ``ModelHandler``, it symbolizes model fields, whereas in the case of ``BaseHandler`` classes, it only has sense if the handler returns dictionaries, or lists of dictionaries, and it indicates the dictionary keys that the handler is allowed to output.
@@ -252,7 +251,7 @@ The actual fields that a request will eventually output, is a function of
 this parameter, as well as the request-level field selection, indicated by
 the ``field``.
 
-#### ``allowed_in_fields``
+#### allowed_in_fields
     
 Tuple of fields, which indicates the fields that the handler allowed to
 take from the incoming request body. In the case of ``ModelHandler``
@@ -260,18 +259,18 @@ classes, no primary keys or related keys are allowed.
 
 ### Relevant only handlers extending ModelHandler
 
-#### ``model``
+#### model
     
 The database model which the Handler exposes.
                        
-#### ``filters``
+#### filters
 
 A dictionary of ``filter name``: ``filter_operation`` couples. ``filter
 name`` defines the querystring parameter used to apply the filtering on the
 current request. ``filter_operation`` corresponds to a Django lookup
 filter, which will be applied on the request's resuls data. 
 
-#### ``exclude_nested``
+#### exclude_nested
 
 Fields which should be excluded when the model is nested in another
 handler's response.
