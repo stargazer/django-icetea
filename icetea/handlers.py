@@ -551,7 +551,8 @@ class ModelHandler(BaseHandler):
     
     def data_item(self, request, *args, **kwargs):
         """
-        Returns a queryset with one item
+        Returns a single model instance, if such has been pointed out. Else the
+        super class returns None.
         """
         # First we check if we have been provided with conditions that are
         # capable of denoting a single item. If we would try to ``get`` an

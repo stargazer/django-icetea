@@ -99,6 +99,26 @@ same.
 * ``BaseHandler``: Used to expose data that don't map on a model. Most of the
   functionality will need to be written manually.  
 
+### Glossary
+
+Singular Request: A request that refers to a single resource. 
+
+Plural Request: A request that refers to a group of resource instances (usually the
+instances that the client has the right to view)
+
+Bulk Request: Request with an array of data in its request body. It only makes
+sense for POST requests, and aims to create multiple instance
+
+### Assumptions
+
+The only assumption that ``django-icetea`` makes is that singular requests are
+denoted by the keyword argument ``id``. So for example a GET request of the
+following form ``/resource/<id>/`` requests the resource with ``id=<id>``.
+
+This is essential mostly for security related checks, which mainly control
+whether the request is plural, and if such a request has been explicitly
+allowed.
+
 ## Usage
 
 Say we have a Project which has pulled ``django-Icetea``. Let's assume we have
