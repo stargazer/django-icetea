@@ -6,7 +6,7 @@ except ImportError:
 setup(
 	name="django-icetea",
 	version="0.1dev",
-	author="Pambo Paschalides",
+	author="C. Paschalides",
 	author_email="already.late@gmail.com",
 	url="http://github.com/stargazer/django-icetea", 
 	long_description=open('README.md').read(),
