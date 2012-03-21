@@ -46,7 +46,6 @@ class ClientModelHandler(ModelHandler):
 
     def validate(self, request, *args, **kwargs):
         request.data['client_id'] = request.user.account.client.id
-        import pdb; pdb.set_trace()
         super(ClientModelHandler, self).\
             validate(request, *args, **kwargs)
 

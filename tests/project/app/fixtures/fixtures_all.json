@@ -136,7 +136,7 @@
         "pk": 1, 
         "model": "app.contact", 
         "fields": {
-            "gender": "m", 
+            "gender": "M", 
             "client": 1, 
             "surname": "", 
             "name": "contact1"
@@ -146,7 +146,7 @@
         "pk": 2, 
         "model": "app.contact", 
         "fields": {
-            "gender": "f", 
+            "gender": "F", 
             "client": 1, 
             "surname": "", 
             "name": "contact2"
@@ -156,7 +156,7 @@
         "pk": 3, 
         "model": "app.contact", 
         "fields": {
-            "gender": "m", 
+            "gender": "M", 
             "client": 1, 
             "surname": "", 
             "name": "contact3"
@@ -166,7 +166,7 @@
         "pk": 4, 
         "model": "app.contact", 
         "fields": {
-            "gender": "f", 
+            "gender": "F", 
             "client": 1, 
             "surname": "", 
             "name": "contact4"
@@ -176,7 +176,7 @@
         "pk": 5, 
         "model": "app.contact", 
         "fields": {
-            "gender": "f", 
+            "gender": "F", 
             "client": 1, 
             "surname": "", 
             "name": "contact5"
@@ -186,7 +186,7 @@
         "pk": 6, 
         "model": "app.contact", 
         "fields": {
-            "gender": "m", 
+            "gender": "M", 
             "client": 2, 
             "surname": "", 
             "name": "contact6"
@@ -196,7 +196,7 @@
         "pk": 7, 
         "model": "app.contact", 
         "fields": {
-            "gender": "m", 
+            "gender": "M", 
             "client": 3, 
             "surname": "", 
             "name": "contact7"
@@ -206,7 +206,7 @@
         "pk": 8, 
         "model": "app.contact", 
         "fields": {
-            "gender": "m", 
+            "gender": "M", 
             "client": 4, 
             "surname": "", 
             "name": "contact8"
@@ -216,7 +216,7 @@
         "pk": 9, 
         "model": "app.contact", 
         "fields": {
-            "gender": "f", 
+            "gender": "F", 
             "client": 5, 
             "surname": "", 
             "name": "contact9"

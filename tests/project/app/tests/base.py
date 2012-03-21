@@ -13,7 +13,7 @@ class BaseTest(TestCase):
     OK = 200
     E_BAD_REQUEST = 400
     E_GONE = 410
-    E_N0T_ALLOWED = 405
+    E_NOT_ALLOWED = 405
 
     endpoints = {
         AccountHandler: '/api/accounts/',
@@ -64,7 +64,7 @@ class TestResponseStatusBase(BaseTest):
         sys.stdout.write("\n--------------------------------------------------------------------\n")
 
         # Print headings
-        sys.stdout.write("{endpoint:25}{payload:30}{expected:10}{actual:10}".format(
+        sys.stdout.write("{endpoint:25}{payload:50}{expected:10}{actual:10}".format(
             endpoint="API Endpoint", 
             payload="Payload",
             expected="Expected",
@@ -78,7 +78,7 @@ class TestResponseStatusBase(BaseTest):
             endpoint = self.endpoints[handler] + suffix
             # execute request
             response = self.request(type, endpoint, payload)
-            sys.stdout.write("{endpoint:25}{payload:30}{expected:10}{actual:10}".format(
+            sys.stdout.write("{endpoint:25}{payload:50}{expected:10}{actual:10}".format(
                 endpoint=endpoint, 
                 payload=payload,
                 expected=str(expected_code),
