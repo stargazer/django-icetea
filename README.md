@@ -116,6 +116,30 @@ This is essential mostly for security related checks, which mainly control
 whether the request is plural, and if such a request has been explicitly
 allowed.
 
+### Incoming Requests
+
+The ``Content-type`` header for incoming requests should be
+``application/json``. This is currently the only request body format that
+``django-icetea`` recognizes.
+
+### Outgoing responses
+
+The outgoing responses of ``django-icetea`` can be of one of the following
+formats:
+
+*   ``application/json``
+*   ``text/xml``
+*   ``text/html``
+*   ``application/vnd.ms-excel``
+
+The defauls is ``application/json``.
+Please not that in the case of outputting ``json``, or ``xml``, it is easy to serialize
+nested data structures in the response. However in the case of ``html`` and
+especially 
+``xls``
+format, there should (probably) be application specific semantics applied to the output
+emitters.
+
 ## Usage
 
 Say we have a Project which has pulled ``django-Icetea``. Let's assume we have
