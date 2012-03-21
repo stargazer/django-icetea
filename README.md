@@ -132,7 +132,7 @@ formats:
 *   ``text/html``
 *   ``application/vnd.ms-excel``
 
-The defauls is ``application/json``.
+The default is ``application/json``.
 Please not that in the case of outputting ``json``, or ``xml``, it is easy to serialize
 nested data structures in the response. However in the case of ``html`` and
 especially 
@@ -337,4 +337,42 @@ So feel free to modify the existing behavior.
 
 By default ``bulk POST requests`` are disabled. They can be enabled by setting
 ``bulk_create = True`` in the handler class.
+
+### Building inheritable handlers... Metaclass magic
+
+In this subsection, ``operation`` means one of ``read``, ``createa``,
+``update``, ``delete``.
+
+When a handler sets ``read = True``, basically it says to the system *I want to
+inherit the standard ``read`` functionality. Please provide me with it*. This
+works with some metaclass magic. Because, clearly some magic needs to be in
+please in order to convert the boolean attribute ``read``, to a method.  
+
+The way metaclasses work, is that when a class is initialized, the Python
+interpreter scans its own member attributes, and *then* runs the code of the
+metaclass. In this case, what the metaclass does, is remove all those
+operations that have been defined with ``True``, like `read = True``, in order
+to make space for them to be inherited. The metaclass runs on class
+initialization, whereas the [Python
+MRO](http://www.python.org/getit/releases/2.3/mro/) runs on runtime.
+
+For this reason, when a handler class is defined, in order to provide
+inheritable behaviour for other handlers, unless it defines the operations as
+methods, it needs to provide them as ``read = True``. This way its metaclass
+will remove these attributes and make "space", for it and classes that inherit
+from it, to inherit the behaviour that these operations define. Of course the
+handlers that inherit from a base handler, will need to first explicitly allow
+an operation, in case they want to inherit its functionality.
+                                                                
+So the way to see it when building handlers:
+
+>    Setting ``read = True``, means that the handler itself and handlers that
+>    inherit from it, will inherit the ``read`` functionality, given that they
+>    allow so.
+>    Setting ``read = False``, or not setting the ``read`` attribute at all, will block
+>    the ``read`` functionality for the handler and handlers that inherit from it.
+    
+
+Because of the way
+metaclasses work
 
