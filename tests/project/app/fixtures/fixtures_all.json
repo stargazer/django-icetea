@@ -1,0 +1,738 @@
+[
+    {
+        "pk": 9, 
+        "model": "contenttypes.contenttype", 
+        "fields": {
+            "model": "account", 
+            "name": "account", 
+            "app_label": "app"
+        }
+    }, 
+    {
+        "pk": 8, 
+        "model": "contenttypes.contenttype", 
+        "fields": {
+            "model": "client", 
+            "name": "client", 
+            "app_label": "app"
+        }
+    }, 
+    {
+        "pk": 10, 
+        "model": "contenttypes.contenttype", 
+        "fields": {
+            "model": "contact", 
+            "name": "contact", 
+            "app_label": "app"
+        }
+    }, 
+    {
+        "pk": 5, 
+        "model": "contenttypes.contenttype", 
+        "fields": {
+            "model": "contenttype", 
+            "name": "content type", 
+            "app_label": "contenttypes"
+        }
+    }, 
+    {
+        "pk": 2, 
+        "model": "contenttypes.contenttype", 
+        "fields": {
+            "model": "group", 
+            "name": "group", 
+            "app_label": "auth"
+        }
+    }, 
+    {
+        "pk": 7, 
+        "model": "contenttypes.contenttype", 
+        "fields": {
+            "model": "logentry", 
+            "name": "log entry", 
+            "app_label": "admin"
+        }
+    }, 
+    {
+        "pk": 4, 
+        "model": "contenttypes.contenttype", 
+        "fields": {
+            "model": "message", 
+            "name": "message", 
+            "app_label": "auth"
+        }
+    }, 
+    {
+        "pk": 1, 
+        "model": "contenttypes.contenttype", 
+        "fields": {
+            "model": "permission", 
+            "name": "permission", 
+            "app_label": "auth"
+        }
+    }, 
+    {
+        "pk": 6, 
+        "model": "contenttypes.contenttype", 
+        "fields": {
+            "model": "session", 
+            "name": "session", 
+            "app_label": "sessions"
+        }
+    }, 
+    {
+        "pk": 3, 
+        "model": "contenttypes.contenttype", 
+        "fields": {
+            "model": "user", 
+            "name": "user", 
+            "app_label": "auth"
+        }
+    }, 
+    {
+        "pk": "448e71b1cddc0cdfb50b110280a64389", 
+        "model": "sessions.session", 
+        "fields": {
+            "expire_date": "2012-04-04 09:21:06", 
+            "session_data": "Y2QxYWMyMGI0MjgwYzlkYTljOGU1OWFkMmIwZjlmYjI3YTlhY2UwNTqAAn1xAShVEl9hdXRoX3Vz\nZXJfYmFja2VuZHECVSlkamFuZ28uY29udHJpYi5hdXRoLmJhY2tlbmRzLk1vZGVsQmFja2VuZHED\nVQ1fYXV0aF91c2VyX2lkcQRLAXUu\n"
+        }
+    }, 
+    {
+        "pk": 1, 
+        "model": "app.client", 
+        "fields": {
+            "name": "Client 1"
+        }
+    }, 
+    {
+        "pk": 2, 
+        "model": "app.client", 
+        "fields": {
+            "name": "Client 2"
+        }
+    }, 
+    {
+        "pk": 3, 
+        "model": "app.client", 
+        "fields": {
+            "name": "Client 3"
+        }
+    }, 
+    {
+        "pk": 4, 
+        "model": "app.client", 
+        "fields": {
+            "name": "Client 4"
+        }
+    }, 
+    {
+        "pk": 5, 
+        "model": "app.client", 
+        "fields": {
+            "name": "Client 5"
+        }
+    }, 
+    {
+        "pk": 1, 
+        "model": "app.contact", 
+        "fields": {
+            "gender": "m", 
+            "client": 1, 
+            "surname": "", 
+            "name": "contact1"
+        }
+    }, 
+    {
+        "pk": 2, 
+        "model": "app.contact", 
+        "fields": {
+            "gender": "f", 
+            "client": 1, 
+            "surname": "", 
+            "name": "contact2"
+        }
+    }, 
+    {
+        "pk": 3, 
+        "model": "app.contact", 
+        "fields": {
+            "gender": "m", 
+            "client": 1, 
+            "surname": "", 
+            "name": "contact3"
+        }
+    }, 
+    {
+        "pk": 4, 
+        "model": "app.contact", 
+        "fields": {
+            "gender": "f", 
+            "client": 1, 
+            "surname": "", 
+            "name": "contact4"
+        }
+    }, 
+    {
+        "pk": 5, 
+        "model": "app.contact", 
+        "fields": {
+            "gender": "f", 
+            "client": 1, 
+            "surname": "", 
+            "name": "contact5"
+        }
+    }, 
+    {
+        "pk": 6, 
+        "model": "app.contact", 
+        "fields": {
+            "gender": "m", 
+            "client": 2, 
+            "surname": "", 
+            "name": "contact6"
+        }
+    }, 
+    {
+        "pk": 7, 
+        "model": "app.contact", 
+        "fields": {
+            "gender": "m", 
+            "client": 3, 
+            "surname": "", 
+            "name": "contact7"
+        }
+    }, 
+    {
+        "pk": 8, 
+        "model": "app.contact", 
+        "fields": {
+            "gender": "m", 
+            "client": 4, 
+            "surname": "", 
+            "name": "contact8"
+        }
+    }, 
+    {
+        "pk": 9, 
+        "model": "app.contact", 
+        "fields": {
+            "gender": "f", 
+            "client": 5, 
+            "surname": "", 
+            "name": "contact9"
+        }
+    }, 
+    {
+        "pk": 19, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "add_logentry", 
+            "name": "Can add log entry", 
+            "content_type": 7
+        }
+    }, 
+    {
+        "pk": 20, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "change_logentry", 
+            "name": "Can change log entry", 
+            "content_type": 7
+        }
+    }, 
+    {
+        "pk": 21, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "delete_logentry", 
+            "name": "Can delete log entry", 
+            "content_type": 7
+        }
+    }, 
+    {
+        "pk": 4, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "add_group", 
+            "name": "Can add group", 
+            "content_type": 2
+        }
+    }, 
+    {
+        "pk": 5, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "change_group", 
+            "name": "Can change group", 
+            "content_type": 2
+        }
+    }, 
+    {
+        "pk": 6, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "delete_group", 
+            "name": "Can delete group", 
+            "content_type": 2
+        }
+    }, 
+    {
+        "pk": 10, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "add_message", 
+            "name": "Can add message", 
+            "content_type": 4
+        }
+    }, 
+    {
+        "pk": 11, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "change_message", 
+            "name": "Can change message", 
+            "content_type": 4
+        }
+    }, 
+    {
+        "pk": 12, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "delete_message", 
+            "name": "Can delete message", 
+            "content_type": 4
+        }
+    }, 
+    {
+        "pk": 1, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "add_permission", 
+            "name": "Can add permission", 
+            "content_type": 1
+        }
+    }, 
+    {
+        "pk": 2, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "change_permission", 
+            "name": "Can change permission", 
+            "content_type": 1
+        }
+    }, 
+    {
+        "pk": 3, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "delete_permission", 
+            "name": "Can delete permission", 
+            "content_type": 1
+        }
+    }, 
+    {
+        "pk": 7, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "add_user", 
+            "name": "Can add user", 
+            "content_type": 3
+        }
+    }, 
+    {
+        "pk": 8, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "change_user", 
+            "name": "Can change user", 
+            "content_type": 3
+        }
+    }, 
+    {
+        "pk": 9, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "delete_user", 
+            "name": "Can delete user", 
+            "content_type": 3
+        }
+    }, 
+    {
+        "pk": 13, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "add_contenttype", 
+            "name": "Can add content type", 
+            "content_type": 5
+        }
+    }, 
+    {
+        "pk": 14, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "change_contenttype", 
+            "name": "Can change content type", 
+            "content_type": 5
+        }
+    }, 
+    {
+        "pk": 15, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "delete_contenttype", 
+            "name": "Can delete content type", 
+            "content_type": 5
+        }
+    }, 
+    {
+        "pk": 16, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "add_session", 
+            "name": "Can add session", 
+            "content_type": 6
+        }
+    }, 
+    {
+        "pk": 17, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "change_session", 
+            "name": "Can change session", 
+            "content_type": 6
+        }
+    }, 
+    {
+        "pk": 18, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "delete_session", 
+            "name": "Can delete session", 
+            "content_type": 6
+        }
+    }, 
+    {
+        "pk": 25, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "add_account", 
+            "name": "Can add account", 
+            "content_type": 9
+        }
+    }, 
+    {
+        "pk": 26, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "change_account", 
+            "name": "Can change account", 
+            "content_type": 9
+        }
+    }, 
+    {
+        "pk": 27, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "delete_account", 
+            "name": "Can delete account", 
+            "content_type": 9
+        }
+    }, 
+    {
+        "pk": 22, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "add_client", 
+            "name": "Can add client", 
+            "content_type": 8
+        }
+    }, 
+    {
+        "pk": 23, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "change_client", 
+            "name": "Can change client", 
+            "content_type": 8
+        }
+    }, 
+    {
+        "pk": 24, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "delete_client", 
+            "name": "Can delete client", 
+            "content_type": 8
+        }
+    }, 
+    {
+        "pk": 28, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "add_contact", 
+            "name": "Can add contact", 
+            "content_type": 10
+        }
+    }, 
+    {
+        "pk": 29, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "change_contact", 
+            "name": "Can change contact", 
+            "content_type": 10
+        }
+    }, 
+    {
+        "pk": 30, 
+        "model": "auth.permission", 
+        "fields": {
+            "codename": "delete_contact", 
+            "name": "Can delete contact", 
+            "content_type": 10
+        }
+    }, 
+    {
+        "pk": 2, 
+        "model": "auth.user", 
+        "fields": {
+            "username": "user1", 
+            "first_name": "name1", 
+            "last_name": "surname1", 
+            "is_active": true, 
+            "is_superuser": false, 
+            "is_staff": false, 
+            "last_login": "2012-03-21 09:10:02", 
+            "groups": [], 
+            "user_permissions": [], 
+            "password": "pass1", 
+            "email": "user1@client1.com", 
+            "date_joined": "2012-03-21 09:10:02"
+        }
+    }, 
+    {
+        "pk": 3, 
+        "model": "auth.user", 
+        "fields": {
+            "username": "user2", 
+            "first_name": "name2", 
+            "last_name": "surname2", 
+            "is_active": true, 
+            "is_superuser": false, 
+            "is_staff": false, 
+            "last_login": "2012-03-21 09:10:28", 
+            "groups": [], 
+            "user_permissions": [], 
+            "password": "pass2", 
+            "email": "user2@client1.com", 
+            "date_joined": "2012-03-21 09:10:28"
+        }
+    }, 
+    {
+        "pk": 4, 
+        "model": "auth.user", 
+        "fields": {
+            "username": "user3", 
+            "first_name": "name3", 
+            "last_name": "surname3", 
+            "is_active": true, 
+            "is_superuser": false, 
+            "is_staff": false, 
+            "last_login": "2012-03-21 09:10:46", 
+            "groups": [], 
+            "user_permissions": [], 
+            "password": "pass3", 
+            "email": "user3@client1.com", 
+            "date_joined": "2012-03-21 09:10:46"
+        }
+    }, 
+    {
+        "pk": 5, 
+        "model": "auth.user", 
+        "fields": {
+            "username": "user4", 
+            "first_name": "name4", 
+            "last_name": "surname4", 
+            "is_active": true, 
+            "is_superuser": false, 
+            "is_staff": false, 
+            "last_login": "2012-03-21 09:10:58", 
+            "groups": [], 
+            "user_permissions": [], 
+            "password": "pass4", 
+            "email": "user4@client1.com", 
+            "date_joined": "2012-03-21 09:10:58"
+        }
+    }, 
+    {
+        "pk": 6, 
+        "model": "auth.user", 
+        "fields": {
+            "username": "user5", 
+            "first_name": "name5", 
+            "last_name": "surname5", 
+            "is_active": true, 
+            "is_superuser": false, 
+            "is_staff": false, 
+            "last_login": "2012-03-21 09:11:10", 
+            "groups": [], 
+            "user_permissions": [], 
+            "password": "pass5", 
+            "email": "user5@client1.com", 
+            "date_joined": "2012-03-21 09:11:10"
+        }
+    }, 
+    {
+        "pk": 7, 
+        "model": "auth.user", 
+        "fields": {
+            "username": "user6", 
+            "first_name": "name6", 
+            "last_name": "surname6", 
+            "is_active": true, 
+            "is_superuser": false, 
+            "is_staff": false, 
+            "last_login": "2012-03-21 09:12:39", 
+            "groups": [], 
+            "user_permissions": [], 
+            "password": "pass6", 
+            "email": "user6@client2.com", 
+            "date_joined": "2012-03-21 09:12:39"
+        }
+    }, 
+    {
+        "pk": 8, 
+        "model": "auth.user", 
+        "fields": {
+            "username": "user7", 
+            "first_name": "name7", 
+            "last_name": "surname7", 
+            "is_active": true, 
+            "is_superuser": false, 
+            "is_staff": false, 
+            "last_login": "2012-03-21 09:12:57", 
+            "groups": [], 
+            "user_permissions": [], 
+            "password": "pass7", 
+            "email": "user7@client3.com", 
+            "date_joined": "2012-03-21 09:12:57"
+        }
+    }, 
+    {
+        "pk": 9, 
+        "model": "auth.user", 
+        "fields": {
+            "username": "user8", 
+            "first_name": "name8", 
+            "last_name": "surname8", 
+            "is_active": true, 
+            "is_superuser": false, 
+            "is_staff": false, 
+            "last_login": "2012-03-21 09:13:13", 
+            "groups": [], 
+            "user_permissions": [], 
+            "password": "pass8", 
+            "email": "user8@client4.com", 
+            "date_joined": "2012-03-21 09:13:13"
+        }
+    }, 
+    {
+        "pk": 10, 
+        "model": "auth.user", 
+        "fields": {
+            "username": "user9", 
+            "first_name": "name9", 
+            "last_name": "surname9", 
+            "is_active": true, 
+            "is_superuser": false, 
+            "is_staff": false, 
+            "last_login": "2012-03-21 09:13:28", 
+            "groups": [], 
+            "user_permissions": [], 
+            "password": "pass9", 
+            "email": "user9@client5.com", 
+            "date_joined": "2012-03-21 09:13:28"
+        }
+    }, 
+    {
+        "pk": 2, 
+        "model": "app.account", 
+        "fields": {
+            "user_permissions": [], 
+            "client": 1, 
+            "groups": []
+        }
+    }, 
+    {
+        "pk": 3, 
+        "model": "app.account", 
+        "fields": {
+            "user_permissions": [], 
+            "client": 1, 
+            "groups": []
+        }
+    }, 
+    {
+        "pk": 4, 
+        "model": "app.account", 
+        "fields": {
+            "user_permissions": [], 
+            "client": 1, 
+            "groups": []
+        }
+    }, 
+    {
+        "pk": 5, 
+        "model": "app.account", 
+        "fields": {
+            "user_permissions": [], 
+            "client": 1, 
+            "groups": []
+        }
+    }, 
+    {
+        "pk": 6, 
+        "model": "app.account", 
+        "fields": {
+            "user_permissions": [], 
+            "client": 1, 
+            "groups": []
+        }
+    }, 
+    {
+        "pk": 7, 
+        "model": "app.account", 
+        "fields": {
+            "user_permissions": [], 
+            "client": 2, 
+            "groups": []
+        }
+    }, 
+    {
+        "pk": 8, 
+        "model": "app.account", 
+        "fields": {
+            "user_permissions": [], 
+            "client": 3, 
+            "groups": []
+        }
+    }, 
+    {
+        "pk": 9, 
+        "model": "app.account", 
+        "fields": {
+            "user_permissions": [], 
+            "client": 4, 
+            "groups": []
+        }
+    }, 
+    {
+        "pk": 10, 
+        "model": "app.account", 
+        "fields": {
+            "user_permissions": [], 
+            "client": 5, 
+            "groups": []
+        }
+    }
+]
