@@ -1,8 +1,0 @@
-Test Suite for django-icetea
------------------------------
-Creates a simple Django application project found under the 
-``project`` folder, and runs some tests against it.
-
-python boodstrap.py -d
-bin/buildout
-bin/test
