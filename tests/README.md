@@ -1,7 +1,7 @@
 Test Suite for django-icetea
 -----------------------------
 
-Build a simple Django project found under the 
+Builds a simple Django project found under the 
 ``project`` folder, and runs some tests against it, in order to validate the behavior of ``django-icetea``.
 
 The procedure is very simple:
