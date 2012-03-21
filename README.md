@@ -340,7 +340,7 @@ By default ``bulk POST requests`` are disabled. They can be enabled by setting
 
 ### Building inheritable handlers... Metaclass magic
 
-In this subsection, ``operation`` means one of ``read``, ``createa``,
+In this subsection, the term ``operation`` means one of ``read``, ``create``,
 ``update``, ``delete``.
 
 When a handler sets ``read = True``, basically it says to the system *I want to
@@ -372,7 +372,4 @@ So the way to see it when building handlers:
 >    Setting ``read = False``, or not setting the ``read`` attribute at all, will block
 >    the ``read`` functionality for the handler and handlers that inherit from it.
     
-
-Because of the way
-metaclasses work
 
