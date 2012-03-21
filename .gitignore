@@ -8,5 +8,9 @@
 *.pyo
 *.orig
 docs/build/*
-dist
-
+dist/
+parts/
+eggs/
+develop-eggs/
+bin/
+.installed.cfg
