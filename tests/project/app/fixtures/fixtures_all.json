@@ -493,7 +493,7 @@
         }
     }, 
     {
-        "pk": 2, 
+        "pk": 1, 
         "model": "auth.user", 
         "fields": {
             "username": "user1", 
@@ -505,13 +505,13 @@
             "last_login": "2012-03-21 09:10:02", 
             "groups": [], 
             "user_permissions": [], 
-            "password": "pass1", 
+            "password": "sha1$1c7a8$de3d1bd5313cb3003349e70664b164f79a6aa286", 
             "email": "user1@client1.com", 
             "date_joined": "2012-03-21 09:10:02"
         }
     }, 
     {
-        "pk": 3, 
+        "pk": 2, 
         "model": "auth.user", 
         "fields": {
             "username": "user2", 
@@ -529,7 +529,7 @@
         }
     }, 
     {
-        "pk": 4, 
+        "pk": 3, 
         "model": "auth.user", 
         "fields": {
             "username": "user3", 
@@ -547,7 +547,7 @@
         }
     }, 
     {
-        "pk": 5, 
+        "pk": 4, 
         "model": "auth.user", 
         "fields": {
             "username": "user4", 
@@ -565,7 +565,7 @@
         }
     }, 
     {
-        "pk": 6, 
+        "pk": 5, 
         "model": "auth.user", 
         "fields": {
             "username": "user5", 
@@ -583,7 +583,7 @@
         }
     }, 
     {
-        "pk": 7, 
+        "pk": 6, 
         "model": "auth.user", 
         "fields": {
             "username": "user6", 
@@ -601,7 +601,7 @@
         }
     }, 
     {
-        "pk": 8, 
+        "pk": 7, 
         "model": "auth.user", 
         "fields": {
             "username": "user7", 
@@ -619,7 +619,7 @@
         }
     }, 
     {
-        "pk": 9, 
+        "pk": 8, 
         "model": "auth.user", 
         "fields": {
             "username": "user8", 
@@ -637,7 +637,7 @@
         }
     }, 
     {
-        "pk": 10, 
+        "pk": 9, 
         "model": "auth.user", 
         "fields": {
             "username": "user9", 
@@ -652,6 +652,15 @@
             "password": "pass9", 
             "email": "user9@client5.com", 
             "date_joined": "2012-03-21 09:13:28"
+        }
+    }, 
+    {
+        "pk": 1, 
+        "model": "app.account", 
+        "fields": {
+            "user_permissions": [], 
+            "client": 1, 
+            "groups": []
         }
     }, 
     {
@@ -695,7 +704,7 @@
         "model": "app.account", 
         "fields": {
             "user_permissions": [], 
-            "client": 1, 
+            "client": 2, 
             "groups": []
         }
     }, 
@@ -704,7 +713,7 @@
         "model": "app.account", 
         "fields": {
             "user_permissions": [], 
-            "client": 2, 
+            "client": 3, 
             "groups": []
         }
     }, 
@@ -713,21 +722,12 @@
         "model": "app.account", 
         "fields": {
             "user_permissions": [], 
-            "client": 3, 
-            "groups": []
-        }
-    }, 
-    {
-        "pk": 9, 
-        "model": "app.account", 
-        "fields": {
-            "user_permissions": [], 
             "client": 4, 
             "groups": []
         }
     }, 
     {
-        "pk": 10, 
+        "pk": 9, 
         "model": "app.account", 
         "fields": {
             "user_permissions": [], 

@@ -1,1 +1,1 @@
-from test_lala import Test1
+from project.app.tests.tests import TestResponseStatus

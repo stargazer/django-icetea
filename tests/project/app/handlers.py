@@ -44,6 +44,12 @@ class ClientModelHandler(ModelHandler):
             working_set(request, *args, **kwargs).\
             filter(client=request.user.account.client)
 
+    def validate(self, request, *args, **kwargs):
+        request.data['client_id'] = request.user.account.client.id
+        import pdb; pdb.set_trace()
+        super(ClientModelHandler, self).\
+            validate(request, *args, **kwargs)
+
 class AccountHandler(ClientModelHandler):
     model = Account
     authentication = True
