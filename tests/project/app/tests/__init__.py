@@ -1,1 +1,1 @@
-from project.app.tests.response_codes import TestResponseStatus
+from project.app.tests.response_content import TestResponseContent

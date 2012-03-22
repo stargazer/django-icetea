@@ -10,11 +10,6 @@ class BaseTest(TestCase):
     USERNAME = 'user1'
     PASSWORD = 'pass1'
 
-    OK = 200
-    E_BAD_REQUEST = 400
-    E_GONE = 410
-    E_NOT_ALLOWED = 405
-
     endpoints = {
         AccountHandler: '/api/accounts/',
         ClientHandler:  '/api/clients/',
@@ -86,4 +81,90 @@ class TestResponseStatusBase(BaseTest):
             ))
             sys.stdout.write("\n")
             assert expected_code == response.status_code
+
+
+class TestResponseContentBase(BaseTest): 
+    def analyze(self, response):
+        """
+        Returns the type and length of the ``response``
+
+        Status code 200: 'populated_dict', 'empty_dict', 'populated_list', 'empty_list'
+        Status code 400: 'bad_request'
+        Status code 405: 'not_allowed'
+        Status code 410: 'gone'
+        """
+        type = length = None
+        if response.status_code == 200:
+            content = json.loads(response.content)['data']
+            if isinstance(content, dict):
+                if len(content) == 0:
+                    type = 'empty_dict'
+                else:   
+                    type = 'populated_dict'    
+                    # length is always 1 in this case
+                    length = 1
+            elif isinstance(content, list):
+                if len(content) == 0:
+                    type = 'empty_list'
+                else:
+                    type = 'populated_list'
+                    length = len(content)
+        elif response.status_code == 405:
+            type = 'not_allowed'
+        elif response.status_code == 410:
+            type = 'gone'
+        elif response.status_code == 400:
+            type = 'bad_request'  
+        elif response.status_code == 403:
+            type = 'not_authorized'
+        
+        return type, length
+
+    def execute(self, type, handler, test_data):
+        print '\n'
+        # Print test information
+        sys.stdout.write("Info: {name}, {handler}, {type}".format(
+            name=self.__class__.__name__, 
+            handler=handler.__name__,
+            type=type,            
+        ))
+        sys.stdout.write("\n--------------------------------------------------------------------\n")
+
+        # Print headings
+        sys.stdout.write(\
+"{endpoint:25}{payload:50}{expected_response:18}{actual_response:18}{expected_length:13}{actual_length:13}".format(
+                endpoint="API Endpoint", 
+                payload="Payload",
+                expected_response="Expected",
+                actual_response="Actual",
+                expected_length="Expected",
+                actual_length="Actual",
+            )
+        )
+        sys.stdout.write("\n")
  
+        # Perform test and print results
+        for suffix, payload, expected_response, expected_length in test_data:           
+            # construct endpoint
+            endpoint = self.endpoints[handler] + suffix
+            # execute request
+            response = self.request(type, endpoint, payload)
+            # analyze response
+            actual_response, actual_length = self.analyze(response)
+            sys.stdout.write(\
+"{endpoint:25}{payload:50}{expected_response:18}{actual_response:18}{expected_length:<13}{actual_length:<13}".format(
+                    endpoint=endpoint, 
+                    payload=payload,
+                    expected_response=expected_response,
+                    actual_response=actual_response,
+                    expected_length=expected_length,
+                    actual_length=actual_length,
+                )
+            )
+            sys.stdout.write("\n")
+
+            assert expected_response == actual_response
+            assert expected_length == actual_length
+
+
+

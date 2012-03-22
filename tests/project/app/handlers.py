@@ -54,6 +54,9 @@ class AccountHandler(ClientModelHandler):
     authentication = True
 
     read = True
+    create = True
+    update = True
+    delete = True
 
     allowed_out_fields = (
         'id', 
@@ -61,13 +64,19 @@ class AccountHandler(ClientModelHandler):
         'last_name',
         'client',
     )
+    allowed_in_fields = (
+        'username',
+        'password',
+        'first_name',
+        'last_name',
+        'email_address',
+    )
 
     exclude_nested = (
         # Saves us from an infinite loop (Recursion depth exceeded)
         'client',
     )
 
-    allowed_in_fields = ()
 
 class ContactHandler(ClientModelHandler):
     model = Contact
