@@ -83,7 +83,10 @@ class TestResponseStatusBase(BaseTest):
             assert expected_code == response.status_code
 
 
-class TestResponseContentBase(BaseTest): 
+class TestResponseContentBase(BaseTest):
+    """
+    Class responsible for testing response code, and response content
+    """
     def analyze(self, response):
         """
         Returns the type and length of the ``response``
@@ -92,6 +95,7 @@ class TestResponseContentBase(BaseTest):
         Status code 400: 'bad_request'
         Status code 405: 'not_allowed'
         Status code 410: 'gone'
+        Status code 403: 'not_authorized'
         """
         type = length = None
         if response.status_code == 200:
