@@ -11,6 +11,8 @@ docs/build/*
 dist/
 parts/
 eggs/
+src/
 develop-eggs/
 bin/
-.installed.cfg
+*.cfg
+
