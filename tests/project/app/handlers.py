@@ -45,7 +45,10 @@ class ClientModelHandler(ModelHandler):
             filter(client=request.user.account.client)
 
     def validate(self, request, *args, **kwargs):
-        request.data['client_id'] = request.user.account.client.id
+        for item in isinstance(request.data, dict) and [request.data] or \
+            request.data:
+            item['client_id'] = request.user.account.client.id
+        
         super(ClientModelHandler, self).\
             validate(request, *args, **kwargs)
 
@@ -86,6 +89,9 @@ class ContactHandler(ClientModelHandler):
     create = True
     update = True
     delete = True
+    bulk_create = True
+    plural_delete = True
+    plural_update = True
 
     allowed_out_fields = (
         'client', 

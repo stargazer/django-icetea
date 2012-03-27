@@ -450,10 +450,13 @@ class TestResponseContent(TestResponseContentBase):
             ('',    {'gender': 'f'},   'bad_request', None),
             ('',    {'gender': 'v'},   'bad_request', None),
             ('',    {'gender': 'bi'},  'bad_request', None),
-            # Handler forbids bulk-POST requests
-            ('',    [{}, {}],     'bad_request', None),
-            ('',    [{'gender':'M'}, {}],  'bad_request', None),
-            ('',    [{'name':'Randy'}, {'name': 'Harry'}],   'bad_request', None),
+            # Handler allows bulk-POST requests
+            ('',    [{}, {}],     'populated_list', 2),
+            ('',    [{'gender':'M'}, {}],  'populated_list', 2),
+            # Invalid value for gender
+            ('',    [{'gender':'bi'}, {}],  'bad_request', None),
+            ('',    [{'name':'Randy', 'gender':'bi'}, {'name': 'Harry'}], 'bad_request', None),
+            ('',    [{'name':'Randy'}, {'name': 'Harry'}],   'populated_list', 2),
         )
         self.execute(type, handler, test_data)
  
@@ -493,26 +496,25 @@ class TestResponseContent(TestResponseContentBase):
 
     def test_ContactHandler_update_plural(self):    
         """
-        The handler forbids plural PUT requests.
-        So the API should respond with a 405 error
+        The handler allows plural PUT requests.
         """
         handler = ContactHandler
         type = 'update'
 
         test_data = (
-            ('',    {},     'not_allowed', None),
-            ('',    {'name': 'Randy', 'surname': 'Frombelize'},     'not_allowed', None),
-            ('',    {'gender': 'M'},     'not_allowed', None),
-            ('',    {'gender': 'F'},     'not_allowed', None),           
+            ('',    {},     'populated_list', 5),
+            ('',  {'name': 'Randy', 'surname': 'Frombelize'}, 'populated_list', 5),
+            ('',    {'gender': 'M'},     'populated_list', 5),
+            ('',    {'gender': 'F'},     'populated_list', 5),           
             # Invalid values for ``gender``
-            ('',    {'gender': 'm'},     'not_allowed', None),
-            ('',    {'gender': 'f'},     'not_allowed', None),
-            ('',    {'gender': 'v'},     'not_allowed', None),
-            ('',    {'gender': 'bi'},     'not_allowed', None),
-            # Handler forbids bulk-POST requests
-            ('',    [{}, {}],     'not_allowed', None),
-            ('',    [{'gender':'M'}, {}],     'not_allowed', None),
-            ('',    [{'name':'Randy'}, {'name': 'Harry'}],     'not_allowed', None),
+            ('',    {'gender': 'm'},     'bad_request', None),
+            ('',    {'gender': 'f'},     'bad_request', None),
+            ('',    {'gender': 'v'},     'bad_request', None),
+            ('',    {'gender': 'bi'},    'bad_request', None),
+            # Handler forbids bulk-PUT requests
+            ('',    [{}, {}],     'bad_request', None),
+            ('',    [{'gender':'M'}, {}],     'bad_request', None),
+            ('',    [{'name':'Randy'}, {'name': 'Harry'}],     'bad_request', None),
         )
         self.execute(type, handler, test_data)
  
@@ -551,13 +553,12 @@ class TestResponseContent(TestResponseContentBase):
  
     def test_ContactHandler_delete_plural(self):
         """
-        The handler forbids plural DELETE requests.
-        So we should get a 405 Error.
+        The handler allows plural DELETE requests.
         """
         handler = ContactHandler
         type = 'delete'
         test_data = (
-            ('',  {},     'not_allowed', None),
+            ('',  {},  'populated_list', 5),
         )
         self.execute(type, handler, test_data)
 
