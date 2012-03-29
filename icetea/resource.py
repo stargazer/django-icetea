@@ -331,6 +331,8 @@ class Resource:
         elif isinstance(e, UnprocessableEntity):
             http_response = HttpResponse(status=422)
 
+        # TODO: Does this ever happen? 404 errors are taken care of by the url
+        # mapper
         elif isinstance(e, Http404):
             http_response = HttpResponseNotFound()
 

@@ -2,6 +2,7 @@ from django.db import models
 from authentication import DjangoAuthentication, NoAuthentication
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from custom_filters import filter_to_method
+from icetea.utils import UnprocessableEntity
 
 # mappings of {HTTP Request: API Handler method}
 CALLMAP = {
@@ -238,9 +239,7 @@ class BaseHandler():
                     except ValueError:
                         # Happens when giving invalid filter type data, like
                         # for example providing a string instead of integer.
-                        #raise ValidationError('Invalid filter data provided')
-                        from icetea.utils import UnprocessableEntity
-                        raise UnprocessableEntity
+                        raise UnprocessableEntity('Invalid filter data')
         
         order = request.GET.getlist(self.order)
         if order:

@@ -10,7 +10,7 @@ class UnprocessableEntity(Exception):
     Raised when a request is semantically incorrect. For example, when an
     invalid querystring parameter has been given.
     """
-    def __init__(self):
+    def __init__(self, message):
         pass
     
 
