@@ -573,8 +573,8 @@ class TestResponseContent(TestResponseContentBase):
             ('?id=1&id=2',  {},  'populated_list', 2),
             # Will not remove the contact, since it's already removed
             ('?id=1',  {},  'empty_list', None),
-            # Bad request???
-            ('?id=',  {},  'empty_list', None),
+            # Semantic error on querystring, returns a 422 error.
+            ('?id=',  {},  'unprocessable', None),
         )
         self.execute(type, handler, test_data)
  

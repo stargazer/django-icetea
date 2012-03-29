@@ -96,6 +96,7 @@ class TestResponseContentBase(BaseTest):
         Status code 405: 'not_allowed'
         Status code 410: 'gone'
         Status code 403: 'not_authorized'
+        Status code: 422: 'unprocessable'
         """
         type = length = None
         if response.status_code == 200:
@@ -121,6 +122,8 @@ class TestResponseContentBase(BaseTest):
             type = 'bad_request'  
         elif response.status_code == 403:
             type = 'not_authorized'
+        elif response.status_code == 422:
+            type = 'unprocessable'
         
         return type, length
 
