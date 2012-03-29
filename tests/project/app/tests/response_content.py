@@ -562,6 +562,23 @@ class TestResponseContent(TestResponseContentBase):
         )
         self.execute(type, handler, test_data)
 
+    def test_ContactHandler_delete_plural_filter_id(self):
+        """
+        Plural DELETE request, applying the filter ``id``.
+        """
+        handler = ContactHandler
+        type = 'delete'
+        test_data = (
+            # Will only remove the 2 contacts with the given IDs
+            ('?id=1&id=2',  {},  'populated_list', 2),
+            # Will not remove the contact, since it's already removed
+            ('?id=1',  {},  'empty_list', None),
+            # Bad request???
+            ('?id=',  {},  'empty_list', None),
+        )
+        self.execute(type, handler, test_data)
+ 
+
     def test_ContactHandler_delete_singular(self):
         handler = ContactHandler
         type = 'delete'

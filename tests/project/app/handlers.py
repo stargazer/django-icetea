@@ -93,6 +93,10 @@ class ContactHandler(ClientModelHandler):
     plural_delete = True
     plural_update = True
 
+    filters = dict(
+        id='id__in',
+    )
+
     allowed_out_fields = (
         'client', 
         'name',
