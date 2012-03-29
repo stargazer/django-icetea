@@ -5,6 +5,15 @@ class MethodNotAllowed(Exception):
 	def __init__(self, *permitted_methods):
 		self.permitted_methods = permitted_methods
 
+class UnprocessableEntity(Exception):
+    """
+    Raised when a request is semantically incorrect. For example, when an
+    invalid querystring parameter has been given.
+    """
+    def __init__(self):
+        pass
+    
+
 def coerce_put_post(request):
 	if request.method.upper() == 'PUT':
 		if hasattr(request, '_post'):

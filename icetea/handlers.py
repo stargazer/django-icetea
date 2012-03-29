@@ -238,7 +238,9 @@ class BaseHandler():
                     except ValueError:
                         # Happens when giving invalid filter type data, like
                         # for example providing a string instead of integer.
-                        raise ValidationError('Invalid filter data provided')
+                        #raise ValidationError('Invalid filter data provided')
+                        from icetea.utils import UnprocessableEntity
+                        raise UnprocessableEntity
         
         order = request.GET.getlist(self.order)
         if order:

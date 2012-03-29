@@ -12,7 +12,7 @@ from django.db import connection
 import datetime
         
 from utils import coerce_put_post, translate_mime, \
-    MimerDataException, MethodNotAllowed
+    MimerDataException, MethodNotAllowed, UnprocessableEntity
 from emitters import Emitter, JSONEmitter
                    
 from django.views.debug import ExceptionReporter   
@@ -327,6 +327,9 @@ class Resource:
 
         elif isinstance(e, MethodNotAllowed): 
             http_response = HttpResponseNotAllowed(e.permitted_methods)
+
+        elif isinstance(e, UnprocessableEntity):
+            http_response = HttpResponse(status=422)
 
         elif isinstance(e, Http404):
             http_response = HttpResponseNotFound()
