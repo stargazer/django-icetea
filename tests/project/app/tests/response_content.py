@@ -436,6 +436,25 @@ class TestResponseContent(TestResponseContentBase):
         )
         self.execute(type, handler, test_data)
 
+    def test_ContactHandler_read_filter_id(self):
+        """
+        Plural DELETE request, applying the filter ``id``.
+        """
+        handler = ContactHandler
+        type = 'read'
+        test_data = (
+            # Will only remove the 2 contacts with the given IDs
+            ('?id=1&id=2',  {},  'populated_list', 2),
+            # Will not remove the contact, since it's already removed
+            ('?id=1',  {},  'populated_list', 1),
+            # Semantic error on querystring, returns a 422 error.
+            ('?id=',  {},  'unprocessable', None),
+            ('?id=&id=1&id=2',  {},  'unprocessable', None),
+            ('?id=lalalala',  {},  'unprocessable', None),
+        )
+        self.execute(type, handler, test_data)
+ 
+
     def test_ContactHandler_create_plural(self):       
         handler = ContactHandler
         type = 'create'
@@ -575,6 +594,8 @@ class TestResponseContent(TestResponseContentBase):
             ('?id=1',  {},  'empty_list', None),
             # Semantic error on querystring, returns a 422 error.
             ('?id=',  {},  'unprocessable', None),
+            ('?id=&id=1&id=2',  {},  'unprocessable', None),
+            ('?id=lalalala',  {},  'unprocessable', None),
         )
         self.execute(type, handler, test_data)
  

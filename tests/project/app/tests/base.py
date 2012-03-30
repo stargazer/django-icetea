@@ -59,7 +59,7 @@ class TestResponseStatusBase(BaseTest):
         sys.stdout.write("\n--------------------------------------------------------------------\n")
 
         # Print headings
-        sys.stdout.write("{endpoint:25}{payload:50}{expected:10}{actual:10}".format(
+        sys.stdout.write("{endpoint:30}{payload:50}{expected:10}{actual:10}".format(
             endpoint="API Endpoint", 
             payload="Payload",
             expected="Expected",
@@ -73,7 +73,7 @@ class TestResponseStatusBase(BaseTest):
             endpoint = self.endpoints[handler] + suffix
             # execute request
             response = self.request(type, endpoint, payload)
-            sys.stdout.write("{endpoint:25}{payload:50}{expected:10}{actual:10}".format(
+            sys.stdout.write("{endpoint:30}{payload:50}{expected:10}{actual:10}".format(
                 endpoint=endpoint, 
                 payload=payload,
                 expected=str(expected_code),
@@ -139,7 +139,7 @@ class TestResponseContentBase(BaseTest):
 
         # Print headings
         sys.stdout.write(\
-"{endpoint:25}{payload:50}{expected_response:18}{actual_response:18}{expected_length:13}{actual_length:13}".format(
+"{endpoint:30}{payload:50}{expected_response:18}{actual_response:18}{expected_length:13}{actual_length:13}".format(
                 endpoint="API Endpoint", 
                 payload="Payload",
                 expected_response="Expected",
@@ -159,7 +159,7 @@ class TestResponseContentBase(BaseTest):
             # analyze response
             actual_response, actual_length = self.analyze(response)
             sys.stdout.write(\
-"{endpoint:25}{payload:50}{expected_response:18}{actual_response:18}{expected_length:<13}{actual_length:<13}".format(
+"{endpoint:30}{payload:50}{expected_response:18}{actual_response:18}{expected_length:<13}{actual_length:<13}".format(
                     endpoint=endpoint, 
                     payload=payload,
                     expected_response=expected_response,
