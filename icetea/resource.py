@@ -316,7 +316,6 @@ class Resource:
         if isinstance(e, ValidationError):
             message = dict(
                 type='Validation Error',
-                message='Invalid data provided.',
                 errors=hasattr(e, 'message_dict') and e.message_dict or \
                     hasattr(e, 'messages') and e.messages
             )
@@ -329,12 +328,11 @@ class Resource:
             http_response = HttpResponseNotAllowed(e.permitted_methods)
 
         elif isinstance(e, UnprocessableEntity):
+            message = dict(
+                type='Unprocessable Entity Error',
+                errors=e.errors,
+            )
             http_response = HttpResponse(status=422)
-
-        # TODO: Does this ever happen? 404 errors are taken care of by the url
-        # mapper
-        elif isinstance(e, Http404):
-            http_response = HttpResponseNotFound()
 
         else: 
             # Consider it a Server Error.
