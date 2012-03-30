@@ -140,12 +140,25 @@ especially
 format, there should (probably) be application specific semantics applied to the output
 emitters.
 
+### Status codes
+
+* 200 OK: Request was served successfully
+* 400 Bad Request: Validation error in request body 
+* 403 Forbidden: Server refuses to server the request, because the client is
+  not authenticated 
+* 405 Method Not Allowed: The request was performed on a resource that does not
+  support that type of method
+* 410 Gone: The resource is not available (either deleted, or not accessible)
+* 422: The request was semantically invalid (used only in cases where some
+  querystring parameters are incorrect)
+* 500: Server error
+
 ## Usage
 
-Say we have a Project which has pulled ``django-Icetea``. Let's assume we have
-an app called ``foo``, with a model ``Foomodel``.
+Say we have a Project which has pulled ``django-icetea``. Let's assume we have
+an app called ``foo``, with a model ``FooModel``.
                 
-We want to define 2 API handlers, to expose the model ``Foomodel`` to the API,
+We want to define 2 API handlers, to expose the model ``FooModel`` to the API,
 as well as some other non-model data.
 
 Other than defining the business logic, handlers also act as means of
@@ -166,7 +179,7 @@ from icetea.handlers import ModelHandler
 
 class FooHandler(ModelHandler):
     authentication = True
-    model = Foomodel
+    model = FooModel
 
     read = True
     create = True
