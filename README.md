@@ -142,16 +142,16 @@ emitters.
 
 ### Status codes
 
-* 200 OK: Request was served successfully
-* 400 Bad Request: Validation error in request body 
-* 403 Forbidden: Server refuses to server the request, because the client is
+* ``200 OK``: Request was served successfully
+* ``400 Bad Request``: Validation error in request body 
+* ``403 Forbidden``: Server refuses to server the request, because the client is
   not authenticated 
-* 405 Method Not Allowed: The request was performed on a resource that does not
+* ``405 Method Not Allowed``: The request was performed on a resource that does not
   support that type of method
-* 410 Gone: The resource is not available (either deleted, or not accessible)
-* 422: The request was semantically invalid (used only in cases where some
+* ``410 Gone``: The resource is not available (either deleted, or not accessible)
+* ``422 Unprocessable Entity``: The request was semantically invalid (used only in cases where some
   querystring parameters are incorrect)
-* 500: Server error
+* ``500 Internal Server Error``
 
 ## Usage
 
