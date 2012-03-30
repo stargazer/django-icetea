@@ -44,12 +44,11 @@ def in_all_filter(data, definition, values):
 
     .. note::
 
-        If any of the values in ``values`` is an empty string, or ``null`` then it's the only
+        If any of the values in ``values`` is ``null`` then it's the only
         value we use to filter the data. Why? Well, say we performed a query to
         get all contacts which belong to lists [2, 3, and null]. This means:
         give me all contacts which belong to the list 2, list 3, and to no list
         (...which is impossible of course).
-        
         So we just consider this as a query with poor semantics, and we return 
         only contacts that belong to no list!
     """
@@ -62,7 +61,7 @@ def in_all_filter(data, definition, values):
 
     # If an empty or ``null`` value is given, filter only based on None.
     for value in values:
-        if value in ['', 'null']:
+        if value in ['null']:
             return data.filter(**{field_exact:None})
 
     #   eg. data.filter(memberships__contact__in=values)
