@@ -153,12 +153,12 @@ emitters.
   querystring parameters are incorrect)
 * ``500 Internal Server Error``
 
-### CSRF token
+### CSRF tokens
 
 Django uses *CSRF tokens*, in order to deal with web browsers' 
 [CSRF vulnerability](http://www.squarefree.com/securitytips/web-developers.html#CSRF). 
-Django's *CsrfViewMiddleware*, inserts a *CSRF token* in every form using the POST method,
-as a hidden field, before sending the form to the web browser. For every subsequent 
+Django's *CsrfViewMiddleware* inserts a *CSRF token* as a hidden field in every form using the 
+*POST method*, before sending the form to the web browser. For every subsequent 
 *POST request* from the web browser, the same middleware checks the token, to ensure that 
 it contains the expected value. If not a *403 Forbidden* response is returned.
 
