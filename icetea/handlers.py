@@ -495,7 +495,7 @@ class ModelHandler(BaseHandler):
                     # There is a weird case, when if a Foreign Key on the model
                     # instance is not defined, and this foreign key is used in
                     # the __unicode__ method of the model, to derive its string
-                    # representatin, we get a ``DoesNotExist``exception.
+                    # representation, we get a ``DoesNotExist``exception.
                     # #TODO: Is this a bug though? 
                     # It can also be dealt with by removing the use of the FK
                     # from the model's unicode method, but that would require a

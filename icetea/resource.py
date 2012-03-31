@@ -65,7 +65,7 @@ class Resource:
             self._TYPEMAPPER[self._handler] = self._handler.model
 
         # Exempt this view from CSRF token checks
-        self.csrf_exempt = getattr(self._handler, 'csrf_exempt', True)
+        self.csrf_exempt = True
 
         self._authentication = getattr(self._handler, 'authentication')
 

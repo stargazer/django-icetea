@@ -88,9 +88,9 @@ same.
 
 ## Short Introduction
 
-``django-icetea`` offers 2 types of handlers:
+*django-icetea`* offers 2 types of handlers:
 
-* ``ModelHandler``: Used to expose ``Django`` models to the API. Offers CRUD
+* ``ModelHandler``: Used to expose *Django* models to the API. Offers CRUD
   functionality out of the box.
 
 * ``BaseHandler``: Used to expose data that don't map on a model. Most of the
@@ -104,11 +104,11 @@ same.
 instances that the client has the right to view).
 
 ``Bulk Request``: Request with an array of data in its request body. It only makes
-sense for POST requests, and aims to create multiple instances in one request.
+sense for *POST* requests, and aims to create multiple instances in one request.
 
 ### Assumptions
 
-The only assumption that ``django-icetea`` makes is that singular requests are
+The only assumption that *django-icetea* makes is that singular requests are
 denoted by the keyword argument ``id``. So for example a GET request of the
 following form ``/resource/<id>/`` requests the resource with ``id=<id>``.
 
@@ -120,11 +120,11 @@ allowed.
 
 The ``Content-type`` header for incoming requests should be
 ``application/json``. This is currently the only request body format that
-``django-icetea`` recognizes.
+*django-icetea* recognizes.
 
 ### Outgoing responses
 
-The outgoing responses of ``django-icetea`` can be of one of the following
+The outgoing responses of *django-icetea* can be of one of the following
 formats:
 
 *   ``application/json``
@@ -152,6 +152,20 @@ emitters.
 * ``422 Unprocessable Entity``: The request was semantically invalid (used only in cases where some
   querystring parameters are incorrect)
 * ``500 Internal Server Error``
+
+### CSRF token
+
+Django uses *CSRF tokens*, in order to deal with web browsers' 
+[CSRF vulnerability](http://www.squarefree.com/securitytips/web-developers.html#CSRF). 
+Django's *CsrfViewMiddleware*, inserts a *CSRF token* in every form using the POST method,
+as a hidden field, before sending the form to the web browser. For every subsequent 
+*POST request* from the web browser, the same middleware checks the token, to ensure that 
+it contains the expected value. If not a *403 Forbidden* response is returned.
+
+However, since *django-icetea* is an API and does not make use of forms, the
+CSRF token doesn't make a lot of sense. So by default *django-icetea* views are
+*CSRF exempted*, meaning they don't require the CSRF token.
+
 
 ## Usage
 
