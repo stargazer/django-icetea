@@ -359,6 +359,8 @@ class BaseHandler():
         fields = self.get_output_fields(request) 
         # Slice
         sliced_data, total = self.response_slice_data(data, request)
+        # Add extra fields to the data items in the response
+        self.add_extra_fields(sliced_data, request)
         
         # Use the emitter to serialize the ``data``. The emitter is responsible for
         # allowing only fields in ``fields``, if such a selection makes sense.
@@ -385,6 +387,15 @@ class BaseHandler():
         """
         Overwrite this method in your handler, in order to add more (meta)data
         within the response data structure.
+        """
+        pass
+
+    def add_extra_fields(self, data, request):
+        """
+        Overwrite this method in the handler, if you want to add any artificial
+        fields within the data that will be packed in the response.
+        It follows the slicing of the data, so that it only processes the data
+        that will actually be returned.
         """
         pass
     
