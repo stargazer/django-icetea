@@ -155,7 +155,7 @@ emitters.
 * ``500 Internal Server Error``
 
 
-## Tests
+### Tests
 
 ``django-icetea`` comes with its own test suite, found in the module
 ``tests.py``. This module defines Base Test Classes, which are used to test
