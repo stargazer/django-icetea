@@ -2,25 +2,6 @@ from project.app.handlers import AccountHandler, ClientHandler, ContactHandler
 from icetea.tests import TestResponseContentBase
 
 """
-This test class, tests for:
-* Correct Response codes
-* Correct Response content
-* Correct amount of resources returned, in case the request is successful.
-
-In order to create more similar tests, do the following:
-* Create a class that extends ``TestResponseContentBase``
-* For every test:
-    *   Create a method whose name starts with ``test``
-    *   Set attributes:
-        *   ``handler``: Equal to the API handler to test
-        *   ``type``: Equal to either ``read``, ``create``, ``update``, ``delete``
-    *   Create a list of tuples ``test_data``. Every tuple should have:
-        *   API suffix
-        *   Payload
-        *   Expected response type
-        *   Number of resources returned, or None   
-    *   Run ``self.execute(type, handler, test_data)
-
 The fixtures used have the following form: 
     Client 1
         Owns Account instances: 1,2,3,4,5

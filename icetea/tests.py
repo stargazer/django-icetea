@@ -7,12 +7,6 @@ class BaseTest(TestCase):
     """
     Base Test Class.
     Don't inherit directly from this class, but from one of its subclasses.
-
-    Mandatory class attributes that need to be defined:
-     * ``fixtures``
-     * ``USERNAME``
-     * ``PASSWORD``
-     * ``endpoints``
     """
 
     #fixtures = ['fixtures_all',]
@@ -58,6 +52,12 @@ class BaseTest(TestCase):
 
 
 class TestResponseStatusBase(BaseTest):
+    """ 
+    This class implements tests for response status code. Don't use this.
+    Insteas use :class:`.TestResponseContentBase` which tests for way more
+    response attributes.
+    """
+
     def execute(self, type, handler, test_data):
         print '\n'
         # Print test information
@@ -95,7 +95,55 @@ class TestResponseStatusBase(BaseTest):
 
 class TestResponseContentBase(BaseTest):
     """
-    Class responsible for testing response code, and response content
+    This class implements tests for:
+
+     * Response codes
+     * Respose content type
+     * Amount of resources returned
+
+    Inherit from it, and define class attributes:
+
+     * ``fixtures``: List of fixtures to be loaded
+     * ``USERNAME``: Username for authenticated user
+     * ``PASSWORD``: Password for authenticated user
+     * ``endpoints``: Dictionary of pairs ``API Handler class: API url endpoint``
+
+    For every test:
+
+     * Define a class method whose name starts with ``test``
+     * Set method attributes:
+
+      * ``handler``
+      * ``type``: Defines the API method to be tested. Equal to either
+        ``read``, ``create``, ``update``, ``delete``
+
+     * Create the ``test_data``, which is a list of tuples. Every tuple should
+       contain:       
+
+       * URL endpoint suffix. Should be a string.
+       * Payload. Should be a a dictionary
+       * Expected response type. Should be one of the following strings (the
+         corresponding response codes are in parenthesis):
+
+         * ``populated_dict``: (200 OK)
+         * ``empty_dict``: (200 OK)
+         * ``populated_list``: (200 OK)
+         * ``empty_list``: (200 OK)
+         * ``bad_request``: (400 Bad Request)
+         * ``not_allowed``: (405 Method Not Allowed)
+         * ``gone``: (410 Response Gone)
+         * ``not_authorized``: (403 Not Authorized)
+         * ``unprocessable``: (422 Unprocessable Entity)
+
+       * Number of expected resources returned. ``None`` if not applicable.
+
+     * Call ``self.execute(type, handler, test_data)``, which checks whether
+       the test succeeds or not.               
+
+    In order to see concrete examples, check the ``tests`` package under
+    ``django-icetea`` folder, which used this class to test ``django-icetea``
+    itself.               
+
     """
     def analyze(self, response):
         """

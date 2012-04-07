@@ -46,4 +46,12 @@ Please refer to the project's `Github repository <https://github.com/stargazer/d
     :undoc-members:
     :member-order: bysource
 
+:mod:`~icetea.tests`
+-------------------------------
+.. automodule:: icetea.tests
+	:members:
+	:undoc-members:
+	:member-order: bysource
+
+
 
