@@ -30,7 +30,8 @@ setup(
 
 ```
 
-Running the buildout should take care of everything.
+Running the buildout should take care of everything, and make package
+``icetea`` available in your project.
 
 ## Philosophy
 
@@ -88,7 +89,7 @@ same.
 
 ## Short Introduction
 
-*django-icetea`* offers 2 types of handlers:
+*django-icetea* offers 2 types of handlers:
 
 * ``ModelHandler``: Used to expose *Django* models to the API. Offers CRUD
   functionality out of the box.
@@ -152,6 +153,14 @@ emitters.
 * ``422 Unprocessable Entity``: The request was semantically invalid (used only in cases where some
   querystring parameters are incorrect)
 * ``500 Internal Server Error``
+
+
+## Tests
+
+``django-icetea`` comes with its own test suite, found in the module
+``tests.py``. This module defines Base Test Classes, which are used to test
+``django-icetea`` itself, and can also be used to test any API
+implementation.
 
 ### CSRF tokens
 

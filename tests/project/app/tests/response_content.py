@@ -1,5 +1,5 @@
 from project.app.handlers import AccountHandler, ClientHandler, ContactHandler
-from project.app.tests.base import TestResponseContentBase
+from icetea.tests import TestResponseContentBase
 
 """
 This test class, tests for:
@@ -40,6 +40,15 @@ The fixtures used have the following form:
 """  
 
 class TestResponseContent(TestResponseContentBase):
+    fixtures = ['fixtures_all']
+    USERNAME = 'user1'
+    PASSWORD = 'pass1'
+    endpoints = {
+        AccountHandler: '/api/accounts/',
+        ClientHandler:  '/api/clients/',
+        ContactHandler: '/api/contacts/',
+    }
+
     def test_ClientHandler_read_plural(self):
         handler = ClientHandler
         type = 'read'

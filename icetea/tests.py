@@ -2,19 +2,29 @@ import sys
 from django.test import TestCase
 from django.test import Client
 from django.utils import simplejson as json
-from project.app.handlers import AccountHandler, ClientHandler, ContactHandler
 
 class BaseTest(TestCase):
-    fixtures = ['fixtures_all',]
+    """
+    Base Test Class.
+    Don't inherit directly from this class, but from one of its subclasses.
 
-    USERNAME = 'user1'
-    PASSWORD = 'pass1'
+    Mandatory class attributes that need to be defined:
+     * ``fixtures``
+     * ``USERNAME``
+     * ``PASSWORD``
+     * ``endpoints``
+    """
 
-    endpoints = {
-        AccountHandler: '/api/accounts/',
-        ClientHandler:  '/api/clients/',
-        ContactHandler: '/api/contacts/',
-    }
+    #fixtures = ['fixtures_all',]
+
+    #USERNAME = 'user1'
+    #PASSWORD = 'pass1'
+
+    #endpoints = {
+    #    AccountHandler: '/api/accounts/',
+    #    ClientHandler:  '/api/clients/',
+    #    ContactHandler: '/api/contacts/',
+    #}
 
     def setUp(self):
         self.browser = Client()        
