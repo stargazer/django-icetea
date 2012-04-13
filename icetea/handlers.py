@@ -522,8 +522,33 @@ class ModelHandler(BaseHandler):
                     except ObjectDoesNotExist, e:
                         raise ValidationError('Foreign Keys on model not defined')
 
-        elif request.method.upper() == 'PUT':
-            # current = model instance(s) to be updated
+        elif request.method.upper() == 'PUT':      
+            # The key here is to create one ``mock`` model instance and
+            # validate it, instead of creating one model instance for every
+            # item in the dataset, and validating it.
+            # The consequence of this is that we only run the validation once,
+            # and moreover, the ValidationError (if any) will proceed any
+            # DontExistError. Therefore easier to test APIs. 
+
+            # Create a mock model instance, with the values in the fields of
+            # ``request.data``
+            instance = self.model(**request.data)
+            
+            # Validate the model instance created, considering only the model
+            # fields that are within the ``request.data``. In order to do this,
+            # we need to *exclude* the rest of the fields from the validateion
+            # checks.
+            model_fields = [field.name for field in self.model._meta.fields if \
+                field.name in self.allowed_in_fields]
+            # fields in request
+            request_fields = [field for field in request.data.keys()]
+            # fields to exclude from validation checks
+            exclude = list(set(model_fields).difference(request_fields))
+            # Validate the model instance
+            instance.full_clean(exclude=exclude)
+
+            # Retrieve the dataset that needs to be affected by the PUT
+            # request.
             current = self.data(request, *args, **kwargs)
             
             def update(current, data):
@@ -532,7 +557,6 @@ class ModelHandler(BaseHandler):
                     current:         
                     for field, value in update_values:
                         setattr(instance, field, value)
-                    instance.full_clean()
 
             # update the model instances (but not save them)
             update(current, request.data)
