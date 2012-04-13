@@ -549,11 +549,16 @@ class TestResponseContent(TestResponseContentBase):
             # Resource exists but is inaccessible
             ('6/',  {}, 'gone', None),
             ('6/',  {'name': 'lalalala'}, 'gone', None),
+            #	validation checks, come first   			
+            ('6/',  {'gender': 'bi'}, 'bad_request', None),
             ('7/',  {}, 'gone', None),
             ('7/',  {'name': 'lalalala'}, 'gone', None),
+            # Resource does not exist
             ('10/',  {}, 'gone', None),
             ('10/',  {'name': 'lalalala'}, 'gone', None),
             ('100/',  {}, 'gone', None),
+            #	validation checks, come first   			
+            ('100/',  {'gender': 'bi'}, 'bad_request', None),
             ('100/',  {'name': 'lalalala'}, 'gone', None),
             ('1000/',  {}, 'gone', None),
             ('1000/',  {'name': 'lalalala'}, 'gone', None),
