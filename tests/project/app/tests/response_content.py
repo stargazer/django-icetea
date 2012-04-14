@@ -539,29 +539,29 @@ class TestResponseContent(TestResponseContentBase):
             ('2/',  {'name': 'lalalala'}, 'populated_dict', 1),
             ('3/',  {'gender': 'M'}, 'populated_dict', 1),
             ('3/',  {'name': 'lalala', 'gender': 'F'}, 'populated_dict', 1),
-            # ``gender``
+            # 	``gender``
             ('4/',  {'name': 'lalalala', 'gender': 'f'}, 'bad_request', None),
             ('4/',  {'name': 'lalala', 'gender': 'm'}, 'bad_request', None),
-            # ``gender``        
+            # 	``gender``        
             ('4/',  {'gender': 'm'}, 'bad_request', None),
-            # ``list in request body
+            # 	``list in request body
             ('5/',    [{}, {}],     'bad_request', None),
             # Resource exists but is inaccessible
             ('6/',  {}, 'gone', None),
             ('6/',  {'name': 'lalalala'}, 'gone', None),
-            #	validation checks, come first   			
             ('6/',  {'gender': 'bi'}, 'bad_request', None),
-            ('7/',  {}, 'gone', None),
-            ('7/',  {'name': 'lalalala'}, 'gone', None),
+            ('6/',  {}, 'gone', None),
+            ('6/',  {'name': 'lalalala'}, 'gone', None),
+            ('6/',    [{}, {}],     'bad_request', None),
             # Resource does not exist
-            ('10/',  {}, 'gone', None),
-            ('10/',  {'name': 'lalalala'}, 'gone', None),
             ('100/',  {}, 'gone', None),
-            #	validation checks, come first   			
+            ('100/',  {'name': 'lalalala'}, 'gone', None),
+            ('100/',  {}, 'gone', None),
+            ('100/',    [{}, {}],     'bad_request', None),
             ('100/',  {'gender': 'bi'}, 'bad_request', None),
             ('100/',  {'name': 'lalalala'}, 'gone', None),
-            ('1000/',  {}, 'gone', None),
-            ('1000/',  {'name': 'lalalala'}, 'gone', None),
+            ('100/',  {}, 'gone', None),
+            ('100/',  {'name': 'lalalala'}, 'gone', None),
         )            
         self.execute(type, handler, test_data)
  
