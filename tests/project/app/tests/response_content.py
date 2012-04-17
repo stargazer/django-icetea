@@ -549,7 +549,7 @@ class TestResponseContent(TestResponseContentBase):
             # Resource exists but is inaccessible
             ('6/',  {}, 'gone', None),
             ('6/',  {'name': 'lalalala'}, 'gone', None),
-            ('6/',  {'gender': 'bi'}, 'bad_request', None),
+            ('6/',  {'gender': 'bi'}, 'gone', None),
             ('6/',  {}, 'gone', None),
             ('6/',  {'name': 'lalalala'}, 'gone', None),
             ('6/',    [{}, {}],     'bad_request', None),
@@ -558,7 +558,7 @@ class TestResponseContent(TestResponseContentBase):
             ('100/',  {'name': 'lalalala'}, 'gone', None),
             ('100/',  {}, 'gone', None),
             ('100/',    [{}, {}],     'bad_request', None),
-            ('100/',  {'gender': 'bi'}, 'bad_request', None),
+            ('100/',  {'gender': 'bi'}, 'gone', None),
             ('100/',  {'name': 'lalalala'}, 'gone', None),
             ('100/',  {}, 'gone', None),
             ('100/',  {'name': 'lalalala'}, 'gone', None),

@@ -349,6 +349,8 @@ class BaseHandler():
         """
         # Validate request body data
         if hasattr(request, 'data') and request.data is not None:
+            if request.method.upper() == 'PUT':
+                self.dataset = self.data(request, *args, **kwargs)                
             self.validate(request, *args, **kwargs)
         
         # Pick action to run
@@ -523,48 +525,18 @@ class ModelHandler(BaseHandler):
                         raise ValidationError('Foreign Keys on model not defined')
 
         elif request.method.upper() == 'PUT':      
-            # The key here is to create one ``mock`` model instance and
-            # validate it, instead of creating one model instance for every
-            # item in the dataset, and validating it.
-            # The consequence of this is that we only run the validation once,
-            # and moreover, the ValidationError (if any) will proceed any
-            # DontExistError. Therefore easier to test APIs. 
-
-            # Create a mock model instance, with the values in the fields of
-            # ``request.data``
-            instance = self.model(**request.data)
-            
-            # Validate the model instance created, considering only the model
-            # fields that are within the ``request.data``. In order to do this,
-            # we need to *exclude* the rest of the fields from the validateion
-            # checks.
-            model_fields = [field.name for field in self.model._meta.fields if \
-                field.name in self.allowed_in_fields]
-            # fields in request
-            request_fields = [field for field in request.data.keys()]
-            # fields to exclude from validation checks
-            exclude = list(set(model_fields).difference(request_fields))
-            # Validate the model instance
-            instance.full_clean(exclude=exclude)
-
-            # Retrieve the dataset that needs to be affected by the PUT
-            # request.
-            current = self.data(request, *args, **kwargs)
-            
+            current = self.dataset            
             def update(current, data):
                 update_values = data.items()
-                for instance in isinstance(current, self.model) and [current] or \
-                    current:         
+                for instance in isinstance(current, self.model) and [current]\
+                    or current:
                     for field, value in update_values:
                         setattr(instance, field, value)
-
-            # update the model instances (but not save them)
+                    instance.full_clean()   
             update(current, request.data)
-                                         
-            # request.data contains a model instance or a list of model instances 
-            # that have been updated, but not yet saved in the database.
             request.data = current
-       
+            return
+  
 
     def working_set(self, request, *args, **kwargs):
         """
