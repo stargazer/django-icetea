@@ -350,6 +350,10 @@ class BaseHandler():
         # Validate request body data
         if hasattr(request, 'data') and request.data is not None:
             if request.method.upper() == 'PUT':
+                # In the case of PUT requests, we first force the evaluation of
+                # the affected dataset (theforore if there are any
+                # HttpResourseGone exceptions, will be raise now), and then in the
+                # ``validate`` method, we perform any data validations.
                 self.dataset = self.data(request, *args, **kwargs)                
             self.validate(request, *args, **kwargs)
         
@@ -368,8 +372,8 @@ class BaseHandler():
         # allowing only fields in ``fields``, if such a selection makes sense.
         # Depending on ``data``'s type, after the serialization, it becomes
         # either a dict, list(of strings, dicts, etc) or string.
-        from resource import Resource; from emitters import Emitter
-        emitter = Emitter(Resource._TYPEMAPPER, sliced_data, self, fields)       
+        from emitters import Emitter
+        emitter = Emitter(sliced_data, self, fields)       
         ser_data = emitter.construct()
 
         # Structure the response data
@@ -525,7 +529,9 @@ class ModelHandler(BaseHandler):
                         raise ValidationError('Foreign Keys on model not defined')
 
         elif request.method.upper() == 'PUT':      
-            current = self.dataset            
+            current = self.dataset  # Evaluated in ``execute_request``        
+            
+
             def update(current, data):
                 update_values = data.items()
                 for instance in isinstance(current, self.model) and [current]\
@@ -533,9 +539,11 @@ class ModelHandler(BaseHandler):
                     for field, value in update_values:
                         setattr(instance, field, value)
                     instance.full_clean()   
+            # Update all model instances in ``current``, with the data from the
+            # reqeust body.
             update(current, request.data)
+            
             request.data = current
-            return
   
 
     def working_set(self, request, *args, **kwargs):

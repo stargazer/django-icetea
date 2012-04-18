@@ -13,7 +13,7 @@ import datetime
         
 from utils import coerce_put_post, translate_mime, \
     MimerDataException, MethodNotAllowed, UnprocessableEntity
-from emitters import Emitter, JSONEmitter
+from emitters import Emitter, JSONEmitter, _TYPEMAPPER
                    
 from django.views.debug import ExceptionReporter   
 from django.core.mail import send_mail, EmailMessage
@@ -29,8 +29,6 @@ class Resource:
     Instances are callable, and therefore, every request on the application endpoint will start from
     the :meth:`Resource.__call__`.
     """
-    # Mappings of: {<Api Handler instance>, <model>}
-    _TYPEMAPPER = {}
     DEFAULT_EMITTER_FORMAT = 'json'
 
     def __init__(self, handler):
@@ -62,7 +60,7 @@ class Resource:
         self._handler = handler()
 
         if getattr(self._handler, 'model', None):
-            self._TYPEMAPPER[self._handler] = self._handler.model
+            _TYPEMAPPER[self._handler] = self._handler.model
 
         # Exempt this view from CSRF token checks
         self.csrf_exempt = True
@@ -124,7 +122,7 @@ class Resource:
             # Else return the error message as JSON
             out = ''
             if message:
-                out = JSONEmitter(self._TYPEMAPPER, message, self._handler).render(request)
+                out = JSONEmitter(message, self._handler).render(request)
             http_response.content = out
             http_response.mimetype = 'application/json; charset=utf-8'
             return http_response
@@ -157,7 +155,7 @@ class Resource:
         emitter_class, mimetype = Emitter.get(emitter_format)
 
         # create instance of the emitter class
-        serializer = emitter_class(self._TYPEMAPPER, result, self._handler, None)
+        serializer = emitter_class(result, self._handler, None)
         # serialize the result
         serialized_result = serializer.render(request)
 

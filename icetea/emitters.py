@@ -16,7 +16,6 @@ from django.core.serializers.json import DateTimeAwareJSONEncoder
 from django.http import HttpResponse
 from django.core import serializers
 
-
 try:
 	import xlwt
 except ImportError:
@@ -37,6 +36,9 @@ from utils import Mimer
 reverser = permalink
 
 from handlers import BaseHandler, ModelHandler
+
+# Mappings of: {<Api Handler instance>, <model>}
+_TYPEMAPPER = {}
 
 class Emitter:
     """
@@ -62,9 +64,9 @@ class Emitter:
                             'delete', 'model', 'anonymous',
                             'allowed_methods', 'fields', 'exclude' ])
 
-    def __init__(self, typemapper, payload, handler, fields=()):
+    def __init__(self, payload, handler, fields=()):
         # Maps pairs of {<API Handler instance>: <Model>}
-        self.typemapper = typemapper
+        self.typemapper = _TYPEMAPPER
 
         # Data to be serialized
         self.data = payload
