@@ -41,7 +41,7 @@ parameters related to ``django-icetea``:
 applications's admins, in the case of Server Errors. Default is ``True``.
 
 * ``ICETEA_DISPLAY_ERRORS``: With ``True``, returns well-formed error messages in the case of
-Server Errors. It requires that ''DEBUG=True``. Default is ``True``.
+Server Errors. It requires that ``DEBUG=True``. Default is ``True``.
 
 ## Philosophy
 
