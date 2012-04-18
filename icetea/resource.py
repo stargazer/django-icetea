@@ -8,6 +8,7 @@ from django.http import Http404, HttpResponseBadRequest, \
     HttpResponseGone, HttpResponseNotAllowed, HttpResponseNotFound, \
     HttpResponseForbidden, HttpResponseServerError
 
+from django.conf import settings
 from django.db import connection
 import datetime
         
@@ -309,7 +310,7 @@ class Resource:
         def format_error(error):
             return u'django-icetea crash report:\n\n%s' % error
         
-        http_response, message = None, None
+        http_response, message = None, ''
         
         if isinstance(e, ValidationError):
             message = dict(
@@ -344,8 +345,8 @@ class Resource:
             )
             if self._email_errors:
                 self.email_exception(reporter)
-            if self._display_errors:
-                    message =  format_error('\n'.join(reporter.format_exception()))
+            if self._display_errors and settings.DEBUG:
+                message = format_error('\n'.join(reporter.format_exception()))
             
             http_response = HttpResponseServerError()
 

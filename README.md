@@ -33,6 +33,16 @@ setup(
 Running the buildout should take care of everything, and make package
 ``icetea`` available in your project.
 
+### Settings parameters
+In your application's ``settings.py`` file, you can specify the following
+parameters related to ``django-icetea``:
+
+* ``ICETEA_ERRORS``: With ``True``, enables the sending of emails to the
+applications's admins, in the case of Server Errors. Default is ``True``.
+
+* ``ICETEA_DISPLAY_ERRORS``: With ``True``, returns well-formed error messages in the case of
+Server Errors. It requires that ''DEBUG=True``. Default is ``True``.
+
 ## Philosophy
 
 ``django-icetea`` aims to provide the abstractions for providing out-of-the-box 
