@@ -313,10 +313,22 @@ class Resource:
         http_response, message = None, ''
         
         if isinstance(e, ValidationError):
+            if hasattr(e, 'message_dict'):
+                if '__all__' in e.message_dict:
+                    # In the case of a ``clean`` model method, that raises a
+                    # ValidationError with a string argument.           
+                    errors = e.message_dict['__all__']
+                else:
+                    # In the case of a ``clean`` model method, that raises a
+                    # ValidationError with a dict argument.                    
+                    errors = e.message_dict
+            elif hasattr(e, 'messages'):
+                # Generic ValidationError messages
+                errors = e.messages
+
             message = dict(
                 type='Validation Error',
-                errors=hasattr(e, 'message_dict') and e.message_dict or \
-                    hasattr(e, 'messages') and e.messages
+                errors=errors,
             )
             http_response = HttpResponseBadRequest()
 
