@@ -6,7 +6,7 @@ except ImportError:
 setup(
 	name="django-icetea",
 	packages=('icetea', ),
-	version="0.2.2",
+	version="0.3",
     description="REST API Framework",
 	author="C. Paschalides",
 	author_email="already.late@gmail.com",
