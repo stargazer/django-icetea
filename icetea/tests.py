@@ -149,7 +149,8 @@ class TestResponseContentBase(BaseTest):
         """
         Returns the type and length of the ``response``
 
-        Status code 200: 'populated_dict', 'empty_dict', 'populated_list', 'empty_list'
+        Status code 200: 'populated_dict', 'empty_dict', 'populated_list',
+        'empty_list', 'attachment'
         Status code 400: 'bad_request'
         Status code 405: 'not_allowed'
         Status code 410: 'gone'
@@ -158,20 +159,27 @@ class TestResponseContentBase(BaseTest):
         """
         type = length = None
         if response.status_code == 200:
-            content = json.loads(response.content)['data']
-            if isinstance(content, dict):
-                if len(content) == 0:
-                    type = 'empty_dict'
-                else:   
-                    type = 'populated_dict'    
-                    # length is always 1 in this case
-                    length = 1
-            elif isinstance(content, list):
-                if len(content) == 0:
-                    type = 'empty_list'
-                else:
-                    type = 'populated_list'
-                    length = len(content)
+            try:
+                content = json.loads(response.content)['data']
+            except:
+                if 'Content-Disposition' in response:
+                    type = 'attachment'
+                    length = None
+            else:
+                if isinstance(content, dict):
+                    if len(content) == 0:
+                        type = 'empty_dict'
+                    else:   
+                        type = 'populated_dict'    
+                        # length is always 1 in this case
+                        length = 1
+                elif isinstance(content, list):
+                    if len(content) == 0:
+                        type = 'empty_list'
+                    else:
+                        type = 'populated_list'
+                        length = len(content)
+
         elif response.status_code == 405:
             type = 'not_allowed'
         elif response.status_code == 410:
