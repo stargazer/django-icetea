@@ -160,8 +160,9 @@ emitters.
 * ``405 Method Not Allowed``: The request was performed on a resource that does not
   support that type of method
 * ``410 Gone``: The resource is not available (either deleted, or not accessible)
-* ``422 Unprocessable Entity``: The request was semantically invalid (used only in cases where some
-  querystring parameters are incorrect)
+* ``422 Unprocessable Entity``: The request was valid, but could not be
+  processed due to invalid semantics (eg. A request to DELETE a resource could
+  not be carried out, because of some dependencies on the resource)
 * ``500 Internal Server Error``
 
 
