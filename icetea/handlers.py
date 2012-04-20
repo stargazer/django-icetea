@@ -260,16 +260,6 @@ class BaseHandler():
         """
         raise NotImplementedError
   
-    def set_response_data(self, response, key, data):
-        """
-        ``@param response``: Dictionary that represents response
-        ``@param key``: New key added to the dictinary
-        ``@param data``: Value added under key
-        
-        Adds the ``key: data`` pair onto the response structure dictionary.
-        """
-        response.update({key: data})
-    
     def filter_data(self, data, definition, values):
         """
         Applies user filters (as specified in :attr:`.filters`) to the
@@ -357,7 +347,7 @@ class BaseHandler():
                 self.dataset = self.data(request, *args, **kwargs)                
             self.validate(request, *args, **kwargs)
         
-		# Pick action to run
+        # Pick action to run
         action = getattr(self,  CALLMAP.get(request.method.upper()))
         # Run it
         data = action(request, *args, **kwargs)
@@ -378,9 +368,9 @@ class BaseHandler():
 
         # Structure the response data
         ret = {}
-        self.set_response_data(ret, 'data', ser_data)
+        ret['data'] = ser_data
         if total:
-            self.set_response_data(ret, 'total', total)
+            ret['total'] = total
         # Add extra metadata
         self.enrich_response(ret, data)
 
@@ -393,6 +383,10 @@ class BaseHandler():
         """
         Overwrite this method in your handler, in order to add more (meta)data
         within the response data structure.
+    
+        ``@param response_structure``: Dictionary that includes at least the
+        {'data': <data>} pair.
+        ``@param data``: The (unsliced) data result of the operation 
         """
         pass
 
@@ -402,6 +396,12 @@ class BaseHandler():
         fields within the data that will be packed in the response.
         It follows the slicing of the data, so that it only processes the data
         that will actually be returned.
+        
+        ``@param data``: Sliced data
+
+        ``@param fields``: Fields to output
+
+        ``@param request``: Incoming request object
         """
         pass
     
@@ -640,6 +640,7 @@ class ModelHandler(BaseHandler):
         Slices the ``data`` and limits it to a certain range.
 
         ``@param data``: Dataset to slice
+
         ``@param request``: Incoming request
 
         ``@return``: Returns a tuple (sliced_data, total)

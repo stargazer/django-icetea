@@ -106,7 +106,7 @@ class Resource:
         except MethodNotAllowed, e:
             return HttpResponseNotAllowed(e.permitted_methods)
 
-        # Determing the emitter, and get rid of the ``emitter_format`` keyword
+        # Determine the emitter, and get rid of the ``emitter_format`` keyword
         # argument
         emitter_format = self.determine_emitter_format(request, *args, **kwargs)
         kwargs.pop('emitter_format', None)
