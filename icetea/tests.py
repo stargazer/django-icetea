@@ -150,7 +150,7 @@ class TestResponseContentBase(BaseTest):
         Returns the type and length of the ``response``
 
         Status code 200: 'populated_dict', 'empty_dict', 'populated_list',
-        'empty_list', 'attachment'
+        'empty_list', 'attachment', 'html'
         Status code 400: 'bad_request'
         Status code 405: 'not_allowed'
         Status code 410: 'gone'
@@ -164,6 +164,9 @@ class TestResponseContentBase(BaseTest):
             except:
                 if 'Content-Disposition' in response:
                     type = 'attachment'
+                    length = None
+                elif response.get('Content-Type', None) == 'text/html':
+                    type = 'html'
                     length = None
             else:
                 if isinstance(content, dict):
