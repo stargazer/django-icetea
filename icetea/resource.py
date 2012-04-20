@@ -106,6 +106,11 @@ class Resource:
         except MethodNotAllowed, e:
             return HttpResponseNotAllowed(e.permitted_methods)
 
+        # Determing the emitter, and get rid of the ``emitter_format`` keyword
+        # argument
+        emitter_format = self.determine_emitter_format(request, *args, **kwargs)
+        kwargs.pop('emitter_format', None)
+        
         # Execute request
         try:          
             # Dictionary containing {'data': <Serialized result>}                
@@ -133,7 +138,8 @@ class Resource:
             self.response_add_debug(response_dictionary)
             # Serialize the result into JSON(or whatever else)
             serialized_result, content_type, emitter_format = \
-                self.serialize_result(response_dictionary, request, *args, **kwargs) 
+                self.serialize_result(response_dictionary, request,\
+                emitter_format) 
             # Construct HTTP response       
             response = HttpResponse(serialized_result, mimetype=content_type,status=200)
 
@@ -142,16 +148,13 @@ class Resource:
 
             return response
         
-    def serialize_result(self, result, request, *args, **kwargs):
+    def serialize_result(self, result, request, emitter_format):
         """
         ``@param result``: Result of the execution of the handler, wrapped in a
         dictionary where keys and values are simply text.
         ``@param request``: Request object
         """
-        # What's the emitter format to use?
-        emitter_format = self.determine_emitter_format(request, *args, **kwargs)
-        
-        # Based on that, find the Emitter class, and the corresponding content
+        # Find the Emitter class, and the corresponding content
         # type
         emitter_class, mimetype = Emitter.get(emitter_format)
 
