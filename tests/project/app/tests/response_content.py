@@ -1,4 +1,5 @@
-from project.app.handlers import AccountHandler, ClientHandler, ContactHandler
+from project.app.handlers import AccountHandler, ClientHandler, ContactHandler,\
+InfoHandler
 from icetea.tests import TestResponseContentBase
 
 """
@@ -28,6 +29,7 @@ class TestResponseContent(TestResponseContentBase):
         AccountHandler: '/api/accounts/',
         ClientHandler:  '/api/clients/',
         ContactHandler: '/api/contacts/',
+        InfoHandler: '/api/info/',
     }
 
     def test_ClientHandler_read_plural(self):
@@ -418,11 +420,48 @@ class TestResponseContent(TestResponseContentBase):
         )
         self.execute(type, handler, test_data)
 
+    def test_ContactHandler_read_singular_excel(self):
+        """
+        Testing output to excel for singular GET requests
+        """
+        handler = ContactHandler
+        type = 'read'
+        test_data = (
+             # Resource exists and is Accessible
+            ('1/?format=excel',    {},   'attachment', None),
+            ('2/?format=excel',    {},   'attachment', None),
+            ('3/?format=excel',    {},   'attachment', None),
+            ('4/?format=excel',    {},   'attachment', None),
+            ('5/?format=excel',    {},   'attachment', None),
+            # Resource exists but is inaccessible
+            ('6/?format=excel',    {},     'gone', None),
+            ('7/?format=excel',    {},     'gone', None),
+            ('8/?format=excel',    {},     'gone', None),
+            ('9/?format=excel',    {},     'gone', None),
+            # Resource does not exist
+            ('10/?format=excel',    {},    'gone', None),
+            ('100/?format=excel',    {},   'gone', None),
+            ('1000/?format=excel',    {},  'gone', None),
+            ('10000/?format=excel',    {}, 'gone', None),
+        )
+        self.execute(type, handler, test_data)
+
     def test_ContactHandler_read_plural(self):
         handler = ContactHandler
         type = 'read'
         test_data = (
             ('',  {},     'populated_list', 5),
+        )
+        self.execute(type, handler, test_data)
+
+    def test_ContactHandler_read_plural_excel(self):
+        """
+        Testing output to excel for plural GET requests
+        """
+        handler = ContactHandler
+        type = 'read'
+        test_data = (
+            ('?format=excel',  {},     'attachment', None),
         )
         self.execute(type, handler, test_data)
 
@@ -539,12 +578,12 @@ class TestResponseContent(TestResponseContentBase):
             ('2/',  {'name': 'lalalala'}, 'populated_dict', 1),
             ('3/',  {'gender': 'M'}, 'populated_dict', 1),
             ('3/',  {'name': 'lalala', 'gender': 'F'}, 'populated_dict', 1),
-            # 	``gender``
+            #   ``gender``
             ('4/',  {'name': 'lalalala', 'gender': 'f'}, 'bad_request', None),
             ('4/',  {'name': 'lalala', 'gender': 'm'}, 'bad_request', None),
-            # 	``gender``        
+            #   ``gender``        
             ('4/',  {'gender': 'm'}, 'bad_request', None),
-            # 	``list in request body
+            #   ``list in request body
             ('5/',    [{}, {}],     'bad_request', None),
             # Resource exists but is inaccessible
             ('6/',  {}, 'gone', None),
@@ -618,4 +657,19 @@ class TestResponseContent(TestResponseContentBase):
         )
         self.execute(type, handler, test_data)
 
- 
+    def test_InfoHandler_read_singular(self):
+        handler = InfoHandler
+        type = 'read'
+        test_data = (
+            ('1/', {}, 'html', None),
+            ('2/', {}, 'html', None),
+        )
+        self.execute(type, handler, test_data)
+
+    def test_InfoHandler_read_plural(self):
+        handler = InfoHandler
+        type = 'read'
+        test_data = (
+            ('', {}, 'html', None),
+        )
+        self.execute(type, handler, test_data)

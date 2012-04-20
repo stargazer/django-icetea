@@ -1,4 +1,4 @@
-from icetea.handlers import ModelHandler
+from icetea.handlers import ModelHandler, BaseHandler
 from project.app.models import Client, Account, Contact
 
                                     
@@ -113,5 +113,34 @@ class ContactHandler(ClientModelHandler):
     exclude_nested = (
         'client',
     )
+
+class InfoHandler(BaseHandler):
+    """
+    I implement this handler, in order to test the emitter_format = html,
+    keyword argument, in the url mapper.
+    """
+    read = True
+
+    allowed_out_fields = (
+        'name',
+        'surname',
+    )
+
+    def data_set(self, request, *args, **kwargs):
+        return """
+            <html>
+                <body>
+                name=name1 <br>
+                surname=surname1 <br>
+                id=1 <br>
+                <br>            
+                name=name2 <br>
+                surname=surname2 <br>
+                id=2 <br>
+                </body>
+            </html>                       
+        """
+        
+
 
 
