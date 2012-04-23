@@ -12,6 +12,7 @@ dist/
 parts/
 eggs/
 src/
+build/
 develop-eggs/
 bin/
 *.cfg

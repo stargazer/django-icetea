@@ -11,7 +11,7 @@ class UnprocessableEntity(Exception):
     semanticlly incorrect querystring parameters.
     """
     def __init__(self, errors):
-        self.errors = errors
+        self.errors = [errors,]
     
 def coerce_put_post(request):
 	if request.method.upper() == 'PUT':
