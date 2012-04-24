@@ -339,13 +339,14 @@ class BaseHandler():
         """
         # Validate request body data
         if hasattr(request, 'data') and request.data is not None:
+            dataset = None
             if request.method.upper() == 'PUT':
                 # In the case of PUT requests, we first force the evaluation of
                 # the affected dataset (theforore if there are any
                 # HttpResourseGone exceptions, will be raise now), and then in the
                 # ``validate`` method, we perform any data validations.
-                self.dataset = self.data(request, *args, **kwargs)                
-            self.validate(request, *args, **kwargs)
+                dataset = self.data(request, *args, **kwargs)                
+            self.validate(request, *args, dataset=dataset, **kwargs)
         
         # Pick action to run
         action = getattr(self,  CALLMAP.get(request.method.upper()))
@@ -529,8 +530,7 @@ class ModelHandler(BaseHandler):
                         raise ValidationError('Foreign Keys on model not defined')
 
         elif request.method.upper() == 'PUT':      
-            current = self.dataset  # Evaluated in ``execute_request``        
-            
+            current = kwargs.pop('dataset', None)  # Evaluated in ``execute_request``        
 
             def update(current, data):
                 update_values = data.items()
