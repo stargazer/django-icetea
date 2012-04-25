@@ -144,7 +144,11 @@ class Resource:
             response = HttpResponse(serialized_result, mimetype=content_type,status=200)
 
             if emitter_format == 'excel':
-                response['Content-Disposition'] = 'attachment; filename=file.xls'
+                # TODO: Define the filename through the handler.
+                date = datetime.date.today()
+                filename = 'Smart.pr-export-%s.xls' % date
+                response['Content-Disposition'] = 'attachment; filename=%s' % \
+                    filename
 
             return response
         
