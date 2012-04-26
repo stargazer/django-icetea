@@ -183,7 +183,7 @@ class Resource:
         if not emitter_format:
             emitter_format = request.GET.get('format', None)
 
-        if not emitter_format:
+        if not emitter_format or emitter_format not in Emitter.EMITTERS.keys():
             return self.DEFAULT_EMITTER_FORMAT
 
         return emitter_format
