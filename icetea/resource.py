@@ -58,18 +58,18 @@ class Resource:
         # incoming request of a certain API endpoint.
         """
         # Instantiate Handler instance
-        self._handler = handler()
+        self.handler = handler()
 
-        if getattr(self._handler, 'model', None):
-            _TYPEMAPPER[self._handler] = self._handler.model
+        if getattr(self.handler, 'model', None):
+            _TYPEMAPPER[self.handler] = self.handler.model
 
         # Exempt this view from CSRF token checks
         self.csrf_exempt = True
 
-        self._authentication = getattr(self._handler, 'authentication')
+        self.authentication = getattr(self.handler, 'authentication')
 
-        self._email_errors = getattr(settings, 'ICETEA_ERRORS', True)
-        self._display_errors = getattr(settings, 'ICETEA_DISPLAY_ERRORS', True)
+        self.email_errors = getattr(settings, 'ICETEA_ERRORS', True)
+        self.display_errors = getattr(settings, 'ICETEA_DISPLAY_ERRORS', True)
         
 
 
@@ -114,7 +114,7 @@ class Resource:
         # Execute request
         try:          
             # Dictionary containing {'data': <Serialized result>}                
-            response_dictionary = self._handler.execute_request(request, *args, **kwargs)
+            response_dictionary = self.handler.execute_request(request, *args, **kwargs)
         except Exception, e:
             # Create appropriate HttpResponse object, depending on the error
             # message
@@ -128,7 +128,7 @@ class Resource:
             # Else return the error message as JSON
             out = ''
             if message:
-                out = JSONEmitter(message, self._handler).render(request)
+                out = JSONEmitter(message, self.handler).render(request)
             http_response.content = out
             http_response.mimetype = 'application/json; charset=utf-8'
             return http_response
@@ -144,9 +144,10 @@ class Resource:
             response = HttpResponse(serialized_result, mimetype=content_type,status=200)
 
             if emitter_format == 'excel':
-                # TODO: Define the filename through the handler.
-                date = datetime.date.today()
-                filename = 'Smart.pr-export-%s.xls' % date
+                if callable(self.handler.excel_filename):
+                    filename = self.handler.excel_filename()
+                else:
+                    filename = self.handler.excel_filename
                 response['Content-Disposition'] = 'attachment; filename=%s' % \
                     filename
 
@@ -163,7 +164,7 @@ class Resource:
         emitter_class, mimetype = Emitter.get(emitter_format)
 
         # create instance of the emitter class
-        serializer = emitter_class(result, self._handler, None)
+        serializer = emitter_class(result, self.handler, None)
         # serialize the result
         serialized_result = serializer.render(request)
 
@@ -193,7 +194,7 @@ class Resource:
         the default ``authentication`` parameter).
         ``False`` otherwise.
         """
-        if self._authentication.is_authenticated(request):
+        if self.authentication.is_authenticated(request):
             return True
         else:
             return False 
@@ -218,8 +219,8 @@ class Resource:
         request_method = request.method.upper()
          
          # Is this HTTP method allowed?
-        if not request_method in self._handler.allowed_methods:
-            raise MethodNotAllowed(*self._handler.allowed_methods)
+        if not request_method in self.handler.allowed_methods:
+            raise MethodNotAllowed(*self.handler.allowed_methods)
 
         # Construct the request.data dictionary, if the request is PUT/POST
         if request_method in ('PUT', 'POST'):
@@ -251,20 +252,20 @@ class Resource:
         #    singular request.       
         if request_method == 'POST':
             if 'id' in kwargs.keys():
-                raise MethodNotAllowed(*self._handler.allowed_methods)
+                raise MethodNotAllowed(*self.handler.allowed_methods)
  
         # 2. Check if the request is a plural PUT or DELETE. Allow only if
         #    explicitly enabled through ``plural_update`` and ``plural_delete``. 
         #    Note: We assume that any ``id`` keyword argument in the request, indicates a
         #    singular request.       
         if request_method == 'PUT' and \
-            not self._handler.plural_update and \
+            not self.handler.plural_update and \
             not 'id' in kwargs.keys():
-            raise MethodNotAllowed(*self._handler.allowed_plural)
+            raise MethodNotAllowed(*self.handler.allowed_plural)
         if request_method == 'DELETE' and \
-            not self._handler.plural_delete and \
+            not self.handler.plural_delete and \
             not 'id' in kwargs.keys():
-            raise MethodNotAllowed(*self._handler.allowed_plural)
+            raise MethodNotAllowed(*self.handler.allowed_plural)
  
         # 3. Check for Bulk-PUT and Bulk-POST requests.
         #    Bulk-PUT makes no sense at all, so it gives a ValidationError.
@@ -274,7 +275,7 @@ class Resource:
             raise ValidationError('Illegal Operation: PUT request with ' + \
                 'array in request body')
         if request_method =='POST' and \
-            not self._handler.bulk_create and \
+            not self.handler.bulk_create and \
             isinstance(request.data, list):
             raise ValidationError('API Handler does not allow bulk POST ' + \
                 'requests')
@@ -290,7 +291,7 @@ class Resource:
                         continue
                 
                     clean_item = dict((key, value) for key, value in item.iteritems() \
-                        if key in self._handler.allowed_in_fields)
+                        if key in self.handler.allowed_in_fields)
         
                     new_request_data.append(clean_item)
                 request.data = new_request_data                
@@ -299,7 +300,7 @@ class Resource:
                 # Assume it's a dictionary
                 request.data = dict((
                     (key, value) for key, value in request.data.iteritems() \
-                    if key in self._handler.allowed_in_fields))
+                    if key in self.handler.allowed_in_fields))
 
 
     def error_handler(self, e, request):
@@ -362,9 +363,9 @@ class Resource:
                 exc_value,
                 traceback.tb_next
             )
-            if self._email_errors:
+            if self.email_errors:
                 self.email_exception(reporter)
-            if self._display_errors and settings.DEBUG:
+            if self.display_errors and settings.DEBUG:
                 message = format_error('\n'.join(reporter.format_exception()))
             
             http_response = HttpResponseServerError()

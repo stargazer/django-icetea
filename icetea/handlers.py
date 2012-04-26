@@ -161,6 +161,11 @@ class BaseHandler():
     should be used. Disabled (``False``) by default.
     """
 
+    excel_filename = 'file.xls'
+    """
+    Default filename in case the handler needs to output to excel. If the handler defines it, it
+    can either be a string, or a callable.
+    """
     
 
     def get_output_fields(self, request):

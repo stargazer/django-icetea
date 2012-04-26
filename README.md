@@ -343,6 +343,11 @@ filter, which will be applied on the request's resuls data.
 Fields which should be excluded when the model is nested in another
 handler's response.
 
+#### excel_filename
+
+The filename to be given to the attachment, if the the request needs to output
+to ``excel`` format. It can either be a string or a handler method that returns a
+string. Default value is ``file.xls``
 
 ## Notes
 
