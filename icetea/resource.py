@@ -12,8 +12,9 @@ from django.conf import settings
 from django.db import connection
 import datetime
         
-from utils import coerce_put_post, translate_mime, \
-    MimerDataException, MethodNotAllowed, UnprocessableEntity
+from utils import coerce_put_post, translate_mime
+from exceptions import MimerDataException, MethodNotAllowed, \
+    UnprocessableEntity
 from emitters import Emitter, JSONEmitter, _TYPEMAPPER
                    
 from django.views.debug import ExceptionReporter   
