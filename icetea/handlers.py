@@ -334,10 +334,11 @@ class BaseHandler():
 
         It returns a dictionary of the result. The dictionary only contains:
 
-        * ``data: <data result>``: ``data result`` is a dictionary, if that was
-          possible.
-        * ``total: <Number>``: if slicing was performed
-        * ``<key>: <value>``: if  :meth:`.ModelHandler.enrich_response` has been overwritten
+        * ``data: <data result>``. ``data result`` is serialized to a
+          dictionary, list or is simply a string.
+        * ``total: <Number>``, if slicing was performed
+        * ``<key>: <value>``: if  :meth:`.ModelHandler.enrich_response` has
+          been overwritten, and more metadata added.
 
         The dictionary values are simply text. The nested models, queryset and
         everything else, have been serialized as text, within this dictionary.       
@@ -346,8 +347,8 @@ class BaseHandler():
         if hasattr(request, 'data') and request.data is not None:
             if request.method.upper() == 'PUT':
                 # In the case of PUT requests, we first force the evaluation of
-                # the affected dataset (theforore if there are any
-                # HttpResourseGone exceptions, will be raise now), and then in the
+                # the affected dataset (theferore if there are any
+                # HttpResourseGone exceptions, they will be raised now), and then in the
                 # ``validate`` method, we perform any data validations.
                 dataset = self.data(request, *args, **kwargs)              
                 kwargs['dataset'] = dataset
@@ -485,7 +486,6 @@ class ModelHandler(BaseHandler):
     value given to ``id``. So, the querystring ``?id=12&id=14``, will perform
     the filter ``filter(id__in=[12, 14]``), on the corresponding model.
     """
- 
 
     read = True
     create = True
@@ -518,7 +518,8 @@ class ModelHandler(BaseHandler):
                     # There is a weird case, when if a Foreign Key on the model
                     # instance is not defined, and this foreign key is used in
                     # the __unicode__ method of the model, to derive its string
-                    # representation, we get a ``DoesNotExist``exception.
+                    # representation, we get a ``DoesNotExist``exception,
+                    # instead of a ``ValidationError``.
                     # #TODO: Is this a bug though? 
                     # It can also be dealt with by removing the use of the FK
                     # from the model's unicode method, but that would require a

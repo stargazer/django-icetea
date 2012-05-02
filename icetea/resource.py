@@ -70,8 +70,6 @@ class Resource:
 
         self.email_errors = getattr(settings, 'ICETEA_ERRORS', True)
         self.display_errors = getattr(settings, 'ICETEA_DISPLAY_ERRORS', True)
-        
-
 
     # TODO: study what this does
     @vary_on_headers('Authorization')
@@ -152,24 +150,18 @@ class Resource:
                     filename
 
             return response
-        
-    def serialize_result(self, result, request, emitter_format):
-        """
-        ``@param result``: Result of the execution of the handler, wrapped in a
-        dictionary where keys and values are simply text.
-        ``@param request``: Request object
-        """
-        # Find the Emitter class, and the corresponding content
-        # type
-        emitter_class, mimetype = Emitter.get(emitter_format)
 
-        # create instance of the emitter class
-        serializer = emitter_class(result, self.handler, None)
-        # serialize the result
-        serialized_result = serializer.render(request)
-
-        return serialized_result, mimetype, emitter_format
- 
+    def authenticate(self, request):
+        """
+        ``True`` if the handler is authenticated(or the handler hasn't overwritten
+        the default ``authentication`` parameter).
+        ``False`` otherwise.
+        """
+        if self.authentication.is_authenticated(request):
+            return True
+        else:
+            return False 
+             
     def determine_emitter_format(self, request, *args, **kwargs):
         """
         Returns the emitter format.
@@ -187,17 +179,24 @@ class Resource:
             return self.DEFAULT_EMITTER_FORMAT
 
         return emitter_format
+ 
+    def serialize_result(self, result, request, emitter_format):
+        """
+        ``@param result``: Result of the execution of the handler, wrapped in a
+        dictionary where keys and values are simply text.
+        ``@param request``: Request object
+        """
+        # Find the Emitter class, and the corresponding content
+        # type
+        emitter_class, mimetype = Emitter.get(emitter_format)
 
-    def authenticate(self, request):
-        """
-        ``True`` if the handler is authenticated(or the handler hasn't overwritten
-        the default ``authentication`` parameter).
-        ``False`` otherwise.
-        """
-        if self.authentication.is_authenticated(request):
-            return True
-        else:
-            return False 
+        # create instance of the emitter class
+        serializer = emitter_class(result, self.handler, None)
+        # serialize the result
+        serialized_result = serializer.render(request)
+
+        return serialized_result, mimetype, emitter_format
+ 
 
     def cleanup(self, request, *args, **kwargs):
         """
@@ -302,7 +301,6 @@ class Resource:
                     (key, value) for key, value in request.data.iteritems() \
                     if key in self.handler.allowed_in_fields))
 
-
     def error_handler(self, e, request):
         """
         Any exceptions that are raised within the API handler, are taken care
@@ -369,9 +367,7 @@ class Resource:
                 message = format_error('\n'.join(reporter.format_exception()))
             
             http_response = HttpResponseServerError()
-
         return http_response, message            
-
 
     def email_exception(self, reporter):
         subject = 'django-icetea crash report'
@@ -385,7 +381,6 @@ class Resource:
         message.content_subtype = 'html'
         message.send(fail_silently=False)
 
-        
     def response_add_debug(self, response_dictionary):
         """
         Adds debug information to the response -- currently the database
