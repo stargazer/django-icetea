@@ -2,7 +2,7 @@ from django.db import models
 from authentication import DjangoAuthentication, NoAuthentication
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from custom_filters import filter_to_method
-from icetea.utils import UnprocessableEntity
+from exceptions import UnprocessableEntity
 
 # mappings of {HTTP Request: API Handler method}
 CALLMAP = {

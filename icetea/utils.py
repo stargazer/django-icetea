@@ -1,24 +1,10 @@
-class MethodNotAllowed(Exception):
-	"""
-	Raised when a request tries to access a method not allowed by the handler.
-	"""
-	def __init__(self, *permitted_methods):
-		self.permitted_methods = permitted_methods
+from exceptions import MimerDataException
 
-class UnprocessableEntity(Exception):
-    """
-    Raised when the request is semantically incorrect. Only raised for
-    semanticlly incorrect querystring parameters.
-    """
-    def __init__(self, errors):
-        self.errors = [errors,]
-    
 def coerce_put_post(request):
 	if request.method.upper() == 'PUT':
 		if hasattr(request, '_post'):
 			del request._post
 			del request._files
-
 		try:
 			request.method='POST'
 			request._load_post_and_files()
@@ -27,14 +13,10 @@ def coerce_put_post(request):
 			request.META['REQUEST_METHOD'] = 'POST'
 			request._load_post_and_files()
 			request.META['REQUEST_METHOD'] = 'PUT'
-
 		request.PUT = request.POST
 
-class MimerDataException(Exception):
-    """
-    Raised if the content_type and data don't match
-    """
-    pass
+def translate_mime(request):
+    request = Mimer(request).translate()
 
 class Mimer(object):
 	# Keeps mappings of {method: MimeType}.
@@ -119,6 +101,3 @@ class Mimer(object):
     def unregister(cls, loadee):
         return cls.TYPES.pop(loadee)
 
-def translate_mime(request):
-    request = Mimer(request).translate()
-                                                   
