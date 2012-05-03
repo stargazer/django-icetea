@@ -1,5 +1,3 @@
-from exceptions import MimerDataException
-
 def coerce_put_post(request):
 	if request.method.upper() == 'PUT':
 		if hasattr(request, '_post'):
@@ -87,7 +85,7 @@ class Mimer(object):
                     self.request.POST = self.request.PUT = dict()
                 except (TypeError, ValueError):
                     # This also catches if loadee is None.
-                    raise MimerDataException
+                    raise ValidationError('Invalid request body')
             else:
                 self.request.data = None
 

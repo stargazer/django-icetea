@@ -3,7 +3,8 @@ from django.http import HttpResponse
 from authentication import NoAuthentication
 from django.conf import settings
 
-from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from django.core.exceptions import ValidationError, ObjectDoesNotExist, \
+    PermissionDenied
 from django.http import Http404, HttpResponseBadRequest, \
     HttpResponseGone, HttpResponseNotAllowed, HttpResponseNotFound, \
     HttpResponseForbidden, HttpResponseServerError
@@ -13,8 +14,7 @@ from django.db import connection
 import datetime
         
 from utils import coerce_put_post, translate_mime
-from exceptions import MimerDataException, MethodNotAllowed, \
-    UnprocessableEntity
+from exceptions import MethodNotAllowed, UnprocessableEntity
 from emitters import Emitter, JSONEmitter, _TYPEMAPPER
                    
 from django.views.debug import ExceptionReporter   
@@ -91,19 +91,13 @@ class Resource:
 
         # Is user authenticated?
         if not self.authenticate(request):
-            return HttpResponseForbidden()
+            return self.error_response(PermissionDenied(), request)
 
+        # Cleanup request
         try:
-            # Cleanup the request, make sure its request body is valid, and
-            # make sure that the given request can be applied on the given
-            # resource.
             self.cleanup(request, *args, **kwargs)
-        except MimerDataException:
-            return HttpResponseBadRequest("Invalid request body")
-        except ValidationError, e:
-            return HttpResponseBadRequest(e.messages)
-        except MethodNotAllowed, e:
-            return HttpResponseNotAllowed(e.permitted_methods)
+        except (ValidationError, MethodNotAllowed), e:
+            return self.error_response(e, request)
 
         # Determine the emitter, and get rid of the ``emitter_format`` keyword
         # argument
@@ -114,43 +108,12 @@ class Resource:
         try:          
             # Dictionary containing {'data': <Serialized result>}                
             response_dictionary = self.handler.execute_request(request, *args, **kwargs)
-        except Exception, e:
-            # Create appropriate HttpResponse object, depending on the error
-            # message
-            http_response, message = self.error_handler(e, request)
-
-            # If a Server Error (500) has occured, return it as is
-            if isinstance(http_response, HttpResponseServerError):
-                http_response.content = message
-                return http_response
-
-            # Else return the error message as JSON
-            out = ''
-            if message:
-                out = JSONEmitter(message, self.handler).render(request)
-            http_response.content = out
-            http_response.mimetype = 'application/json; charset=utf-8'
+        except Exception, e:        
+            http_response = self.error_response(e, request)
+        else:           
+            http_response = self.non_error_response(request, response_dictionary, emitter_format)
+        finally:
             return http_response
-
-        else:            
-            # Add debug messages to response dictionary
-            self.response_add_debug(response_dictionary)
-            # Serialize the result into JSON(or whatever else)
-            serialized_result, content_type, emitter_format = \
-                self.serialize_result(response_dictionary, request,\
-                emitter_format) 
-            # Construct HTTP response       
-            response = HttpResponse(serialized_result, mimetype=content_type,status=200)
-
-            if emitter_format == 'excel':
-                if callable(self.handler.excel_filename):
-                    filename = self.handler.excel_filename()
-                else:
-                    filename = self.handler.excel_filename
-                response['Content-Disposition'] = 'attachment; filename=%s' % \
-                    filename
-
-            return response
 
     def authenticate(self, request):
         """
@@ -160,8 +123,7 @@ class Resource:
         """
         if self.authentication.is_authenticated(request):
             return True
-        else:
-            return False 
+        return False 
              
     def determine_emitter_format(self, request, *args, **kwargs):
         """
@@ -201,20 +163,20 @@ class Resource:
 
     def cleanup(self, request, *args, **kwargs):
         """
-        Cleanes the incoming request, and makes sure that it is allowed. The
-        checks performed are the folowing:
+        Cleanes up the incoming request, makes sure it's valid and allowed. In
+        detail, the checks performed are the folowing:
         
         * If the request is ``PUT``, transform its data to POST.
         * If request is ``PUT`` or ``POST``, make sure the request body
           conforms to the ``Content-Type`` header.
-        * Makes sure that the type of request is allowed.
+        * Makes sure that the type of HTTP request is allowed.
         * Makes sure that if it is a bulk or plural request, it is allowed.
         * Makes sure that non-allowed incoming fields, are cut off the request
           body.
 
         .. note::
 
-            Assumes that the `id` keyword argument inidicates singular requests on all handlers
+            Assumes that the `id` keyword argument indicates singular requests on all handlers
         """
         request_method = request.method.upper()
          
@@ -232,7 +194,7 @@ class Resource:
             if request_method in ('PUT', 'POST'):
                 try:
                     translate_mime(request)
-                except MimerDataException:
+                except ValidationError:
                     raise
                 if not hasattr(request, 'data'):
                     if request_method == 'POST':
@@ -302,17 +264,78 @@ class Resource:
                     (key, value) for key, value in request.data.iteritems() \
                     if key in self.handler.allowed_in_fields))
 
-    def error_handler(self, e, request):
+    def non_error_response(self, request, response_dictionary, emitter_format):           
+        """
+        No exception has been raised in the handler. 
+        Here we construct and return the HTTP response object, with the
+        appropriate content in the response body.
+
+        @param request: Incoming request object
+        @param response_dictionary: Dictionary that includes all the response
+        data.
+        @param emitter_format: Emitter format as string
+        
+        @return: HttpResponse object
+        """
+        # Add debug messages to response dictionary
+        self.response_add_debug(response_dictionary)
+
+        # Serialize the result into JSON(or whatever else)
+        serialized_result, content_type, emitter_format = \
+            self.serialize_result(response_dictionary, request,\
+            emitter_format) 
+        
+        # Construct HTTP response       
+        response = HttpResponse(serialized_result, mimetype=content_type,status=200)
+
+        if emitter_format == 'excel':
+            if callable(self.handler.excel_filename):
+                filename = self.handler.excel_filename()
+            else:
+                filename = self.handler.excel_filename
+            response['Content-Disposition'] = 'attachment; filename=%s' % \
+                filename
+        
+        return response
+
+    def error_response(self, e, request):            
+        """
+        Creates and returns the appropriate HttpResponse object, depending on
+        the type of exception that has been raised.
+
+        @param e: Exception object
+        @param request: Incoming request objec
+        
+        @return: HttpResponse object
+        """
+        http_response, message = self.exception_to_http_response(e, request)
+
+        # If a Server Error (500) has occured, return it as is
+        if isinstance(http_response, HttpResponseServerError):
+            http_response.content = message
+            return http_response
+
+        # Else return the error message as JSON
+        out = ''
+        if message:
+            out = JSONEmitter(message, self.handler).render(request)
+        http_response.content = out
+        http_response.mimetype = 'application/json; charset=utf-8'
+        return http_response
+
+    def exception_to_http_response(self, e, request):
         """
         Any exceptions that are raised within the API handler, are taken care
         of here.                   
         
-        Returns a tuple (HttpResponseObject, message).
+        @param e: Exception object
+        @param request: Incoming request object
+        
+        @return: Tuple (HttpResponseObject, message).
         The HttpResponseObject, is simply an HttpRespone object of the
         appropriate form, depending on the error that occured.
-        The message is any kind of message that we would like to return in the
-        response body.
-
+        The message is any kind of message that we will be included in the
+        response body.        
         """
         def format_error(error):
             return u'django-icetea crash report:\n\n%s' % error
@@ -345,6 +368,9 @@ class Resource:
         elif isinstance(e, MethodNotAllowed): 
             http_response = HttpResponseNotAllowed(e.permitted_methods)
 
+        elif isinstance(e, PermissionDenied):
+            http_response = HttpResponseForbidden()
+
         elif isinstance(e, UnprocessableEntity):
             message = dict(
                 type='Unprocessable Entity Error',
@@ -371,6 +397,9 @@ class Resource:
         return http_response, message            
 
     def email_exception(self, reporter):
+        """
+        Sends email to ``ADMINS``, informing them of the crash
+        """
         subject = 'django-icetea crash report'
         html = reporter.get_traceback_html()
         message = EmailMessage(
