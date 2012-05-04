@@ -15,7 +15,7 @@ import datetime
         
 from utils import coerce_put_post, translate_mime
 from exceptions import MethodNotAllowed, UnprocessableEntity
-from emitters import Emitter, JSONEmitter, _TYPEMAPPER
+from emitters import Emitter, JSONEmitter
                    
 from django.views.debug import ExceptionReporter   
 from django.core.mail import send_mail, EmailMessage
@@ -62,7 +62,7 @@ class Resource:
         self.handler = handler()
 
         if getattr(self.handler, 'model', None):
-            _TYPEMAPPER[self.handler] = self.handler.model
+            Emitter.TYPEMAPPER[self.handler] = self.handler.model
 
         # Exempt this view from CSRF token checks
         self.csrf_exempt = True

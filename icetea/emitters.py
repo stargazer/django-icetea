@@ -37,9 +37,6 @@ reverser = permalink
 
 from handlers import BaseHandler, ModelHandler
 
-# Mappings of: {<Api Handler instance>, <model>}
-_TYPEMAPPER = {}
-
 class Emitter:
     """
     Super emitter. All other emitters should subclass
@@ -60,14 +57,13 @@ class Emitter:
     as the methods on the handler. Issue58 says that's no good.
     """
     EMITTERS = { }
+    # Maps pairs of {<API Handler class>: <Model>}
+    TYPEMAPPER = {}
     RESERVED_FIELDS = set([ 'read', 'update', 'create',
                             'delete', 'model', 'anonymous',
                             'allowed_methods', 'fields', 'exclude' ])
 
     def __init__(self, payload, handler, fields=()):
-        # Maps pairs of {<API Handler instance>: <Model>}
-        self.typemapper = _TYPEMAPPER
-
         # Data to be serialized
         self.data = payload
         # API Handler, handling this request        
@@ -296,7 +292,7 @@ class Emitter:
         """
         Returns the ``model``'s associated API handler.
         """
-        for _handler, _model in self.typemapper.iteritems():
+        for _handler, _model in self.TYPEMAPPER.iteritems():
             if model is _model:
                 return _handler
 
