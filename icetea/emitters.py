@@ -352,22 +352,6 @@ class JSONEmitter(Emitter):
 Emitter.register('json', JSONEmitter, 'application/json; charset=utf-8')
 Mimer.register(simplejson.loads, ('application/json',))
 
-
-class DjangoEmitter(Emitter):
-    """
-    Emitter for the Django serialized format.
-    """
-    def render(self, request, format='xml'):
-        if isinstance(self.data, HttpResponse):
-            return self.data
-        elif isinstance(self.data, (int, str)):
-            response = self.data
-        else:
-            response = serializers.serialize(format, self.data, indent=True)
-
-        return response
-Emitter.register('django', DjangoEmitter, 'text/xml; charset=utf-8')
-
 class XMLEmitter(Emitter):
     def _to_xml(self, xml, data):
         if isinstance(data, (list, tuple)):
