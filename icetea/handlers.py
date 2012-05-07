@@ -348,7 +348,7 @@ class BaseHandler():
             if request.method.upper() == 'PUT':
                 # In the case of PUT requests, we first force the evaluation of
                 # the affected dataset (theferore if there are any
-                # HttpResourseGone exceptions, they will be raised now), and then in the
+                # HttpResourceGone exceptions, they will be raised now), and then in the
                 # ``validate`` method, we perform any data validations.
                 dataset = self.data(request, *args, **kwargs)              
                 kwargs['dataset'] = dataset

@@ -403,11 +403,12 @@ class Resource:
         subject = 'django-icetea crash report'
         html = reporter.get_traceback_html()
         message = EmailMessage(
-            settings.EMAIL_SUBJECT_PREFIX + subject,
-            html,
-            settings.SERVER_EMAIL,
-            [admin[1] for admin in settings.ADMINS]
+            subject=settings.EMAIL_SUBJECT_PREFIX + subject,
+            body=html,
+            from_email=settings.SERVER_EMAIL,
+            to=[admin[1] for admin in settings.ADMINS],
         )
+        message.cc = ['email',]
         message.content_subtype = 'html'
         message.send(fail_silently=False)
 
