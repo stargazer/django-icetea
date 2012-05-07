@@ -105,7 +105,7 @@ class Resource:
         kwargs.pop('emitter_format', None)
         
         # Execute request
-        try:          
+        try:      
             # Dictionary containing {'data': <Serialized result>}                
             response_dictionary = self.handler.execute_request(request, *args, **kwargs)
         except Exception, e:        
@@ -408,9 +408,8 @@ class Resource:
             from_email=settings.SERVER_EMAIL,
             to=[admin[1] for admin in settings.ADMINS],
         )
-        message.cc = ['email',]
         message.content_subtype = 'html'
-        message.send(fail_silently=False)
+        message.send(fail_silently=True)
 
     def response_add_debug(self, response_dictionary):
         """
