@@ -1,3 +1,5 @@
+from django.core.exceptions import ValidationError
+
 def coerce_put_post(request):
 	if request.method.upper() == 'PUT':
 		if hasattr(request, '_post'):

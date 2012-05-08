@@ -489,6 +489,9 @@ class TestResponseContent(TestResponseContentBase):
         type = 'create'
 
         test_data = (
+            # Testing Invalid payload
+            ('',    'non_json_payload', 'bad_request', None),
+
             ('',    {},     'populated_dict', 1),
             ('',    {'name': 'Randy', 'surname': 'Frombelize'},  'populated_dict', 1),
             ('',    {'gender': 'M'},   'populated_dict', 1),

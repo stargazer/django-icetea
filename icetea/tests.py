@@ -38,9 +38,15 @@ class BaseTest(TestCase):
         @param type: request type
         @param endpoint: api endpoint url
         @payload: request body
+
+        The value payload='non_json_payload', is used to simulate an invalid
+        json payload. In this case, we won't try to dump the payload to a JSON
+        object, therefore we will be testing the handler's response to invalid
+        request bodies.
         """
         if type in ('create', 'update'):
-            payload=json.dumps(payload)
+            if not payload == 'non_json_payload':
+                payload=json.dumps(payload)
 
         method = self.method_mapping[type]
         response = method(
