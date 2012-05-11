@@ -514,7 +514,7 @@ class ModelHandler(BaseHandler):
                 request.data = self.model(**request.data)
                 try:                    
                     request.data.full_clean()                    
-                except ObjectDoesNotExist, e:
+                except ObjectDoesNotExist:
                     # There is a weird case, when if a Foreign Key on the model
                     # instance is not defined, and this foreign key is used in
                     # the __unicode__ method of the model, to derive its string
@@ -532,7 +532,7 @@ class ModelHandler(BaseHandler):
                 for instance in request.data:
                     try:
                         instance.full_clean()
-                    except ObjectDoesNotExist, e:
+                    except ObjectDoesNotExist:
                         raise ValidationError('Foreign Keys on model not defined')
 
         elif request.method.upper() == 'PUT':      

@@ -1,24 +1,21 @@
 from django.views.decorators.vary import vary_on_headers
 from django.http import HttpResponse
-from authentication import NoAuthentication
 from django.conf import settings
 
 from django.core.exceptions import ValidationError, ObjectDoesNotExist, \
     PermissionDenied
-from django.http import Http404, HttpResponseBadRequest, \
-    HttpResponseGone, HttpResponseNotAllowed, HttpResponseNotFound, \
+from django.http import HttpResponseBadRequest, \
+    HttpResponseGone, HttpResponseNotAllowed, \
     HttpResponseForbidden, HttpResponseServerError
 
-from django.conf import settings
 from django.db import connection
-import datetime
         
 from utils import coerce_put_post, translate_mime
 from exceptions import MethodNotAllowed, UnprocessableEntity
 from emitters import Emitter, JSONEmitter
                    
 from django.views.debug import ExceptionReporter   
-from django.core.mail import send_mail, EmailMessage
+from django.core.mail import EmailMessage
 import sys
 
 class Resource:

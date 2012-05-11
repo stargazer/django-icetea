@@ -3,18 +3,14 @@
 # TODO: What is this
 from __future__ import generators
 
-import decimal, re, inspect
-import copy
+import decimal, inspect
 
 from django.db.models.query import QuerySet
-from django.db.models import Model, permalink
+from django.db.models import Model
 from django.utils import simplejson
 from django.utils.xmlutils import SimplerXMLGenerator
 from django.utils.encoding import smart_unicode
-from django.core.urlresolvers import reverse, NoReverseMatch
 from django.core.serializers.json import DateTimeAwareJSONEncoder
-from django.http import HttpResponse
-from django.core import serializers
 
 try:
 	import xlwt
@@ -31,11 +27,7 @@ from utils import Mimer
 #TODO: Needed?
 #from validate_jsonp import is_valid_jsonp_callback_value
 
-#TODO: WTF?
-# Allow people to change the reverser (default `permalink`).
-reverser = permalink
-
-from handlers import BaseHandler, ModelHandler
+from handlers import ModelHandler
 
 class Emitter:
     """
@@ -338,14 +330,8 @@ class JSONEmitter(Emitter):
     JSON emitter, understands timestamps.
     """
     def render(self, request):
-        # TODO: Get rid of this callback shit
-        cb = request.GET.get('callback', None)
         data_as_dic = self.construct()
         seria = simplejson.dumps(data_as_dic, cls=DateTimeAwareJSONEncoder, ensure_ascii=False, indent=4)
-
-        # Callback
-        if cb and is_valid_jsonp_callback_value(cb):
-            return '%s(%s)' % (cb, seria)
 
         return seria
 
