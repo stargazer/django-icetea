@@ -542,8 +542,7 @@ class ModelHandler(BaseHandler):
                 update_values = data.items()
                 for instance in isinstance(current, self.model) and [current]\
                     or current:
-                    for field, value in update_values:
-                        setattr(instance, field, value)
+                    [setattr(instance, field, value) for field, value in update_values]
                     instance.full_clean()   
             # Update all model instances in ``current``, with the data from the
             # reqeust body.

@@ -1,10 +1,7 @@
-# TODO: Incorporate all the monkey patching in here!
-
 # TODO: What is this
 from __future__ import generators
 
-import decimal, inspect
-
+import decimal, inspect, StringIO
 from django.db.models.query import QuerySet
 from django.db.models import Model
 from django.utils import simplejson
@@ -12,22 +9,19 @@ from django.utils.xmlutils import SimplerXMLGenerator
 from django.utils.encoding import smart_unicode
 from django.core.serializers.json import DateTimeAwareJSONEncoder
 
+# Class which will register MimeTypes to methods which will decode the
+# corresponding MimeType to python data structures.
+from utils import Mimer
+from handlers import ModelHandler
+
 try:
 	import xlwt
 except ImportError:
 	# Needed for sphinx documentation
 	# WTF
 	pass
-import StringIO
 
-# Class which will register MimeTypes to methods which will decode the
-# corresponding MimeType to python data structures.
-from utils import Mimer
 
-#TODO: Needed?
-#from validate_jsonp import is_valid_jsonp_callback_value
-
-from handlers import ModelHandler
 
 class Emitter:
     """
@@ -168,7 +162,6 @@ class Emitter:
                 # TODO: If the request does not ask for nested representation,
                 # then give resource URI instead.
                 fields = set(handler.allowed_out_fields) - set(handler.exclude_nested)
-
             
             if handler:
                 get_fields = set(fields)
@@ -334,7 +327,6 @@ class JSONEmitter(Emitter):
         seria = simplejson.dumps(data_as_dic, cls=DateTimeAwareJSONEncoder, ensure_ascii=False, indent=4)
 
         return seria
-
 Emitter.register('json', JSONEmitter, 'application/json; charset=utf-8')
 Mimer.register(simplejson.loads, ('application/json',))
 
@@ -442,7 +434,6 @@ class ExcelEmitter(Emitter):
     # TODO
     # Works only for outputting handlers extending the ModelHandler class
     # Doesn't really work with outputing nested fields 
-
 Emitter.register('excel', ExcelEmitter, 'application/vnd.ms-excel')
  
                
@@ -459,6 +450,4 @@ class HTMLEmitter(Emitter):
             return construct['errors']
 
         return None         
-        
-
 Emitter.register('html', HTMLEmitter, 'text/html')
