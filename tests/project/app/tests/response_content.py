@@ -1,5 +1,5 @@
 from project.app.handlers import AccountHandler, ClientHandler, ContactHandler,\
-InfoHandler
+FileHandler, InfoHandler
 from icetea.tests import TestResponseContentBase
 
 """
@@ -7,18 +7,23 @@ The fixtures used have the following form:
     Client 1
         Owns Account instances: 1,2,3,4,5
         Owns Contact instances: 1,2,3,4,5
+        Owns File instances: 1,2,3,4,5
     Client 2
         Owns Account instances: 6
         Owns Contact instances: 6
+        Owns File instances: 6
     Client 3
         Owns Account instances: 7
         Owns Contact instances: 7
+        Owns File instances: 7
     Client 4
         Owns Account instances: 8
         Owns Contact instances: 8
+        Owns File instances: 8
     Client 5
         Owns Account instances: 9
         Owns Contact instances: 
+        Owns File instances: 9
 """  
 
 class TestResponseContent(TestResponseContentBase):
@@ -29,6 +34,7 @@ class TestResponseContent(TestResponseContentBase):
         AccountHandler: '/api/accounts/',
         ClientHandler:  '/api/clients/',
         ContactHandler: '/api/contacts/',
+        FileHandler:    '/api/files/',
         InfoHandler: '/api/info/',
     }
 
@@ -394,9 +400,6 @@ class TestResponseContent(TestResponseContentBase):
         )
         self.execute(type, handler, test_data)
 
- 
-
-
     def test_ContactHandler_read_singular(self):
         handler = ContactHandler
         type = 'read'
@@ -482,7 +485,6 @@ class TestResponseContent(TestResponseContentBase):
             ('?id=lalalala',  {},  'unprocessable', None),
         )
         self.execute(type, handler, test_data)
- 
 
     def test_ContactHandler_create_plural(self):       
         handler = ContactHandler
@@ -636,7 +638,6 @@ class TestResponseContent(TestResponseContentBase):
         )
         self.execute(type, handler, test_data)
  
-
     def test_ContactHandler_delete_singular(self):
         handler = ContactHandler
         type = 'delete'
@@ -657,6 +658,86 @@ class TestResponseContent(TestResponseContentBase):
             ('100/',    {},     'gone', None),
             ('1000/',    {},     'gone', None),
             ('10000/',    {},     'gone', None),
+        )
+        self.execute(type, handler, test_data)
+
+    def test_FileHandler_create_plural(self):
+        """
+        Here we test the ``bulk create`` functionality.
+        The handler has set ``validate_silently=True``, which means that it
+        will not return validation errors ``bulk create`` requests, in case an instance is invalid, but
+        rather, only return the valid and successfully updated data
+        instances.
+
+        The File model defined that the ``name`` field is mandatory, so for any
+        data instance that we don't provide the ``name`` field, the instance is
+        invalid.
+        """
+        handler = FileHandler
+        type = 'create'
+        test_data = (
+            # Both invalid
+            (   '', 
+                [{}, {}], 'empty_list', None,
+            ),
+            # One valid
+            (   '', 
+                [{'name': 'whatever'}, {}], 
+                'populated_list', 1,
+            ),
+            # Both valid
+            (   '', 
+                [{'name': 'whatever1'}, {'name': 'whatever2'}], 
+                'populated_list', 2,
+            ),
+
+            # Here I go on to prove that POST requests creating a single data
+            # instance, behave normally (ie. if the data instance is invalid,
+            # they return a 400 Bad Request error)
+            
+            ('',    {},     'bad_request', None),
+            # ``name`` already taken
+            ('',    {'name': 'file1'},     'bad_request', None),
+            ('',    {'name': 'file2'},     'bad_request', None),
+            ('',    {'name': 'filelalala'}, 'populated_dict', 1),
+
+        )
+        self.execute(type, handler, test_data)
+
+    def test_FileHandler_update_plural(self):  
+        """
+        Here we test the ``plural update`` functionality.
+        The handler has set ``validate_silently=True``, which means that it
+        will not return validation errors in ``plural update`` requests, in
+        case an instance is invalid, but rather only return the valid and
+        successfully updated data instances.
+        """
+
+        # Field ``name`` is ``unique``, and that's where our tests are based
+        # on.
+
+        handler = FileHandler
+        type = 'update'
+        test_data = (
+            # Only the File instance with ``name=file1`` validated correctly.
+            ('', {'name': 'file1'}, 'populated_list', 1),
+            ('?id=1&id=2', {'name': 'file1'}, 'populated_list', 1),
+        )
+        self.execute(type, handler, test_data)
+
+    def test_FileHandler_update_singular(self):
+        """
+        Here I go on to prove that PUT requests updating a single data
+        instance, behave normally (ie. if the data instance is invalid,
+        they return a 400 Bad Request error)
+        """
+        handler = FileHandler
+        type = 'update'
+        test_data = (
+            ('1/', {'name':'file2'}, 'bad_request', None),
+            ('1/', {'name':'file1'}, 'populated_dict', 1),
+            ('2/', {'name':'file1'}, 'bad_request', None),
+            ('2/', {'name':'filelalaala'}, 'populated_dict', 1),
         )
         self.execute(type, handler, test_data)
 

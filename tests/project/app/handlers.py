@@ -1,5 +1,5 @@
 from icetea.handlers import ModelHandler, BaseHandler
-from project.app.models import Client, Account, Contact
+from project.app.models import Client, Account, Contact, File
 
                                     
 class ClientHandler(ModelHandler):
@@ -112,6 +112,34 @@ class ContactHandler(ClientModelHandler):
 
     exclude_nested = (
         'client',
+    )
+
+class FileHandler(ClientModelHandler):
+    model = File
+    authentication = True
+
+    read = True
+    create = True
+    update = True
+    delete = True
+    bulk_create = True
+    plural_update = True
+
+    validate_silently = True
+
+    allowed_in_fields = (
+        'name',
+        'url',
+    )
+    
+    allowed_out_fields = (
+        'client',
+        'name',
+        'url',
+    )    
+
+    filters = dict(
+        id='id__in',
     )
 
 class InfoHandler(BaseHandler):

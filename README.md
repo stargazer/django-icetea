@@ -272,15 +272,21 @@ overridden.
 If ``True`` enables bulk-POST requests. Default is ``False``. See section *Notes* for more
 information.
 
+Requires that ``create = True``.
+
 #### plural_update
 If ``True``, enables plural PUT requests, which means updating multiple
 resources in one request. It is a potentially catastrophic operation, and for
 this reason is should be explicitly allowed. Default is ``False``.
 
+Requires that ``update = True``.
+
 #### plural_delete
 If ``True`` enables plural DELETE requests, which means deleting multiple
 resources in one request. It is a potentially catastrophic operation, and for
 this reason it should be explicitly allowed. Default is ``False``.
+
+Requires that ``delete = True``.
 
 #### request_fields
 
@@ -325,12 +331,33 @@ Tuple of fields, which indicates the fields that the handler allowed to
 take from the incoming request body. In the case of ``ModelHandler``
 classes, no primary keys or related keys are allowed.
 
-### Relevant only handlers extending ModelHandler
+### Relevant only for handlers extending ModelHandler
 
 #### model
     
 The database model which the Handler exposes.
-                       
+                  
+#### validate_silently
+This attribute refers to the ``bulk create`` and ``plural update`` operation,
+and defines the handler's behavior in case a data instance in the request body
+(in the case of a bulk create), or a resulting data instance (in the case of a
+plural update), is invalid. 
+
+If ``True``, an invalid data instance will not raise an exception and return a
+``400 Bad Request`` error, and consequently cancel the whole operation. Instead the invalid 
+data instance will be removed from the dataset, and the rest of the operation
+will take place normally. The response will only include the successfully
+created/updated data instances.
+
+If ``False``, a single invalid data instance will cause the whole operation to
+be cancelled, and a ``400 Bad Request`` error will be returned.
+
+Default is ``False``.
+
+The behavior really is application specific, and should be chosen carefully.
+ 
+See [bulk_create](https://github.com/stargazer/django-icetea#bulk_create) and [plural_update](https://github.com/stargazer/django-icetea#plural_update)
+
 #### filters
 
 A dictionary of ``filter name``: ``filter_operation`` couples. ``filter

@@ -135,7 +135,7 @@ class BaseHandler():
     bulk_create = False
     """
     Indicates whether bulk POST(creating multiple items with one request) requests are allowed.
-    """
+    """                
 
     plural_update = False
     """
@@ -486,6 +486,16 @@ class ModelHandler(BaseHandler):
     value given to ``id``. So, the querystring ``?id=12&id=14``, will perform
     the filter ``filter(id__in=[12, 14]``), on the corresponding model.
     """
+    
+    validate_silently = False
+    """
+    Indicates whether ``bulk_create`` and ``plural_update`` operations will
+    return a ValidationError if even one of the created/updated objects is not
+    valid, or if they will remain silent and simply return the successfully
+    created/updated data instances.
+    
+    Default is ``False``, which means that ValidationError will be returned.
+    """
 
     read = True
     create = True
@@ -504,6 +514,12 @@ class ModelHandler(BaseHandler):
         
         After this method, we shouldn't perform modifications on the model
         instances, since any modifications might make the data models invalid.
+
+        Depending on the value of the handler attribute ``validate_silently``,
+        in the case of ``bulk create`` or ``plural update`` operations, we will
+        either raise an exception immediately if any of the updated/created
+        instances are invalid, or alternatively silence out any errors, and
+        only return the successfully updated/created model instances.
         """
         super(ModelHandler, self).validate(request, *args, **kwargs)
 
@@ -525,31 +541,65 @@ class ModelHandler(BaseHandler):
                     # from the model's unicode method, but that would require a
                     # lot of manual work
                     raise ValidationError('Foreign Keys on model not defined')
+                except Exception:
+                    raise
 
-            else:
+            else:    
                 request.data = [self.model(**data_item) for \
                     data_item in request.data]
-                for instance in request.data:
-                    try:
-                        instance.full_clean()
-                    except ObjectDoesNotExist:
-                        raise ValidationError('Foreign Keys on model not defined')
+                if not self.validate_silently:
+                    # Raise any exception that happens
+                    for instance in request.data:
+                        try:
+                            instance.full_clean()
+                        except ObjectDoesNotExist:
+                            raise ValidationError('Foreign Keys on model not defined')
+                        except Exception:
+                            raise
+                else:
+                    # Silence all exceptions and only return successfully
+                    # created data instances
+                    successful = []
+                    for instance in request.data:
+                        try:
+                            instance.full_clean()
+                        except:
+                            pass
+                        else:
+                            successful.append(instance)
+                    request.data = successful
 
-        elif request.method.upper() == 'PUT':      
+        elif request.method.upper() == 'PUT':     
             current = kwargs.pop('dataset', None)  # Evaluated in ``execute_request``        
 
-            def update(current, data):
-                update_values = data.items()
-                for instance in isinstance(current, self.model) and [current]\
-                    or current:
-                    [setattr(instance, field, value) for field, value in update_values]
-                    instance.full_clean()   
-            # Update all model instances in ``current``, with the data from the
-            # reqeust body.
-            update(current, request.data)
-            
-            request.data = current
-  
+            def update(instance, update_items):
+                # Update ``instance`` with the key, value pairs in
+                # ``update_values``
+                [setattr(instance, field, value) for field, value in update_items]
+                instance.full_clean()
+
+            # (key, value) pairs to update                
+            update_items = request.data.items()
+
+            if isinstance(current, self.model):
+                update(current, update_items)
+                request.data = current
+            else:
+                if not self.validate_silently:
+                    for instance in current:
+                        # Raise any exception that may occur
+                        update(instance, update_items) 
+                    request.data = current
+                else:
+                    successful = []
+                    for instance in current:
+                        try:
+                            update(instance, update_items)
+                        except:
+                            pass
+                        else:
+                            successful.append(instance)
+                    request.data = successful                            
 
     def working_set(self, request, *args, **kwargs):
         """
