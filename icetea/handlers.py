@@ -87,7 +87,6 @@ class BaseHandler():
     don't hesitate to override.
     """
     __metaclass__ = BaseHandlerMeta
-            
 
     allowed_out_fields = ()
     """
@@ -352,6 +351,8 @@ class BaseHandler():
                 # ``validate`` method, we perform any data validations.
                 dataset = self.data(request, *args, **kwargs)              
                 kwargs['dataset'] = dataset
+                # TODO: It's probably better to make ``dataset`` an attribute of
+                # the ``request`` object.
             self.validate(request, *args, **kwargs)
         
         # Pick action to run
@@ -720,30 +721,33 @@ class ModelHandler(BaseHandler):
 
     def create(self, request, *args, **kwargs):
         """
-        Saves the model instances available in ``request.data``. Returns the
-        subset of ``request.data`` which contains the successfully created
-        model instances.
-        """
-        if not isinstance(request.data, self.model):
-            unsuccessful = []
-            for instance in request.data:
-                try:
-                    instance.save(force_insert=True)
-                except:
-                    unsuccessful.append(instance)
-            if unsuccessful:
-                # Remove model instances that were not saved successfully, from
-                # ``request.data``
-                request.data = set(request.data) - set(unsuccessful)
-        else:
-            # request.data is a single self.model instance
-            try:
-                request.data.save(force_insert=True)
-            except:
-                # Not sure what errors we could get, but I think it's safe to just
-                # assume that *any* error means that no record has been created.
-                request.data = None
+        Saves the model instances available in ``request.data``. 
         
+        After this method, ``request.data`` only contains the successfully
+        created model instance(s).
+
+        When can a model instance fail to be created?
+         * In very rare cases, when a model instance will escape the uniqueness
+           constraints(eg, bulk create: More that one entries are the same.
+           They both escape the uniqueness constraints since they are not yet
+           created, but only the first of them managed to be created eventually), 
+           and only fail upon hitting the database.
+         * Database failure
+        """
+        def persist(instance):
+            try:
+                instance.save(force_insert=True)
+            except:
+                return None
+            else:
+                return instance
+
+        if isinstance(request.data, self.model):
+            request.data = persist(request.data)
+        elif request.data:
+            request.data = \
+                [instance for instance in request.data if persist(instance)]
+
         return super(ModelHandler, self).create(request, *args, **kwargs)
     
     def update(self, request, *args, **kwargs):
@@ -755,14 +759,16 @@ class ModelHandler(BaseHandler):
         def persist(instance):
             try:
                 instance.save(force_update=True)
-                return instance
             except:
                 return None
+            else:
+                return instance
         
         if isinstance(request.data, self.model):
             request.data = persist(request.data)
         elif request.data:
-            request.data = [instance for instance in request.data if persist(instance)]
+            request.data = \
+                [instance for instance in request.data if persist(instance)]
         
         return super(ModelHandler, self).update(request, *args, **kwargs)
     
