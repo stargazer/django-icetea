@@ -2,7 +2,7 @@ from django.db import models
 from authentication import DjangoAuthentication, NoAuthentication
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from custom_filters import filter_to_method
-from exceptions import UnprocessableEntity
+from exceptions import UnprocessableEntity, ValidationErrorList
 
 # mappings of {HTTP Request: API Handler method}
 CALLMAP = {
@@ -488,16 +488,6 @@ class ModelHandler(BaseHandler):
     the filter ``filter(id__in=[12, 14]``), on the corresponding model.
     """
     
-    validate_silently = False
-    """
-    Indicates whether ``bulk_create`` and ``plural_update`` operations will
-    return a ValidationError if even one of the created/updated objects is not
-    valid, or if they will remain silent and simply return the successfully
-    created/updated data instances.
-    
-    Default is ``False``, which means that ValidationError will be returned.
-    """
-
     read = True
     create = True
     update = True
@@ -516,18 +506,54 @@ class ModelHandler(BaseHandler):
         After this method, we shouldn't perform modifications on the model
         instances, since any modifications might make the data models invalid.
 
-        Depending on the value of the handler attribute ``validate_silently``,
-        in the case of ``bulk create`` or ``plural update`` operations, we will
-        either raise an exception immediately if any of the updated/created
-        instances are invalid, or alternatively silence out any errors, and
-        only return the successfully updated/created model instances.
+        For Bulk create or plural update requests, if some of the data
+        instances fail to validate, we raise an ErrorList exception, which
+        includes the validation errors of the corresponding data instances.
         """
+        def validate_all_post(instances):
+            """
+            Generator that validates a list of ``self.model`` instances.
+            Should be used to validate the model instance in the case of Bulk
+            POST and plural PUT requests.
+
+            @param instances: List of ``self.model`` instances
+            @param specifier: String to indicate the position of erroneous
+            instances.
+            """
+            for i, instance in enumerate(instances):
+                try:
+                    instance.full_clean()
+                except ObjectDoesNotExist:
+                    yield ValidationError(
+                        'Foreign Keys on model not defined',
+                        params={'index': i}
+                    )
+                except ValidationError, e:
+                    e.params = {'index': i}
+                    yield e
+                yield None
+
+        def validate_all_put(instances): 
+            for instance in instances:
+                try:
+                    instance.full_clean()
+                except ObjectDoesNotExist:
+                    yield ValidationError(
+                        'Foreign Keys on model not defined',
+                        params={'id': instance.id}
+                    )
+                except ValidationError, e:
+                    e.params = {'id': instance.id}
+                    yield e
+                yield None
+
         super(ModelHandler, self).validate(request, *args, **kwargs)
 
         if request.method.upper() == 'POST':
-            # Create model instance(s) without saving them, and go through all
-            # field level validation checks.
+            # Create model instance(s) without saving them, and validate them
             if not isinstance(request.data, list):
+                # Single model instance. 
+                #Validate and raise any exception that may happen                
                 request.data = self.model(**request.data)
                 try:                    
                     request.data.full_clean()                    
@@ -542,65 +568,44 @@ class ModelHandler(BaseHandler):
                     # from the model's unicode method, but that would require a
                     # lot of manual work
                     raise ValidationError('Foreign Keys on model not defined')
-                except Exception:
+                except ValidationError:
                     raise
-
-            else:    
-                request.data = [self.model(**data_item) for \
-                    data_item in request.data]
-                if not self.validate_silently:
-                    # Raise any exception that happens
-                    for instance in request.data:
-                        try:
-                            instance.full_clean()
-                        except ObjectDoesNotExist:
-                            raise ValidationError('Foreign Keys on model not defined')
-                        except Exception:
-                            raise
-                else:
-                    # Silence all exceptions and only return successfully
-                    # created data instances
-                    successful = []
-                    for instance in request.data:
-                        try:
-                            instance.full_clean()
-                        except:
-                            pass
-                        else:
-                            successful.append(instance)
-                    request.data = successful
+            else:                   
+                # Multiple model instances. 
+                # Create(not save), validate all, make a list of all exceptions
+                # that may happen, and pack them in a ValidationErrorList.
+                request.data = \
+                    [self.model(**data_item) for data_item in request.data]
+                
+                error_list = [error for error in validate_all_post(request.data) if error]
+                if error_list:
+                    raise ValidationErrorList(error_list)
 
         elif request.method.upper() == 'PUT':     
             current = kwargs.pop('dataset', None)  # Evaluated in ``execute_request``        
-
+            
             def update(instance, update_items):
                 # Update ``instance`` with the key, value pairs in
                 # ``update_values``
                 [setattr(instance, field, value) for field, value in update_items]
-                instance.full_clean()
 
             # (key, value) pairs to update                
             update_items = request.data.items()
 
             if isinstance(current, self.model):
+                # Single model instance
+                # Update, validate and raise any exception that may happen
                 update(current, update_items)
-                request.data = current
+                current.full_clean()
             else:
-                if not self.validate_silently:
-                    for instance in current:
-                        # Raise any exception that may occur
-                        update(instance, update_items) 
-                    request.data = current
-                else:
-                    successful = []
-                    for instance in current:
-                        try:
-                            update(instance, update_items)
-                        except:
-                            pass
-                        else:
-                            successful.append(instance)
-                    request.data = successful                            
+                # Multiple model instance
+                # Update, validate all, make list of all exceptions that
+                # occur, and pack them in a ValidationErrorList.
+                [update(instance, update_items) for instance in current]
+                error_list = [error for error in validate_all_put(current) if error]
+                if error_list:
+                    raise ValidationErrorList(error_list)
+            request.data = current
 
     def working_set(self, request, *args, **kwargs):
         """

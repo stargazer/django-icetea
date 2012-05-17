@@ -112,7 +112,8 @@ same.
 ``Singular Request``: A request that refers to a single resource. 
 
 ``Plural Request``: A request that refers to a group of resource instances (usually the
-instances that the client has the right to view).
+instances that the client has the right to view), like plural GET, plural PUT,
+and plural DELETE.
 
 ``Bulk Request``: Request with an array of data in its request body. It only makes
 sense for *POST* requests, and aims to create multiple instances in one request.
@@ -154,7 +155,13 @@ emitters.
 ### Status codes
 
 * ``200 OK``: Request was served successfully
-* ``400 Bad Request``: Validation error in request body 
+* ``400 Bad Request``: Validation error in request body. 
+  The message in the
+  response body is either a dictionary or a list. It's a dictionary in the case
+  that the Validation error is a generic string, or if the request referred to
+  a single resource. It is a list, if the request was plural or bulk (in this
+  case the framework tried to identify and isolate the invalid/erroneous data
+  instances).
 * ``403 Forbidden``: Server refuses to server the request, because the client is
   not authenticated 
 * ``405 Method Not Allowed``: The request was performed on a resource that does not
@@ -162,7 +169,13 @@ emitters.
 * ``410 Gone``: The resource is not available (either deleted, or not accessible)
 * ``422 Unprocessable Entity``: The request was valid, but could not be
   processed due to invalid semantics (eg. A request to DELETE a resource could
-  not be carried out, because of some dependencies on the resource)
+  not be carried out, because of some dependencies on the resource).
+  The message in the
+  response body is either a dictionary or a list. It's a dictionary in the case
+  that the error message is a generic string, or if the request referred to
+  a single resource. It is a list, if the request was plural or bulk (in this
+  case the framework tried to identify and isolate the invalid/erroneous data
+  instances).
 * ``500 Internal Server Error``
 
 
@@ -185,7 +198,6 @@ it contains the expected value. If not a *403 Forbidden* response is returned.
 However, since *django-icetea* is an API and does not make use of forms, the
 CSRF token doesn't make a lot of sense. So by default *django-icetea* views are
 *CSRF exempted*, meaning they don't require the CSRF token.
-
 
 ## Usage
 
@@ -336,27 +348,6 @@ classes, no primary keys or related keys are allowed.
 #### model
     
 The database model which the Handler exposes.
-                  
-#### validate_silently
-This attribute refers to the ``bulk create`` and ``plural update`` operation,
-and defines the handler's behavior in case a data instance in the request body
-(in the case of a bulk create), or a resulting data instance (in the case of a
-plural update), is invalid. 
-
-If ``True``, an invalid data instance will not raise an exception and return a
-``400 Bad Request`` error, and consequently cancel the whole operation. Instead the invalid 
-data instance will be removed from the dataset, and the rest of the operation
-will take place normally. The response will only include the successfully
-created/updated data instances.
-
-If ``False``, a single invalid data instance will cause the whole operation to
-be cancelled, and a ``400 Bad Request`` error will be returned.
-
-Default is ``False``.
-
-The behavior really is application specific, and should be chosen carefully.
- 
-See [bulk_create](https://github.com/stargazer/django-icetea#bulk_create) and [plural_update](https://github.com/stargazer/django-icetea#plural_update)
 
 #### filters
 

@@ -11,7 +11,8 @@ from django.http import HttpResponseBadRequest, \
 from django.db import connection
         
 from utils import coerce_put_post, translate_mime
-from exceptions import MethodNotAllowed, UnprocessableEntity
+from exceptions import MethodNotAllowed, UnprocessableEntity,\
+    ValidationErrorList, UnprocessableEntityList
 from emitters import Emitter, JSONEmitter
                    
 from django.views.debug import ExceptionReporter   
@@ -338,26 +339,39 @@ class Resource:
             return u'django-icetea crash report:\n\n%s' % error
         
         http_response, message = None, ''
-        
-        if isinstance(e, ValidationError):
+
+        def validation_error_message(e):
             if hasattr(e, 'message_dict'):
                 if '__all__' in e.message_dict:
-                    # In the case of a ``clean`` model method, that raises a
-                    # ValidationError with a string argument.           
                     errors = e.message_dict['__all__']
                 else:
-                    # In the case of a ``clean`` model method, that raises a
-                    # ValidationError with a dict argument.                    
                     errors = e.message_dict
             elif hasattr(e, 'messages'):
-                # Generic ValidationError messages
                 errors = e.messages
-
             message = dict(
                 type='Validation Error',
                 errors=errors,
             )
+            if hasattr(e, 'params') and e.params:
+                message.update(**e.params)
+            return message
+
+        def unprocessable_entity_message(e):
+            message = dict(
+                type='Unprocessable Entity Error',
+                errors=e.errors,
+            )
+            if hasattr(e, 'params') and e.params:
+                message.update(**e.params)
+            return message
+        
+        if isinstance(e, ValidationError):
+            message = validation_error_message(e)
             http_response = HttpResponseBadRequest()
+
+        elif isinstance(e, UnprocessableEntity):
+            message = unprocessable_entity_message(e)
+            http_response = HttpResponse(status=422)
 
         elif isinstance(e, (NotImplementedError, ObjectDoesNotExist)):
             http_response = HttpResponseGone()
@@ -368,12 +382,15 @@ class Resource:
         elif isinstance(e, PermissionDenied):
             http_response = HttpResponseForbidden()
 
-        elif isinstance(e, UnprocessableEntity):
-            message = dict(
-                type='Unprocessable Entity Error',
-                errors=e.errors,
-            )
-            http_response = HttpResponse(status=422)
+        elif isinstance(e, ValidationErrorList):       
+            http_response = HttpResponseBadRequest()
+            # TODO: Differentiate between validation error and unprocessable
+            # entity errors
+            message = [validation_error_message(error) for error in e.error_list]
+
+        elif isinstance(e, UnprocessableEntityList):
+            http_response = HttpResponse(status=222)
+            message = [unprocessable_entity_message(error) for error in e.error_list]
 
         else: 
             # Consider it a Server Error.

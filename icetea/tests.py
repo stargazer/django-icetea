@@ -162,6 +162,14 @@ class TestResponseContentBase(BaseTest):
         Status code 410: 'gone'
         Status code 403: 'not_authorized'
         Status code: 422: 'unprocessable'
+
+        400 and 422 responses, contain detailed information about what went wrong,
+        and their responses can contain either a dictionary or list of
+        dictionaries.
+
+        When the error message is some generic string,  length=1
+        When the error message is a dictionary, length=1
+        When the error message is a list, length=len(list)
         """
         type = length = None
         if response.status_code == 200:
@@ -193,12 +201,22 @@ class TestResponseContentBase(BaseTest):
             type = 'not_allowed'
         elif response.status_code == 410:
             type = 'gone'
-        elif response.status_code == 400:
-            type = 'bad_request'  
         elif response.status_code == 403:
             type = 'not_authorized'
+        elif response.status_code == 400:
+            content = json.loads(response.content)
+            type = 'bad_request' 
+            if isinstance(content, dict):
+                length = 1
+            elif isinstance(content, list):
+                length = len(content)
         elif response.status_code == 422:
+            content = json.loads(response.content)
             type = 'unprocessable'
+            if isinstance(content, dict):
+                length = 1
+            elif isinstance(content, list):
+                length = len(content)
         
         return type, length
 
