@@ -1,0 +1,5 @@
+README
+------
+Make sure to comment on Bulk and plural requests:
+- If raise ValidationError or UnprocessableEntity, please add the parameter
+  e.params={'index': i}

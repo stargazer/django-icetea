@@ -1,5 +1,5 @@
 from project.app.handlers import AccountHandler, ClientHandler, ContactHandler,\
-FileHandler, InfoHandler
+InfoHandler
 from icetea.tests import TestResponseContentBase
 
 """
@@ -34,7 +34,6 @@ class TestResponseContent(TestResponseContentBase):
         AccountHandler: '/api/accounts/',
         ClientHandler:  '/api/clients/',
         ContactHandler: '/api/contacts/',
-        FileHandler:    '/api/files/',
         InfoHandler: '/api/info/',
     }
 
@@ -242,18 +241,18 @@ class TestResponseContent(TestResponseContentBase):
         type = 'create'
         test_data = (
             # ``username`` and ``password`` not provided.
-            ('',    {},     'bad_request',  None),
-            ('',    {'name': 'Randy', 'surname': 'Frombelize'}, 'bad_request' ,None),
+            ('',    {},     'bad_request',  1),
+            ('',    {'name': 'Randy', 'surname': 'Frombelize'}, 'bad_request', 1),
             # ``username`` already taken.
-            ('',    {'username': 'user1', 'password': 'pass'},  'bad_request',  None),
-            ('',    {'username': 'user2', 'password': 'pass'},  'bad_request',  None),
-            ('',    {'username': 'user3', 'password': 'pass'},  'bad_request',  None),
+            ('',    {'username': 'user1', 'password': 'pass'},  'bad_request', 1),
+            ('',    {'username': 'user2', 'password': 'pass'},  'bad_request', 1),
+            ('',    {'username': 'user3', 'password': 'pass'},  'bad_request', 1),
             # Successful
             ('',    {'username': 'userlalala', 'password': 'pass'},  'populated_dict',   1),
             # Handler forbids bulk-POST requests
-            ('',    [{}, {}],     'bad_request', None),
-            ('',    [{'username': 'user1', 'password': 'pass'},{}],  'bad_request',  None),
-            ('',    [{'name':'Randy'}, {'name': 'Harry'}],   'bad_request', None),
+            ('',    [{}, {}],     'bad_request', 1),
+            ('',    [{'username': 'user1', 'password': 'pass'},{}], 'bad_request',  1), 
+            ('',    [{'name':'Randy'}, {'name': 'Harry'}],   'bad_request', 1),
         )
         self.execute(type, handler, test_data)
  
@@ -322,7 +321,7 @@ class TestResponseContent(TestResponseContentBase):
             ('1/',  {'first_name': 'lalalala'}, 'populated_dict', 1),
             ('2/',  {},     'populated_dict', 1),
             # Fails. The username is taken
-            ('2/',  {'username': 'user1'}, 'bad_request', None),
+            ('2/',  {'username': 'user1'}, 'bad_request', 1),
             # Success
             ('2/',  {'username': 'userlololo'}, 'populated_dict', 1),
             # Unnecessary params are cut, since not included in
@@ -332,7 +331,7 @@ class TestResponseContent(TestResponseContentBase):
             ('4/',  {'name': 'lalala', 'gender': 'm'}, 'populated_dict', 1),
             ('4/',  {'gender': 'm'}, 'populated_dict', 1),
             # ``list in request body
-            ('5/',    [{}, {}],     'bad_request', None),
+            ('5/',    [{}, {}],     'bad_request', 1),
             # Resource exists but is inaccessible
             # ``gender``        
             ('6/',  {}, 'gone', None),
@@ -480,9 +479,9 @@ class TestResponseContent(TestResponseContentBase):
             # Will not remove the contact, since it's already removed
             ('?id=1',  {},  'populated_list', 1),
             # Semantic error on querystring, returns a 422 error.
-            ('?id=',  {},  'unprocessable', None),
-            ('?id=&id=1&id=2',  {},  'unprocessable', None),
-            ('?id=lalalala',  {},  'unprocessable', None),
+            ('?id=',  {},  'unprocessable', 1),
+            ('?id=&id=1&id=2',  {},  'unprocessable', 1),
+            ('?id=lalalala',  {},  'unprocessable', 1),
         )
         self.execute(type, handler, test_data)
 
@@ -492,23 +491,24 @@ class TestResponseContent(TestResponseContentBase):
 
         test_data = (
             # Testing Invalid payload
-            ('',    'non_json_payload', 'bad_request', None),
+            ('',    'non_json_payload', 'bad_request', 1),
 
             ('',    {},     'populated_dict', 1),
             ('',    {'name': 'Randy', 'surname': 'Frombelize'},  'populated_dict', 1),
             ('',    {'gender': 'M'},   'populated_dict', 1),
             ('',    {'gender': 'F'},   'populated_dict', 1),           
             # Invalid values for ``gender``
-            ('',    {'gender': 'm'},   'bad_request', None),
-            ('',    {'gender': 'f'},   'bad_request', None),
-            ('',    {'gender': 'v'},   'bad_request', None),
-            ('',    {'gender': 'bi'},  'bad_request', None),
+            ('',    {'gender': 'm'},   'bad_request', 1),
+            ('',    {'gender': 'f'},   'bad_request', 1),
+            ('',    {'gender': 'v'},   'bad_request', 1),
+            ('',    {'gender': 'bi'},  'bad_request', 1),
             # Handler allows bulk-POST requests
             ('',    [{}, {}],     'populated_list', 2),
             ('',    [{'gender':'M'}, {}],  'populated_list', 2),
             # Invalid value for gender
-            ('',    [{'gender':'bi'}, {}],  'bad_request', None),
-            ('',    [{'name':'Randy', 'gender':'bi'}, {'name': 'Harry'}], 'bad_request', None),
+            ('',    [{'gender':'bi'}, {}],  'bad_request', 1),
+            ('',    [{'name':'Randy', 'gender':'bi'}, {'name': 'Harry'}], 'bad_request', 1),
+            ('',    [{'gender':'bi'}, {'gender': 'trans'}], 'bad_request', 2),
             ('',    [{'name':'Randy'}, {'name': 'Harry'}],   'populated_list', 2),
         )
         self.execute(type, handler, test_data)
@@ -560,14 +560,17 @@ class TestResponseContent(TestResponseContentBase):
             ('',    {'gender': 'M'},     'populated_list', 5),
             ('',    {'gender': 'F'},     'populated_list', 5),           
             # Invalid values for ``gender``
-            ('',    {'gender': 'm'},     'bad_request', None),
-            ('',    {'gender': 'f'},     'bad_request', None),
-            ('',    {'gender': 'v'},     'bad_request', None),
-            ('',    {'gender': 'bi'},    'bad_request', None),
+            ('',    {'gender': 'm'},     'bad_request', 5),
+            ('',    {'gender': 'f'},     'bad_request', 5),
+            ('',    {'gender': 'v'},     'bad_request', 5),
+            ('',    {'gender': 'bi'},    'bad_request', 5),
+            # Why length=5? Because it's a plural update, that tried to update
+            # all 5 Contact instances.
+
             # Handler forbids bulk-PUT requests
-            ('',    [{}, {}],     'bad_request', None),
-            ('',    [{'gender':'M'}, {}],     'bad_request', None),
-            ('',    [{'name':'Randy'}, {'name': 'Harry'}],     'bad_request', None),
+            ('',    [{}, {}],     'bad_request', 1),
+            ('',    [{'gender':'M'}, {}],     'bad_request', 1),
+            ('',    [{'name':'Randy'}, {'name': 'Harry'}],     'bad_request', 1),
         )
         self.execute(type, handler, test_data)
  
@@ -584,24 +587,24 @@ class TestResponseContent(TestResponseContentBase):
             ('3/',  {'gender': 'M'}, 'populated_dict', 1),
             ('3/',  {'name': 'lalala', 'gender': 'F'}, 'populated_dict', 1),
             #   ``gender``
-            ('4/',  {'name': 'lalalala', 'gender': 'f'}, 'bad_request', None),
-            ('4/',  {'name': 'lalala', 'gender': 'm'}, 'bad_request', None),
+            ('4/',  {'name': 'lalalala', 'gender': 'f'}, 'bad_request', 1),
+            ('4/',  {'name': 'lalala', 'gender': 'm'}, 'bad_request', 1),
             #   ``gender``        
-            ('4/',  {'gender': 'm'}, 'bad_request', None),
+            ('4/',  {'gender': 'm'}, 'bad_request', 1),
             #   ``list in request body
-            ('5/',    [{}, {}],     'bad_request', None),
+            ('5/',    [{}, {}],     'bad_request', 1),
             # Resource exists but is inaccessible
             ('6/',  {}, 'gone', None),
             ('6/',  {'name': 'lalalala'}, 'gone', None),
             ('6/',  {'gender': 'bi'}, 'gone', None),
             ('6/',  {}, 'gone', None),
             ('6/',  {'name': 'lalalala'}, 'gone', None),
-            ('6/',    [{}, {}],     'bad_request', None),
+            ('6/',    [{}, {}],     'bad_request', 1),
             # Resource does not exist
             ('100/',  {}, 'gone', None),
             ('100/',  {'name': 'lalalala'}, 'gone', None),
             ('100/',  {}, 'gone', None),
-            ('100/',    [{}, {}],     'bad_request', None),
+            ('100/',    [{}, {}],     'bad_request', 1),
             ('100/',  {'gender': 'bi'}, 'gone', None),
             ('100/',  {'name': 'lalalala'}, 'gone', None),
             ('100/',  {}, 'gone', None),
@@ -632,9 +635,9 @@ class TestResponseContent(TestResponseContentBase):
             # Will not remove the contact, since it's already removed
             ('?id=1',  {},  'empty_list', None),
             # Semantic error on querystring, returns a 422 error.
-            ('?id=',  {},  'unprocessable', None),
-            ('?id=&id=1&id=2',  {},  'unprocessable', None),
-            ('?id=lalalala',  {},  'unprocessable', None),
+            ('?id=',  {},  'unprocessable', 1),
+            ('?id=&id=1&id=2',  {},  'unprocessable', 1),
+            ('?id=lalalala',  {},  'unprocessable', 1),
         )
         self.execute(type, handler, test_data)
  
@@ -658,86 +661,6 @@ class TestResponseContent(TestResponseContentBase):
             ('100/',    {},     'gone', None),
             ('1000/',    {},     'gone', None),
             ('10000/',    {},     'gone', None),
-        )
-        self.execute(type, handler, test_data)
-
-    def test_FileHandler_create_plural(self):
-        """
-        Here we test the ``bulk create`` functionality.
-        The handler has set ``validate_silently=True``, which means that it
-        will not return validation errors ``bulk create`` requests, in case an instance is invalid, but
-        rather, only return the valid and successfully updated data
-        instances.
-
-        The File model defined that the ``name`` field is mandatory, so for any
-        data instance that we don't provide the ``name`` field, the instance is
-        invalid.
-        """
-        handler = FileHandler
-        type = 'create'
-        test_data = (
-            # Both invalid
-            (   '', 
-                [{}, {}], 'empty_list', None,
-            ),
-            # One valid
-            (   '', 
-                [{'name': 'whatever'}, {}], 
-                'populated_list', 1,
-            ),
-            # Both valid
-            (   '', 
-                [{'name': 'whatever1'}, {'name': 'whatever2'}], 
-                'populated_list', 2,
-            ),
-
-            # Here I go on to prove that POST requests creating a single data
-            # instance, behave normally (ie. if the data instance is invalid,
-            # they return a 400 Bad Request error)
-            
-            ('',    {},     'bad_request', None),
-            # ``name`` already taken
-            ('',    {'name': 'file1'},     'bad_request', None),
-            ('',    {'name': 'file2'},     'bad_request', None),
-            ('',    {'name': 'filelalala'}, 'populated_dict', 1),
-
-        )
-        self.execute(type, handler, test_data)
-
-    def test_FileHandler_update_plural(self):  
-        """
-        Here we test the ``plural update`` functionality.
-        The handler has set ``validate_silently=True``, which means that it
-        will not return validation errors in ``plural update`` requests, in
-        case an instance is invalid, but rather only return the valid and
-        successfully updated data instances.
-        """
-
-        # Field ``name`` is ``unique``, and that's where our tests are based
-        # on.
-
-        handler = FileHandler
-        type = 'update'
-        test_data = (
-            # Only the File instance with ``name=file1`` validated correctly.
-            ('', {'name': 'file1'}, 'populated_list', 1),
-            ('?id=1&id=2', {'name': 'file1'}, 'populated_list', 1),
-        )
-        self.execute(type, handler, test_data)
-
-    def test_FileHandler_update_singular(self):
-        """
-        Here I go on to prove that PUT requests updating a single data
-        instance, behave normally (ie. if the data instance is invalid,
-        they return a 400 Bad Request error)
-        """
-        handler = FileHandler
-        type = 'update'
-        test_data = (
-            ('1/', {'name':'file2'}, 'bad_request', None),
-            ('1/', {'name':'file1'}, 'populated_dict', 1),
-            ('2/', {'name':'file1'}, 'bad_request', None),
-            ('2/', {'name':'filelalaala'}, 'populated_dict', 1),
         )
         self.execute(type, handler, test_data)
 

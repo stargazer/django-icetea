@@ -50,28 +50,9 @@ class Contact(models.Model):
         choices=GENDER_CHOICES,
     )    
 
-class File(models.Model):
-    client = models.ForeignKey(
-        Client,
-        related_name='file',
-    )
-    
-    name = models.CharField(
-        max_length=100,
-        unique=True,
-        db_index=True,
-    )    
-    
-    url = models.CharField(
-        max_length=100,
-        blank=True,
-    )
-
-
 from django.contrib import admin, databrowse
 admin.site.register(Client)
 admin.site.register(Account)
 admin.site.register(Contact)
-admin.site.register(File)
 
 
