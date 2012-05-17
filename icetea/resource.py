@@ -389,7 +389,7 @@ class Resource:
             message = [validation_error_message(error) for error in e.error_list]
 
         elif isinstance(e, UnprocessableEntityList):
-            http_response = HttpResponse(status=222)
+            http_response = HttpResponse(status=422)
             message = [unprocessable_entity_message(error) for error in e.error_list]
 
         else: 
