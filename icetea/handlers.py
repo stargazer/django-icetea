@@ -348,11 +348,9 @@ class BaseHandler():
                 # In the case of PUT requests, we first force the evaluation of
                 # the affected dataset (theferore if there are any
                 # HttpResourceGone exceptions, they will be raised now), and then in the
-                # ``validate`` method, we perform any data validations.
-                dataset = self.data(request, *args, **kwargs)              
-                kwargs['dataset'] = dataset
-                # TODO: It's probably better to make ``dataset`` an attribute of
-                # the ``request`` object.
+                # ``validate`` method, we perform any data validations. We
+                # assign it to parameter ``request.dataset``.
+                request.dataset = self.data(request, *args, **kwargs)              
             self.validate(request, *args, **kwargs)
         
         # Pick action to run
@@ -519,6 +517,9 @@ class ModelHandler(BaseHandler):
             @param instances: List of ``self.model`` instances
             @param specifier: String to indicate the position of erroneous
             instances.
+
+            For every instance in ``instances``, it returns None if the
+            instance validates correctly, or a ValidationError if not.
             """
             for i, instance in enumerate(instances):
                 try:
@@ -550,7 +551,7 @@ class ModelHandler(BaseHandler):
         super(ModelHandler, self).validate(request, *args, **kwargs)
 
         if request.method.upper() == 'POST':
-            # Create model instance(s) without saving them, and validate them
+            # Create model instance(s) (without saving them), and validate them
             if not isinstance(request.data, list):
                 # Single model instance. 
                 #Validate and raise any exception that may happen                
@@ -582,7 +583,7 @@ class ModelHandler(BaseHandler):
                     raise ValidationErrorList(error_list)
 
         elif request.method.upper() == 'PUT':     
-            current = kwargs.pop('dataset', None)  # Evaluated in ``execute_request``        
+            current = getattr(request, 'dataset', None)
             
             def update(instance, update_items):
                 # Update ``instance`` with the key, value pairs in
