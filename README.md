@@ -111,7 +111,7 @@ same.
 
 ``Singular Request``: A request that refers to a single resource. 
 
-``Plural Request``: A request that refers to a group of resource instances (usually the
+``Plural Request``: A request that affects(retrieves or modifies) a group of resource instances (usually the
 instances that the client has the right to view), like plural GET, plural PUT,
 and plural DELETE.
 
@@ -156,12 +156,16 @@ emitters.
 
 * ``200 OK``: Request was served successfully
 * ``400 Bad Request``: Validation error in request body. 
-  The message in the
-  response body is either a dictionary or a list. It's a dictionary in the case
-  that the Validation error is a generic string, or if the request referred to
-  a single resource. It is a list, if the request was plural or bulk (in this
-  case the framework tried to identify and isolate the invalid/erroneous data
-  instances).
+  The response body can be:
+
+  * Dictionary: In the case
+    that the Validation error is a generic string, or if the request referred to
+    a single resource. 
+
+  * List: If the request was plural or bulk. In this case, every item of the list
+    points out which entity of the request body(bulk POST), or which
+    instances(plural PUT) could not validate.
+
 * ``403 Forbidden``: Server refuses to server the request, because the client is
   not authenticated 
 * ``405 Method Not Allowed``: The request was performed on a resource that does not
@@ -170,12 +174,13 @@ emitters.
 * ``422 Unprocessable Entity``: The request was valid, but could not be
   processed due to invalid semantics (eg. A request to DELETE a resource could
   not be carried out, because of some dependencies on the resource).
-  The message in the
-  response body is either a dictionary or a list. It's a dictionary in the case
-  that the error message is a generic string, or if the request referred to
-  a single resource. It is a list, if the request was plural or bulk (in this
-  case the framework tried to identify and isolate the invalid/erroneous data
-  instances).
+  The response body can be:
+  
+  * Dictionary: In the case that the error message is a generic string, or if the request referred to
+  a single resource. 
+  * List: If the request was plural (plural DELETE). In this case the every
+  * item in the list points out which instances caused the problems.
+
 * ``500 Internal Server Error``
 
 
@@ -286,6 +291,9 @@ information.
 
 Requires that ``create = True``.
 
+If enabled, you should anticipate on ``400 Bad Request`` responses, with a list
+in their body.
+
 #### plural_update
 If ``True``, enables plural PUT requests, which means updating multiple
 resources in one request. It is a potentially catastrophic operation, and for
@@ -293,10 +301,18 @@ this reason is should be explicitly allowed. Default is ``False``.
 
 Requires that ``update = True``.
 
+If enabled, you should anticipate on ``400 Bad Request`` responses, with a list
+in their body.
+
 #### plural_delete
 If ``True`` enables plural DELETE requests, which means deleting multiple
 resources in one request. It is a potentially catastrophic operation, and for
 this reason it should be explicitly allowed. Default is ``False``.
+
+Requires that ``delete=True``.
+
+If enabled, you should anticipate on ``422 Unprocessable Entity`` responses,
+with a list in their body.
 
 Requires that ``delete = True``.
 
