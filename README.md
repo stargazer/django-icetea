@@ -155,7 +155,8 @@ emitters.
 ### Status codes
 
 * ``200 OK``: Request was served successfully
-* ``400 Bad Request``: Validation error in request body. 
+* ``400 Bad Request``: There was a Validation error in the request body.
+
   The response body can be:
 
   * Dictionary: In the case
@@ -174,12 +175,13 @@ emitters.
 * ``422 Unprocessable Entity``: The request was valid, but could not be
   processed due to invalid semantics (eg. A request to DELETE a resource could
   not be carried out, because of some dependencies on the resource).
+  
   The response body can be:
   
   * Dictionary: In the case that the error message is a generic string, or if the request referred to
-  a single resource. 
+    a single resource. 
   * List: If the request was plural (plural DELETE). In this case the every
-  * item in the list points out which instances caused the problems.
+    item in the list points out which instances caused the problems.
 
 * ``500 Internal Server Error``
 
@@ -305,6 +307,7 @@ If enabled, you should anticipate on ``400 Bad Request`` responses, with a list
 in their body.
 
 #### plural_delete
+w
 If ``True`` enables plural DELETE requests, which means deleting multiple
 resources in one request. It is a potentially catastrophic operation, and for
 this reason it should be explicitly allowed. Default is ``False``.
