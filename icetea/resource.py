@@ -432,8 +432,13 @@ class Resource:
         extend with custom debug information.
         """
         if settings.DEBUG:
+            total_query_time = sum(
+                [float(dic['time']) for dic in connection.queries]
+             )
+            
             response_dictionary.update({
                 'debug': {
+                    'total_query_time': total_query_time,
                     'query_count': len(connection.queries),
                     'query_log': connection.queries,
                 }
