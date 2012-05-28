@@ -168,127 +168,9 @@ The Status codes have the following meanings:
 *   422 UnprocessableEntity: The request was valid but could not be processed due
     to invalid semantics
 
-Here we describe the responses (status code and response body) for all types of
-HTTP requests, successful or not.
+For a very detailed description of any kind of response to be expected for any
+kind of request, please check section [Request and response protocol](https://github.com/stargazer/django-icetea/tree/experimental#request-and-response-protocol).
 
-*   GET
-    *   Singular
-        *   Successful:
-            *   Status code: 200
-                *   Response body: Dictionary
-        * Errors:
-            *   Status code: 403
-                *   Response body: Empty
-            *   Status code: 405
-                *   Response body: Empty
-            *   Status code: 410   
-                *   Response body: Empty
-
-    *   Plural
-        *   Successful:
-            *   Status code: 200
-                *   Response body: List
-        *   Errors:                
-            *   Status code: 403
-                *   Response body: Empty
-            *   Status code: 405
-                *   Response body: Empty
-
-*   POST
-    *   Refers to single resource (Dictionary in request body)
-        *   Successful:
-            *   Status code: 200
-                *   Response body: Dictionary
-        *   Errors:            
-            *   Status code: 400
-                *   Response body: Dictionary
-            *   Status code: 403
-                *   Response body: Empty
-            *   Status code: 405
-                *   Response body: Empty
-            *   Status code: 422
-                *   Response body: Dictionary
-    *   Bulk (List in request body)
-        *   Successful
-            *   Status code: 200
-                *   Response body: List
-        *   Errors                    
-            *   Status code: 400
-                *   Response body: List (list items are dictionaries. Every
-                    dictionary should have an``index`` parameter which defines a
-                    zero-based index of the request body instance that was
-                    invalid)
-            *   Status code: 403
-                *   Response body: Empty
-            *   Status code: 405
-                *   Response body: Empty
-            *   Status code: 422
-                *   Response body: List (list items are dictionaries. Every
-                    dictionary should have an ``index`` parameter which defines a
-                    zero-based index of the request body instance that caused
-                    the error)
-
-*   PUT
-    *   Singular
-        *   Successful
-            *   Status code: 200
-                *   Response body: Dictionary
-        *   Errors
-            *   Status code: 400
-                *   Response body: Dictionary
-            *   Status code: 403
-                *   Response body: Empty
-            *   Status code: 405
-                *   Response body: Empty
-            *   Status code: 410
-                *   Response body: Empty
-            *   Status code: 422
-                *   Response body: Dictionary
-    *   Plural
-        *   Successful                
-            *   Status code: 200
-                *   Response body: List
-        *   Errors
-            *   Status code: 400
-                *   Response body: List (list items are dictionaries. Every
-                    dictionary should provide an ``id`` parameter which defines
-                    the ``id`` of the (model) instance that was invalid)
-            *   Status code: 403
-                *   Response body: Empty
-            *   Status code: 405
-                *   Response body: Empty
-            *   Status code: 422
-                *   Response body: List (list items are dictionaries. Every
-                    dictionary should provide an ``id`` parameter which defines
-                    the ``id` of the (model) instance that caused the error)
-
-*   DELETE
-    *   Singular
-        *   Successful
-            *   Status code: 200
-                *   Response body: Dictionary
-        *   Errors                    
-            *   Status code: 403
-                *   Response body: Empty
-            *   Status code: 405
-                *   Response body: Empty
-            *   Status code: 410
-                *   Response body: Empty
-            *   Status code: 422
-                *   Response body: Dictionary
-    *   Plural
-        *   Successful
-            *   Status code: 200
-                *   Response body: List
-        *   Errors
-            *   Status code: 403
-                *   Response body: Empty
-            *   Status code: 405
-                *   Response body: Empty
-            *   Status code: 422
-                *   Response body: List (list items are dictionaries. Every
-                    dictionary should provide an ``id`` parameter which defined
-                    the ``id`` of the (model) instance that caused the error)
 
 ### Tests
 
@@ -352,7 +234,6 @@ class FooHandler(ModelHandler):
         'field2',
     )
 ```    
-    
 
 ### foo/urls.py
 
@@ -567,4 +448,127 @@ So the way to see it when building handlers:
 >    Setting ``read = False``, or not setting the ``read`` attribute at all, will block
 >    the ``read`` functionality for the handler and handlers that inherit from it.
     
+### Request and response protocol
 
+Here we describe the responses (status code and response body) for all types of
+HTTP requests, successful or not.
+ 
+*   GET
+    *   Singular
+        *   Successful:
+            *   Status code: 200
+                *   Response body: Dictionary
+        * Errors:
+            *   Status code: 403
+                *   Response body: Empty
+            *   Status code: 405
+                *   Response body: Empty
+            *   Status code: 410   
+                *   Response body: Empty
+
+    *   Plural
+        *   Successful:
+            *   Status code: 200
+                *   Response body: List
+        *   Errors:                
+            *   Status code: 403
+                *   Response body: Empty
+            *   Status code: 405
+                *   Response body: Empty
+
+*   POST
+    *   Refers to single resource (Dictionary in request body)
+        *   Successful:
+            *   Status code: 200
+                *   Response body: Dictionary
+        *   Errors:            
+            *   Status code: 400
+                *   Response body: Dictionary
+            *   Status code: 403
+                *   Response body: Empty
+            *   Status code: 405
+                *   Response body: Empty
+            *   Status code: 422
+                *   Response body: Dictionary
+    *   Bulk (List in request body)
+        *   Successful
+            *   Status code: 200
+                *   Response body: List
+        *   Errors                    
+            *   Status code: 400
+                *   Response body: List (list items are dictionaries. Every
+                    dictionary should have an``index`` parameter which defines a
+                    zero-based index of the request body instance that was
+                    invalid)
+            *   Status code: 403
+                *   Response body: Empty
+            *   Status code: 405
+                *   Response body: Empty
+            *   Status code: 422
+                *   Response body: List (list items are dictionaries. Every
+                    dictionary should have an ``index`` parameter which defines a
+                    zero-based index of the request body instance that caused
+                    the error)
+
+*   PUT
+    *   Singular
+        *   Successful
+            *   Status code: 200
+                *   Response body: Dictionary
+        *   Errors
+            *   Status code: 400
+                *   Response body: Dictionary
+            *   Status code: 403
+                *   Response body: Empty
+            *   Status code: 405
+                *   Response body: Empty
+            *   Status code: 410
+                *   Response body: Empty
+            *   Status code: 422
+                *   Response body: Dictionary
+    *   Plural
+        *   Successful                
+            *   Status code: 200
+                *   Response body: List
+        *   Errors
+            *   Status code: 400
+                *   Response body: List (list items are dictionaries. Every
+                    dictionary should provide an ``id`` parameter which defines
+                    the ``id`` of the (model) instance that was invalid)
+            *   Status code: 403
+                *   Response body: Empty
+            *   Status code: 405
+                *   Response body: Empty
+            *   Status code: 422
+                *   Response body: List (list items are dictionaries. Every
+                    dictionary should provide an ``id`` parameter which defines
+                    the ``id` of the (model) instance that caused the error)
+
+*   DELETE
+    *   Singular
+        *   Successful
+            *   Status code: 200
+                *   Response body: Dictionary
+        *   Errors                    
+            *   Status code: 403
+                *   Response body: Empty
+            *   Status code: 405
+                *   Response body: Empty
+            *   Status code: 410
+                *   Response body: Empty
+            *   Status code: 422
+                *   Response body: Dictionary
+    *   Plural
+        *   Successful
+            *   Status code: 200
+                *   Response body: List
+        *   Errors
+            *   Status code: 403
+                *   Response body: Empty
+            *   Status code: 405
+                *   Response body: Empty
+            *   Status code: 422
+                *   Response body: List (list items are dictionaries. Every
+                    dictionary should provide an ``id`` parameter which defined
+                    the ``id`` of the (model) instance that caused the error)
+ 
