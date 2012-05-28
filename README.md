@@ -109,14 +109,19 @@ same.
 
 ### Glossary
 
-``Singular Request``: A request that refers to a single resource. 
+``Singular Request``: A request that refers to a single resource. Usually it is
+idenfified by the url. For example a GET/PUT/DELETE request on ``/resource/<id>/`` is a
+singular resource.
 
 ``Plural Request``: A request that affects(retrieves or modifies) a group of resource instances (usually the
-instances that the client has the right to view), like plural GET, plural PUT,
-and plural DELETE.
+instances that the client has the right to view). It could be plural GET, plural PUT,
+or plural DELETE.
 
 ``Bulk Request``: Request with an array of data in its request body. It only makes
-sense for *POST* requests, and aims to create multiple instances in one request.
+sense for *POST* requests, and aims to create multiple instances in one request. For Bulk POST requests there
+is no recommended behavior or semantics, so we defined our own semantics, in order to make sure
+that the functionality is predictable and makes the most sense. More details
+can be seen in section [Bulk POST requests](https://github.com/stargazer/django-icetea#bulk-post-requests).
 
 ### Assumptions
 
@@ -154,37 +159,136 @@ emitters.
 
 ### Status codes
 
-* ``200 OK``: Request was served successfully
-* ``400 Bad Request``: There was a Validation error in the request body.
+The Status codes have the following meanings:
 
-  The response body can be:
+*   200 OK: Request was served successfully
+*   403 Forbidden: The client is not authenticated
+*   405 Method Not Allowed: The request method was performed on a resource that does not support that method
+*   410 Gone: The resource is not available
+*   422 UnprocessableEntity: The request was valid but could not be processed due
+    to invalid semantics
 
-  * Dictionary: In the case
-    that the Validation error is a generic string, or if the request referred to
-    a single resource. 
+Here we describe the responses (status code and response body) for all types of
+HTTP requests, successful or not.
 
-  * List: If the request was plural or bulk. In this case, every item of the list
-    points out which entity of the request body(bulk POST), or which
-    instances(plural PUT) could not validate.
+*   GET
+    *   Singular
+        *   Successful:
+            *   Status code: 200
+                *   Response body: Dictionary
+        * Errors:
+            *   Status code: 403
+                *   Response body: Empty
+            *   Status code: 405
+                *   Response body: Empty
+            *   Status code: 410   
+                *   Response body: Empty
 
-* ``403 Forbidden``: Server refuses to server the request, because the client is
-  not authenticated 
-* ``405 Method Not Allowed``: The request was performed on a resource that does not
-  support that type of method
-* ``410 Gone``: The resource is not available (either deleted, or not accessible)
-* ``422 Unprocessable Entity``: The request was valid, but could not be
-  processed due to invalid semantics (eg. A request to DELETE a resource could
-  not be carried out, because of some dependencies on the resource).
-  
-  The response body can be:
-  
-  * Dictionary: In the case that the error message is a generic string, or if the request referred to
-    a single resource. 
-  * List: If the request was plural (plural DELETE). In this case the every
-    item in the list points out which instances caused the problems.
+    *   Plural
+        *   Successful:
+            *   Status code: 200
+                *   Response body: List
+        *   Errors:                
+            *   Status code: 403
+                *   Response body: Empty
+            *   Status code: 405
+                *   Response body: Empty
 
-* ``500 Internal Server Error``
+*   POST
+    *   Refers to single resource (Dictionary in request body)
+        *   Successful:
+            *   Status code: 200
+                *   Response body: Dictionary
+        *   Errors:            
+            *   Status code: 400
+                *   Response body: Dictionary
+            *   Status code: 403
+                *   Response body: Empty
+            *   Status code: 405
+                *   Response body: Empty
+            *   Status code: 422
+                *   Response body: Dictionary
+    *   Bulk (List in request body)
+        *   Successful
+            *   Status code: 200
+                *   Response body: List
+        *   Errors                    
+            *   Status code: 400
+                *   Response body: List (list items are dictionaries. Every
+                    dictionary should have an``index`` parameter which defines a
+                    zero-based index of the request body instance that was
+                    invalid)
+            *   Status code: 403
+                *   Response body: Empty
+            *   Status code: 405
+                *   Response body: Empty
+            *   Status code: 422
+                *   Response body: List (list items are dictionaries. Every
+                    dictionary should have an ``index`` parameter which defines a
+                    zero-based index of the request body instance that caused
+                    the error)
 
+*   PUT
+    *   Singular
+        *   Successful
+            *   Status code: 200
+                *   Response body: Dictionary
+        *   Errors
+            *   Status code: 400
+                *   Response body: Dictionary
+            *   Status code: 403
+                *   Response body: Empty
+            *   Status code: 405
+                *   Response body: Empty
+            *   Status code: 410
+                *   Response body: Empty
+            *   Status code: 422
+                *   Response body: Dictionary
+    *   Plural
+        *   Successful                
+            *   Status code: 200
+                *   Response body: List
+        *   Errors
+            *   Status code: 400
+                *   Response body: List (list items are dictionaries. Every
+                    dictionary should provide an ``id`` parameter which defines
+                    the ``id`` of the (model) instance that was invalid)
+            *   Status code: 403
+                *   Response body: Empty
+            *   Status code: 405
+                *   Response body: Empty
+            *   Status code: 422
+                *   Response body: List (list items are dictionaries. Every
+                    dictionary should provide an ``id`` parameter which defines
+                    the ``id` of the (model) instance that caused the error)
+
+*   DELETE
+    *   Singular
+        *   Successful
+            *   Status code: 200
+                *   Response body: Dictionary
+        *   Errors                    
+            *   Status code: 403
+                *   Response body: Empty
+            *   Status code: 405
+                *   Response body: Empty
+            *   Status code: 410
+                *   Response body: Empty
+            *   Status code: 422
+                *   Response body: Dictionary
+    *   Plural
+        *   Successful
+            *   Status code: 200
+                *   Response body: List
+        *   Errors
+            *   Status code: 403
+                *   Response body: Empty
+            *   Status code: 405
+                *   Response body: Empty
+            *   Status code: 422
+                *   Response body: List (list items are dictionaries. Every
+                    dictionary should provide an ``id`` parameter which defined
+                    the ``id`` of the (model) instance that caused the error)
 
 ### Tests
 
@@ -402,8 +506,11 @@ I chose the following behavior:
 
 * Any error in the request body, will return a ``Bad Request`` response.
   For example if the data in the request body refer to Django models, if
-  even one of the models fails to validate, the response will be ``Bad
-  Request``.
+  even one of the models fails to validate, the response will be ``400 Bad
+  Request``. The response body will include a list, with all the objects that
+  could not be validated. Every object should have an ``index`` parameter, that
+  specifies a zero-bazed index of the request body parameter that could not be
+  validated.
 
   (Similarly a ``POST`` request for a single instance, returns ``Bad request``
   if the request body does not contain valid data) 
