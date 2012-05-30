@@ -598,7 +598,7 @@ In the case of a list of errors, every item will contain the key ``index``, or
             "This field cannot be blank"
         ]
     },
-    "type": Validation Error
+    "type": "Validation Error"
 }
 
 ```
@@ -613,7 +613,7 @@ In the case of a list of errors, every item will contain the key ``index``, or
                 "Invalid Email"
             ]
         }
-        "type": "ValidationError"
+        "type": "Validation Error"
     },
     {
         "index": 3,
@@ -621,7 +621,7 @@ In the case of a list of errors, every item will contain the key ``index``, or
             "postcode": [
                 "Invalid Postcode"
             ]
-        "type": Validation Error            
+        "type": "Validation Error"
         }
     }
 ]    
