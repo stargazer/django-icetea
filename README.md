@@ -575,7 +575,7 @@ HTTP requests, successful or not.
                     dictionary should provide an ``id`` parameter which defined
                     the ``id`` of the (model) instance that caused the error)
  
-
+#### Note
 In the presence of errors, if the response body is a dictionary or a list,
 every error instance(1 in the case of dictionary, multiple in the case of a
 list) will contain the following keys:
@@ -588,7 +588,7 @@ In the case of a list of errors, every item will contain the key ``index``, or
 ``id``, which will specify which request body item, or which data model instance caused the corresponding error.
 
 
-Examples:
+##### Examples
 
 ``` python
 # Error response of a POST request for a single resource
