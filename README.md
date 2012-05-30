@@ -7,7 +7,7 @@ It has been influenced by the architecture of [django-piston](https://bitbucket.
 I have decided to build ``django-icetea``, in order to have an API framework with tight foundations, consistent and intuitive behaviour, *readable code*, and of course, easy to use.
 
 * auto-gen TOC:
-{:toc}
+{:with_toc_data}
 
 ## Installation
 
