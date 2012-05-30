@@ -1,3 +1,5 @@
+[TOC]
+
 # django-icetea
 
 ``django-icetea`` is a package built on top of [Django](https://www.djangoproject.com/) and provides the necessary abstractions for creating REST APIs.
@@ -6,8 +8,6 @@ It has been influenced by the architecture of [django-piston](https://bitbucket.
 
 I have decided to build ``django-icetea``, in order to have an API framework with tight foundations, consistent and intuitive behaviour, *readable code*, and of course, easy to use.
 
-* auto-gen TOC:
-{:with_toc_data}
 
 ## Installation
 
