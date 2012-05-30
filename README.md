@@ -6,6 +6,9 @@ It has been influenced by the architecture of [django-piston](https://bitbucket.
 
 I have decided to build ``django-icetea``, in order to have an API framework with tight foundations, consistent and intuitive behaviour, *readable code*, and of course, easy to use.
 
+* auto-gen TOC:
+{:toc}
+
 ## Installation
 
 ``django-icetea`` is registered in [PyPI](http://pypi.python.org/pypi/django-icetea/), so 
