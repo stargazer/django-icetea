@@ -612,7 +612,7 @@ In the case of a list of errors, every item will contain the key ``index``, or
             "email": [
                 "Invalid Email"
             ]
-        }
+        },
         "type": "Validation Error"
     },
     {
@@ -633,16 +633,16 @@ In the case of a list of errors, every item will contain the key ``index``, or
 [
     {
         "id": 2,
-        "errors": {
-            ["Instance cannot be deleted"]
-        }
+        "errors": [
+            "Instance cannot be deleted"
+        ],
         "type": "Unprocessable Entity Error"
     },
     {
         "id": 4,
-        "errors": {
-            ["Instance cannot be deleted"]
-        }
+        "errors": [
+            "Instance cannot be deleted"
+        ],
         "type": "Unprocessable Entity Error"
     }
 ]    
