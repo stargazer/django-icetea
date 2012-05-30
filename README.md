@@ -627,3 +627,24 @@ In the case of a list of errors, every item will contain the key ``index``, or
 ]    
 
 ```
+
+``` python
+# Error response of a plural DELETE request
+[
+    {
+        "id": 2,
+        "errors": {
+            ["Instance cannot be deleted"]
+        }
+        "type": "Unprocessable Entity Error"
+    },
+    {
+        "id": 4,
+        "errors": {
+            ["Instance cannot be deleted"]
+        }
+        "type": "Unprocessable Entity Error"
+    }
+]    
+
+``` 
