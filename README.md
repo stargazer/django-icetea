@@ -1,5 +1,3 @@
-[TOC]
-
 # django-icetea
 
 ``django-icetea`` is a package built on top of [Django](https://www.djangoproject.com/) and provides the necessary abstractions for creating REST APIs.
