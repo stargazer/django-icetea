@@ -744,6 +744,20 @@ class ModelHandler(BaseHandler):
             try:
                 instance.save(force_insert=True)
             except:
+                # TODO: 
+                # 1. If I was using InnoDB storage engine, I could simply consider
+                # the whole operation (whether single or Bulk) as a
+                # transaction, and roll it back in the first failure.
+                # Unfortunately I cannot assume that InnoDB is used
+                # 
+                # 2. Use bulk_create that Django 1.4 offers
+                #
+                # Long term plan:
+                # - Single item POST: Raise an error and an appropriate
+                #   HTTPResponse, when the database fails.
+                # - Bulk POST: Use Django 1.4 ``bulk_create``. This way a
+                # failure can raise an error.
+                #
                 return None
             else:
                 return instance

@@ -481,6 +481,9 @@ HTTP requests, successful or not.
         *   Successful:
             *   Status code: 200
                 *   Response body: Dictionary
+                *   Response body: ``null`` (Happens in the case when a
+                    database failure prevents the data object from being
+                    written to the database)
         *   Errors:            
             *   Status code: 400
                 *   Response body: Dictionary
