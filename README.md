@@ -575,3 +575,55 @@ HTTP requests, successful or not.
                     dictionary should provide an ``id`` parameter which defined
                     the ``id`` of the (model) instance that caused the error)
  
+
+In the presence of errors, if the response body is a dictionary or a list,
+every error instance(1 in the case of dictionary, multiple in the case of a
+list) will contain the following keys:
+
+*   ``errors``: It will be a dictionary of {``field``: [``error``]} pairs where possible,
+    or a list of strings describing the errors.
+*   ``type``  : Error type
+
+In the case of a list of errors, every item will contain the key ``index``, or
+``id``, which will specify which request body item, or which data model instance caused the corresponding error.
+
+
+Examples:
+
+``` python
+# Error response of a POST request for a single resource
+{
+    "errors": {
+        "text": [
+            "This field cannot be blank"
+        ]
+    },
+    "type": Validation Error
+}
+
+```
+
+``` python
+# Error response of a Bulk POST request
+[
+    {
+        "index": 0,
+        "errors": {
+            "email": [
+                "Invalid Email"
+            ]
+        }
+        "type": "ValidationError"
+    },
+    {
+        "index": 3,
+        "errors":   {
+            "postcode": [
+                "Invalid Postcode"
+            ]
+        "type": Validation Error            
+        }
+    }
+]    
+
+```
