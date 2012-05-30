@@ -610,7 +610,7 @@ In the case of a list of errors, every item will contain the key ``index``, or
         "index": 0,
         "errors": {
             "gender": [
-                "Value u'b' is not a valid choice."
+                "Value u'bi' is not a valid choice."
             ], 
             "email": [
                 "Invalid Email"
