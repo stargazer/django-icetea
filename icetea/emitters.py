@@ -440,10 +440,17 @@ Emitter.register('excel', ExcelEmitter, 'application/vnd.ms-excel')
 class HTMLEmitter(Emitter):
     def render(self, request):
         construct = self.construct()
-
         if 'data' in construct:
-            # Correct response
-            return construct['data']
+            # If the ``construct['data']`` is dictionary(hence the request was
+            # singular), and only contains one field,
+            # we can simmly output the  ``value`` of this field. 
+            # Else, we simply output the whole data structure 
+            # as is (altough it doesn't make much sense).
+            if isinstance(construct['data'], dict)\
+            and len(construct['data']) == 1:
+                return construct['data'].values()[0]
+            else:
+                return construct['data']
 
         elif 'errors' in construct:
             # Validation was raised
