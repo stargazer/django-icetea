@@ -1,27 +1,27 @@
 from django.core.exceptions import ValidationError
 
 def coerce_put_post(request):
-	if request.method.upper() == 'PUT':
-		if hasattr(request, '_post'):
-			del request._post
-			del request._files
-		try:
-			request.method='POST'
-			request._load_post_and_files()
-			request.method = 'PUT'
-		except AttributeError:
-			request.META['REQUEST_METHOD'] = 'POST'
-			request._load_post_and_files()
-			request.META['REQUEST_METHOD'] = 'PUT'
-		request.PUT = request.POST
+    if request.method.upper() == 'PUT':
+        if hasattr(request, '_post'):
+            del request._post
+            del request._files
+        try:
+            request.method = 'POST'
+            request._load_post_and_files()
+            request.method = 'PUT'
+        except AttributeError:
+            request.META['REQUEST_METHOD'] = 'POST'
+            request._load_post_and_files()
+            request.META['REQUEST_METHOD'] = 'PUT'
+        request.PUT = request.POST
 
 def translate_mime(request):
     request = Mimer(request).translate()
 
 class Mimer(object):
-	# Keeps mappings of {method: MimeType}.
-	# It is used to decode incoming data in the request body, to python data
-	# structures, if the given 'Content-Type' is actually supported.
+    # Keeps mappings of {method: MimeType}.
+    # It is used to decode incoming data in the request body, to python data
+    # structures, if the given 'Content-Type' is actually supported.
     TYPES = dict()
     
     def __init__(self, request):
