@@ -171,7 +171,7 @@ class Emitter:
                 v = lambda f: getattr(data, f.attname)
 
                 for f in data._meta.local_fields + data._meta.virtual_fields:
-                    if f.serialize and not any([ p in met_fields for p in [ f.attname, f.name ]]):
+                    if hasattr(f, 'serialize') and f.serialize and not any([ p in met_fields for p in [ f.attname, f.name ]]):
                         if not f.rel:
                             if f.attname in get_fields:
                                 ret[f.attname] = _any(v(f))
