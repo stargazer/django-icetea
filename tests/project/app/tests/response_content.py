@@ -387,15 +387,15 @@ class TestResponseContent(TestResponseContentBase):
             # Deleting the user with who I'm logged in...
             ('1/',    {},     'populated_dict', 1),
             # I should be getting a 403 error now
-            ('5/',    {},     'not_authorized', None),
-            ('4/',    {},     'not_authorized', None),
-            ('3/',    {},     'not_authorized', None),
-            ('6/',    {},     'not_authorized', None),
-            ('7/',    {},     'not_authorized', None),
-            ('8/',    {},     'not_authorized', None),
-            ('10/',    {},     'not_authorized', None),
-            ('100/',    {},     'not_authorized', None),
-            ('1000/',    {},     'not_authorized', None),
+            ('5/',    {},     'forbidden', None),
+            ('4/',    {},     'forbidden', None),
+            ('3/',    {},     'forbidden', None),
+            ('6/',    {},     'forbidden', None),
+            ('7/',    {},     'forbidden', None),
+            ('8/',    {},     'forbidden', None),
+            ('10/',    {},     'forbidden', None),
+            ('100/',    {},     'forbidden', None),
+            ('1000/',    {},     'forbidden', None),
         )
         self.execute(type, handler, test_data)
 

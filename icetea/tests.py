@@ -193,7 +193,7 @@ class TestResponseContentBase(BaseTest):
         elif response.status_code == 410:
             type = 'gone'
         elif response.status_code == 403:
-            type = 'not_authorized'
+            type = 'forbidden'
         elif response.status_code == 400:
             content = json.loads(response.content)
             type = 'bad_request' 
