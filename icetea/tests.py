@@ -8,30 +8,21 @@ class BaseTest(TestCase):
     Base Test Class.
     Don't inherit directly from this class, but from one of its subclasses.
     """
-
-    #fixtures = ['fixtures_all',]
-
-    #USERNAME = 'user1'
-    #PASSWORD = 'pass1'
-
-    #endpoints = {
-    #    AccountHandler: '/api/accounts/',
-    #    ClientHandler:  '/api/clients/',
-    #    ContactHandler: '/api/contacts/',
-    #}
-
     def setUp(self):
         self.browser = Client()        
-        self.browser.login(
-            username=self.USERNAME,
-            password=self.PASSWORD,
-        )   
         self.method_mapping = {
             'read': self.browser.get,
             'create': self.browser.post,
             'update': self.browser.put,
             'delete': self.browser.delete,
         }
+        self.login()
+
+    def login(self):
+        self.browser.login(
+            username=self.USERNAME,
+            password=self.PASSWORD,
+        )   
 
     def request(self, type, endpoint, payload):
         """
