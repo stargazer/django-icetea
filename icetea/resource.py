@@ -432,9 +432,15 @@ class Resource:
         extend with custom debug information.
         """
         if settings.DEBUG:
-            total_query_time = sum(
-                [float(dic['time']) for dic in connection.queries]
-             )
+            # In the GAE there is no ``time`` key in the ``connection.queries``
+            # dictionaries. That's why I first check for the existence of ``time``
+            time_per_query = [
+                float(dic['time']) for dic in connection.queries if 'time' in dic
+            ]
+            if time_per_query:
+                total_query_time = sum(time_per_query)
+            else:
+                total_query_time = 'Not Available'
             
             response_dictionary.update({
                 'debug': {
