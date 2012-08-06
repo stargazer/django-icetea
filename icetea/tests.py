@@ -1,4 +1,4 @@
-import sys
+import sys, inspect
 from django.test import TestCase
 from django.test import Client
 from django.utils import simplejson as json
@@ -213,9 +213,12 @@ class TestResponseContentBase(BaseTest):
 
     def execute(self, type, handler, test_data):
         print '\n'
+        # caller method name (method that called ``execute``)
+        caller_method = inspect.stack()[1][3]
         # Print test information
-        sys.stdout.write("Info: {name}, {handler}, {type}".format(
+        sys.stdout.write("Info: {name}, {caller}, {handler}, {type}".format(
             name=self.__class__.__name__, 
+            caller=caller_method,
             handler=handler.__name__,
             type=type,            
         ))
