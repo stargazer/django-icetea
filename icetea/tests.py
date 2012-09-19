@@ -127,6 +127,7 @@ class TestResponseContentBase(BaseTest):
          * ``populated_list``: (200 OK)
          * ``empty_list``: (200 OK)
          * ``bad_request``: (400 Bad Request)
+         * ``not_found``: (4o4 Not Found)
          * ``not_allowed``: (405 Method Not Allowed)
          * ``gone``: (410 Response Gone)
          * ``not_authorized``: (403 Not Authorized)
@@ -150,6 +151,7 @@ class TestResponseContentBase(BaseTest):
         'empty_list', 'attachment', 'html'
         Status code 400: 'bad_request'
         Status code 405: 'not_allowed'
+        Status code 404: 'not_found'
         Status code 410: 'gone'
         Status code 403: 'not_authorized'
         Status code: 422: 'unprocessable'
@@ -190,6 +192,8 @@ class TestResponseContentBase(BaseTest):
 
         elif response.status_code == 405:
             type = 'not_allowed'
+        elif response.status_code == 404:
+            type = 'not_found'
         elif response.status_code == 410:
             type = 'gone'
         elif response.status_code == 403:
