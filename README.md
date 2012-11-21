@@ -143,12 +143,11 @@ emitters.
 
 The Status codes have the following meanings:
 
-*   200 OK: Request was served successfully
-*   403 Forbidden: The client is not authenticated
-*   405 Method Not Allowed: The request method was performed on a resource that does not support that method
-*   410 Gone: The resource is not available
-*   422 UnprocessableEntity: The request was valid but could not be processed due
-    to invalid semantics
+*   ``200 OK``: Request was served successfully
+*   ``403 Forbidden``: The client is not authenticated
+*   ``405 Method Not Allowed``: The request method was performed on a resource that does not support that method
+*   ``410 Gone``: The resource is not available
+*   ``422 UnprocessableEntity``: The request was valid but could not be processed due to the semantics of the resource (for example, a DELETE request on a resource that belongs to the authenticated client. We might choose not to allow deletion of the specific resource if it's field *x* has a specific value. In that case we respond with a *422 UnprocessableEntity* response).
 
 For a very detailed description of any kind of response to be expected for any
 kind of request, please check section [Request and response protocol](https://github.com/stargazer/django-icetea/tree/experimental#request-and-response-protocol).
