@@ -172,11 +172,11 @@ CSRF token doesn't make a lot of sense. So by default *django-icetea* views are
 
 ## Usage
 
-Say we have a Project which has pulled ``django-icetea``. Let's assume we have
-an app called ``foo``, with a model ``FooModel``.
+Say we have an API built on top of ``django-icetea``. Let's assume we have
+a Django app called ``foo``, with a model ``FooModel``.
                 
-We want to define 2 API handlers, to expose the model ``FooModel`` to the API,
-as well as some other non-model data.
+We want to define 2 API handlers; One that exposes the model ``FooModel``,
+and another one that exposes some other non-model data.
 
 Other than defining the business logic, handlers also act as means of
 representation. For example, ``ModelHandler`` classes, define how the
@@ -191,7 +191,7 @@ Here we define our API handler, which is the implementer of the business
 logic
 
 ``` python
-from models import foomodel
+from foo.models import foomodel
 from icetea.handlers import ModelHandler
 
 class FooHandler(ModelHandler):
@@ -220,13 +220,14 @@ the serving of API requests
 
 ``` python
 from djanco.conf.urls.defaults import *
-from handlers import FooHandler
+from foo.handlers import FooHandler
 from icetea.resource import Resource
 
 foo_handler = Resource(FooHandler)
 
 urlpatterns = patterns('',
     url(r'^foo/$ ', foo_handler),
+    url(r'^foo/(?P<id>\d+)/$ ', foo_handler),
 )
 ```
 
