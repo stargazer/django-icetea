@@ -1,38 +1,19 @@
 # django-icetea
 
-``django-icetea`` is a package built on top of [Django](https://www.djangoproject.com/) and provides the necessary abstractions for creating REST APIs.
+``django-icetea`` is a package built on top of [Django](https://www.djangoproject.com/) and provides abstractions for creating REST APIs.
 
 It has been influenced by the architecture of [django-piston](https://bitbucket.org/jespern/django-piston/wiki/Home) and [piston-perfect](https://github.com/smartpr/piston-perfect).
 
-I have decided to build ``django-icetea``, in order to have an API framework with tight foundations, consistent and intuitive behaviour, *readable code*, and of course, easy to use.
-
+I decided to build ``django-icetea``, in order to have an API framework with tight foundations, consistent and intuitive behaviour, *readable code*, and of course, easy to use.
 
 ## Installation
 
 ``django-icetea`` is registered in [PyPI](http://pypi.python.org/pypi/django-icetea/), so 
-installing it is as easy as listing it under your project's dependencies, and pulling it on build time.
+installing it is as easy as running:
 
-If you use ``zc.buildout``, you only need to do the following: 
+    pip install django-icetea
 
-> In your Django project's ``setup.py``, add  ``django-icetea`` in section
-> ``install_requires``: 
-
-``` python
-setup(
-    ...
-    ...
-    install_requires=(
-        ...
-        ...
-        "django-icetea",
-    )
-    ...
-)
-
-```
-
-Running the buildout should take care of everything, and make package
-``icetea`` available in your project.
+However, I would suggest using the latest version from github. The master branch is always stable.
 
 ### Settings parameters
 In your application's ``settings.py`` file, you can specify the following
