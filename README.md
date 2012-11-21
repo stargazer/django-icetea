@@ -68,7 +68,7 @@ goals with this project. If different applications require different semantics,
 
 Moreover, following the [Principle of the least astonishment](http://en.wikipedia.org/wiki/Principle_of_least_astonishment) which is what *Python* in general, and *Django* in particular encourage, I
 have tried to follow the general behavior that *Django* users are familiar
-with. An example of this is the ``validation`` method of the ``ModelHandler`` class (in the ``handlers`` module). It
+with. An example of this is the ``validation`` method of the ``ModelHandler`` class (in the ``handlers.py`` module). It
 cleans the data, creates model instances (without committing them to the
 database) and validates them using the model's ``full-clean`` method. Once this
 is done, we are certain that we are dealing with perfectly valid model
@@ -155,10 +155,7 @@ kind of request, please check section [Request and response protocol](https://gi
 
 ### Tests
 
-``django-icetea`` comes with its own test suite, found in the module
-``tests.py``. This module defines Base Test Classes, which are used to test
-``django-icetea`` itself, and can also be used to test any API
-implementation.
+``django-icetea`` comes with its own test suite, found in the ``tests.py`` module. This module defines Base Test Classes, which are used to test ``django-icetea`` itself, and can also be used to test any API implementation.
 
 ### CSRF tokens
 
