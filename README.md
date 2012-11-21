@@ -92,12 +92,11 @@ same.
 
 ### Glossary
 
-``Singular Request``: A request that refers to a single resource. Usually it is
-idenfified by the url. For example a GET/PUT/DELETE request on ``/resource/<id>/`` is a
-singular resource.
+``Singular Request``: A request that refers to a single resource. The resource
+is usually identified by the url. For example a *GET/PUT/DELETE* request on ``/resource/<id>/`` is a
+singular request.
 
-``Plural Request``: A request that affects(retrieves or modifies) a group of resource instances (usually the
-instances that the client has the right to view). It could be plural GET, plural PUT,
+``Plural Request``: A request that affects(retrieves or modifies) a group of resources (usually a subset or all the resources that the client has the right to view). It could be plural GET, plural PUT,
 or plural DELETE.
 
 ``Bulk Request``: Request with an array of data in its request body. It only makes
