@@ -38,36 +38,37 @@ As in any project though, some assumptions have to be made, and some
 conventions need to be predefined. 
 
 For example, although *HTTP* is an
-application protocol, it has been built mostly for interaction with Web
-browsers. When applied in more generic request-response schemes, there are
-cases where the protocol itself does not really indicate the correct way of
-doing things. For this reason, I mostly view *HTTP* as the transmission means
+application protocol, it is mostly used for interaction with Web
+browsers. When applied in more generic request/response schemes, there are
+scenarios that the protocol itself does not indicate the correct behavior.
+For this reason, I mostly view *HTTP* as the means of transmission
 for requests and responses. It is unaware of business logic, and therefore it
-lacks the means of mapping application specific semantice or errors to *HTTP
+lacks the means of mapping application specific semantics or errors to *HTTP
 Responses*. 
 
 A specific case in which the *HTTP* protocol doesn't really specify the
 behaviour, is the following:
 
 > Say we need to create a model instance; We issue a *POST* request to the
-> server API, and we expect a response which will indicate *if* the
+> API, and we expect a response which will indicate *if* the
 > resource has been created, and if yes, return the resource.
 > The server first needs to validate the data it has received. If the data
-> doesn't validate, then it needs to return a ``400 Bad Request``. If the data
-> validates, but upon creation the database fails, what do we do? Do we
+> are invalid, the API should return a ``400 Bad Request`` response. If the data
+> are valid, but upon creation the database fails, what do we do? Do we
 > return ``400 Bad Request``? No way. This will confuse the user and indicate
 > that the data provided were invalid. The request was validated successfully,
 > so this is not the case, Do we return a Successful response ``200 OK``,
-> and empty data? I choose for the latter. 
+> and empty data? I choose for the latter. This indicates that the data were
+> indeed valid, but the resource failed to be created.
 
 In anycase developing an API is all about consistent and unambiguous
 communication between the client and the server. This has been one of my main
 goals with this project. If different applications require different semantics,
 *django-icetea*'s code can easily be modified to support them.
 
-Moreover, following the [Principle of the least astonishment](http://en.wikipedia.org/wiki/Principle_of_least_astonishment) which is what *Python* in general, and *Django* in particular *try* to do, I
+Moreover, following the [Principle of the least astonishment](http://en.wikipedia.org/wiki/Principle_of_least_astonishment) which is what *Python* in general, and *Django* in particular encourage, I
 have tried to follow the general behavior that *Django* users are familiar
-with. An example of this is the ``validation`` method of ``django-icetea``. It
+with. An example of this is the ``validation`` method of the ``ModelHandler`` class (in the ``handlers`` module). It
 cleans the data, creates model instances (without committing them to the
 database) and validates them using the model's ``full-clean`` method. Once this
 is done, we are certain that we are dealing with perfectly valid model
