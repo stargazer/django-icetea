@@ -396,7 +396,9 @@ In this subsection, the term ``operation`` means one of ``read``, ``create``,
 ``update``, ``delete``.
 
 When a handler class sets ``read = True``, basically it says to the system:
+
 > I want to inherit the standard ``read`` functionality. Please provide me with it.
+
 This works with some metaclass magic. Clearly some magic needs to be in
 please in order to convert the boolean attribute ``read``, to a method.  
 
