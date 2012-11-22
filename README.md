@@ -150,7 +150,7 @@ The Status codes have the following meanings:
 *   ``422 UnprocessableEntity``: The request was valid but could not be processed due to the semantics of the resource (for example, a *DELETE* request on a resource that belongs to the authenticated client. We might choose not to allow deletion of the specific resource if its field *x* has a specific value. In that case we respond with a *422 UnprocessableEntity* response).
 
 For a very detailed description of the expected responses for any
-kind of request, please check section [Request and response protocol](https://github.com/stargazer/django-icetea/tree/experimental#request-and-response-protocol).
+kind of request, please check section [Request and response protocol](https://github.com/stargazer/django-icetea#request-and-response-protocol).
 
 
 ### Tests
@@ -240,7 +240,7 @@ urlpatterns = patterns('',
 If any of these parameters is ``True``, then the handler allows ``GET``,
 ``POST``, ``PUT`` and ``DELETE`` requests respectively.
 
-If instead they are defined as methods, eg::
+If instead they are defined as methods, eg:
 
 ``` python
 def read(self, request, *args, **kwargs):
@@ -248,17 +248,15 @@ def read(self, request, *args, **kwargs):
 ```
 
 Then the corresponding action is enabled, and the default functionality is
-overridden.
+overridden by the method we defined.
 
 #### bulk_create
 
-If ``True`` enables bulk-POST requests. Default is ``False``. See section *Notes* for more
-information.
+If ``True`` enables bulk-POST requests. Default is ``False``. See section [Notes](https://github.com/stargazer/django-icetea#notes) for more information.
 
 Requires that ``create = True``.
 
-If enabled, you should anticipate on ``400 Bad Request`` responses, with a list
-in their body.
+When enabled, you should anticipate on ``400 Bad Request`` responses, with a list in their body.
 
 #### plural_update
 If ``True``, enables plural PUT requests, which means updating multiple
@@ -267,8 +265,7 @@ this reason is should be explicitly allowed. Default is ``False``.
 
 Requires that ``update = True``.
 
-If enabled, you should anticipate on ``400 Bad Request`` responses, with a list
-in their body.
+When enabled, you should anticipate on ``400 Bad Request`` responses, with a list in their body.
 
 #### plural_delete
 If ``True`` enables plural DELETE requests, which means deleting multiple
@@ -277,10 +274,7 @@ this reason it should be explicitly allowed. Default is ``False``.
 
 Requires that ``delete=True``.
 
-If enabled, you should anticipate on ``422 Unprocessable Entity`` responses,
-with a list in their body.
-
-Requires that ``delete = True``.
+When enabled, you should anticipate on ``422 Unprocessable Entity`` responses, with a list in their body.
 
 #### request_fields
 
@@ -302,18 +296,21 @@ Indicates which querystring parameter will be used to request slicing of
 the result set of the requested operation.
 If ``True``, then the parameter is ``slice``. If ``False``, no slicing will
 be possible. Default is ``False``.
-The slicing notation follows Python's ``list slice syntax``, of
-``start:stop:step``.                                                          
+The slicing notation follows Python's *slice notation*, of ``start:stop:step``.                                                          
 
 #### authentication
     
-If ``True``, only authenticated users can access the handler. The ``Django
-authenticataion`` is used. Default value is ``False``.
+If ``True``, only authenticated users can access the handler. The *Django
+authentication* is used. Default value is ``False``.
 
 #### allowed_out_fields
     
 Tuple of fields, which indicates the fields that the handler is allowed to
-output. In the case of ``ModelHandler``, it symbolizes model fields, whereas in the case of ``BaseHandler`` classes, it only has sense if the handler returns dictionaries, or lists of dictionaries, and it indicates the dictionary keys that the handler is allowed to output.
+output. 
+
+In the case of a ``ModelHandler``, it indicates model fields.
+
+In the case of a ``BaseHandler``, it only has sense if the handler returns dictionaries, or lists of dictionaries, and it indicates the dictionary keys that the handler is allowed to output.
     
 The actual fields that a request will eventually output, is a function of
 this parameter, as well as the request-level field selection, indicated by
@@ -321,7 +318,7 @@ the ``field``.
 
 #### allowed_in_fields
     
-Tuple of fields, which indicates the fields that the handler allowed to
+Tuple of fields, which indicates the fields that the handler is allowed to
 take from the incoming request body. In the case of ``ModelHandler``
 classes, no primary keys or related keys are allowed.
 
@@ -353,19 +350,19 @@ string. Default value is ``file.xls``
 
 ### Bulk POST requests
 
-``Bulk POST requests`` refers to a single ``POST`` request which attempts to create
-multiple data objects. The specifications of ``REST`` or ``HTTP`` don't specify
-any standard behaviour for such requests, and instead discourage its use. The
-reason is the poor semantics of such requests. 
+*Bulk POST request* refers to a single ``POST`` request which attempts to create
+multiple resources. The specifications of ``REST`` or ``HTTP`` don't specify
+any standard behaviour for such requests, and instead discourage its use, due
+to poor semantics.
 
-For example, how would the API signal an error one one of the data objects in 
-the request body? How would it signal a database error, when all the data
+For example, how would the API signal an error on one of the data objects in 
+the request body? Or, how would it signal a database error, when all the data
 objects in the request body were valid?
 
 I chose the following behavior:
 
 * Any error in the request body, will return a ``Bad Request`` response.
-  For example if the data in the request body refer to Django models, if
+  For example when the data in the request body refer to Django models, if
   even one of the models fails to validate, the response will be ``400 Bad
   Request``. The response body will include a list, with all the objects that
   could not be validated. Every object should have an ``index`` parameter, that
@@ -390,7 +387,7 @@ This is in my opinion the most intuitive behavior. However I think that it all
 depends on the requirements of each application, and the clients using the API.
 So feel free to modify the existing behavior.
 
-By default ``bulk POST requests`` are disabled. They can be enabled by setting
+By default *bulk POST requests* are disabled. They can be enabled by setting
 ``bulk_create = True`` in the handler class.
 
 ### Building inheritable handlers... Metaclass magic
@@ -398,9 +395,9 @@ By default ``bulk POST requests`` are disabled. They can be enabled by setting
 In this subsection, the term ``operation`` means one of ``read``, ``create``,
 ``update``, ``delete``.
 
-When a handler sets ``read = True``, basically it says to the system *I want to
-inherit the standard ``read`` functionality. Please provide me with it*. This
-works with some metaclass magic. Because, clearly some magic needs to be in
+When a handler class sets ``read = True``, basically it says to the system:
+> I want to inherit the standard ``read`` functionality. Please provide me with it.
+This works with some metaclass magic. Clearly some magic needs to be in
 please in order to convert the boolean attribute ``read``, to a method.  
 
 The way metaclasses work, is that when a class is initialized, the Python
@@ -414,7 +411,7 @@ MRO](http://www.python.org/getit/releases/2.3/mro/) runs on runtime.
 For this reason, when a handler class is defined, in order to provide
 inheritable behaviour for other handlers, unless it defines the operations as
 methods, it needs to provide them as ``read = True``. This way its metaclass
-will remove these attributes and make "space", for it and classes that inherit
+will remove these attributes and make "space", for classes that inherit
 from it, to inherit the behaviour that these operations define. Of course the
 handlers that inherit from a base handler, will need to first explicitly allow
 an operation, in case they want to inherit its functionality.
@@ -556,7 +553,7 @@ HTTP requests, successful or not.
  
 #### Note
 In the presence of errors, if the response body is a dictionary or a list,
-every error instance(1 in the case of dictionary, multiple in the case of a
+every error instance(*one* in the case of dictionary, *multiple* in the case of a
 list) will contain the following keys:
 
 *   ``errors``: It will be a dictionary of {``field``: [``error``]} pairs where possible,
