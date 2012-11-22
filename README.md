@@ -423,6 +423,7 @@ So the way to see it when building handlers:
 >    Setting ``read = True``, means that the handler itself and handlers that
 >    inherit from it, will inherit the ``read`` functionality, given that they
 >    allow so.
+>
 >    Setting ``read = False``, or not setting the ``read`` attribute at all, will block
 >    the ``read`` functionality for the handler and handlers that inherit from it.
     
