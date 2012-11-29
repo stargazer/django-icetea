@@ -348,6 +348,34 @@ string. Default value is ``file.xls``
 
 ## Notes
 
+### Adding extra fields on a ModelHandler
+
+It's possible that we want to add extra fields on the output of a ``ModelHandler``. 
+By *extra* I mean fields that are not actual physical model fields, but simply extra 
+information that we wish to include on the API handler's output. Doing so is very easy.
+
+In the model class, simply need to define the ``extra_fields`` tuple, with the
+names of the extra fields. Then we define the class method
+``_extra_fields(self, field)``, which defines the value of the extra field
+``field``.
+
+For example:
+
+``` python
+extra_fields = ('num_tweets', 'num_retweets',)
+
+def _extra_fields(self, field):
+    if field == 'num_tweets':
+        return self.tweets.count()            
+
+    elif field == 'num_retweets':
+        return Retweet.objects.filter(tweet__in=self.tweets.all()).count() 
+``
+The method ``_extra_fields`` is invoked by the ``Emitter`` class, which
+constructs the output of the handler. The ``field`` parameter is the field name
+that is evaluated. So the ``_extra_fields`` method should be able to compute
+all the field names in the ``extra_fields`` tuple.
+
 ### Bulk POST requests
 
 *Bulk POST request* refers to a single ``POST`` request which attempts to create

@@ -4,6 +4,7 @@ from __future__ import generators
 import decimal, inspect, StringIO
 from django.db.models.query import QuerySet
 from django.db.models import Model
+from django.db.models.fields import FieldDoesNotExist
 from django.utils import simplejson
 from django.utils.xmlutils import SimplerXMLGenerator
 from django.utils.encoding import smart_unicode
@@ -107,31 +108,36 @@ class Emitter:
 
         def _fk(data, field, nested=True):
             """
-            Foreign keys.
-
+            The field ``field`` is a FK of the ``data`` model instance.
             Fields of foreign keys are always nested.
             """
             return _any(getattr(data, field.name), fields=(), nested=True)
 
         def _related(data, fields=(), nested=True):
             """
-            Foreign keys.
+            ``data`` is a RelatedManager, so it represents a Queryset which a
+            backwards relationship to the model from which we came here.
 
             Fields of (related) foreign keys are always nested
             """
-            return [ _model(m, fields) for m in data.iterator() ]
+            return [ _model(m, fields, nested) for m in data.iterator() ]
 
-        def _m2m(data, field, fields=()):
+        def _m2m(data, field, nested=True):
             """
-            Many to many (re-route to `_model`.)
+            The field ``field`` is a many-to-many field of the ``data`` model
+            instance.
             """
-            return [ _model(m, fields) for m in getattr(data, field.name).iterator() ]
+            return [ _model(m, fields=(), nested=True) for m in getattr(data, field.name).iterator() ]
 
         # TODO: Study it again, and get rid of all its garbage.
         def _model(data, fields=(), nested=False):
             """
             Models. 
             
+            @param data: Model instance
+            @param fields: Model fields that we can output
+            @param nested: True if model is nested in data representation
+
             If nested=True, then the ``fields`` are decided by:
                 handler.fields - handler.exclude_nested.
 
@@ -149,63 +155,65 @@ class Emitter:
                 fields = set(handler.allowed_out_fields) - set(handler.exclude_nested)
             
             if handler:
-                get_fields = set(fields)
+                fields = set(fields)
 
-                # Callable fields
-                met_fields = self.method_fields(handler, get_fields)
+                # Function that retrives the value of the field ``f``
                 v = lambda f: getattr(data, f.attname)
 
-                for f in data._meta.local_fields + data._meta.virtual_fields:
-                    if hasattr(f, 'serialize') and f.serialize and not any([ p in met_fields for p in [ f.attname, f.name ]]):
-                        if not f.rel:
-                            if f.attname in get_fields:
-                                ret[f.attname] = _any(v(f))
-                                get_fields.remove(f.attname)
-                        else:
-                            if f.attname[:-3] in get_fields:
-                                ret[f.name] = _fk(data, f, nested=True)
-                                get_fields.remove(f.name)
+                for field_name in fields:   
+                    f = None
 
-                for mf in data._meta.many_to_many:
-                    if mf.serialize and mf.attname not in met_fields:
-                        if mf.attname in get_fields:
-                            ret[mf.name] = _m2m(data, mf)
-                            get_fields.remove(mf.name)
+                    # Retrieve the field by name
+                    try:
+                        f = data._meta.get_field_by_name(field_name)[0]
+                    except FieldDoesNotExist:                         
+                        # Field is not a physical model field. So we look in
+                        # the ``extra_fields`` tuple.
+                        # Check if any of the fields that we want to output, are
+                        # included in the model's ``extra_fields`` list. If yes,
+                        # evaluate them using the model's ``_extra_fields()`` method.
+                        if hasattr(data, 'extra_fields'):
+                            if field_name in data.extra_fields:
+                                try:
+                                    ret[field_name] = data._extra_fields(field_name)
+                                except AttributeError:
+                                    raise
+                                else:
+                                    continue
 
-                # try to get the remainder of fields
-                for maybe_field in get_fields:
-                    if isinstance(maybe_field, (list, tuple)):
-                        model, fields = maybe_field
-                        inst = getattr(data, model, None)
+                    # The field ``f`` is a physical model field.
+                    else:                               
+                        # Check if it is a related field
+                        value = getattr(data, field_name)
+                        if hasattr(value, 'all'):
+                            # value is a RelatedManager object
+                            ret[field_name] = _related(value, nested=True)
+                            continue
 
-                        if inst:
-                            if hasattr(inst, 'all'):
-                                ret[model] = _related(inst, fields)
-                            elif callable(inst):
-                                if len(inspect.getargspec(inst)[0]) == 1:
-                                    ret[model] = _any(inst(), fields)
+                        # Check if it is a many_to_many field
+                        elif f in data._meta.many_to_many:
+                            if f.serialize:
+                                ret[field_name] = _m2m(data, f, nested=True)
+                                continue                   
+
+                        # Check if it is a local field or virtual field
+                        elif f in (data._meta.local_fields + data._meta.virtual_fields)\
+                        and hasattr(f, 'serialize')\
+                        and f.serialize:
+                            # Is it a serializable physical field on the model?
+                            if not f.rel:
+                                ret[field_name] = _any(v(f))
+                                continue
+                            # Is it a foreign key?
                             else:
-                                ret[model] = _model(inst, fields, nested=True)
+                                ret[field_name] = _fk(data, f, nested=True)
+                                continue
 
-                    elif maybe_field in met_fields:
-                        # Overriding normal field which has a "resource method"
-                        # so you can alter the contents of certain fields without
-                        # using different names.
-                        ret[maybe_field] = _any(met_fields[maybe_field](data))
-
-                    else:
-                        maybe = getattr(data, maybe_field, None)
-                        if maybe is not None:
-                            if callable(maybe):
-                                if len(inspect.getargspec(maybe)[0]) <= 1:
-                                    ret[maybe_field] = _any(maybe())
-                            else:
-                                ret[maybe_field] = _any(maybe, nested=True)
+                        # Else try to read the value of the field from the
+                        # model
                         else:
-                            handler_f = getattr(handler or self.handler, maybe_field, None)
-
-                            if handler_f:
-                                ret[maybe_field] = _any(handler_f(data))
+                            ret[field_name] = _any(v(f))
+                            continue
 
             # No handler could be found. So trying to construct a default
             # representation for the model.
