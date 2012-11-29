@@ -354,10 +354,9 @@ It's possible that we want to add extra fields on the output of a ``ModelHandler
 By *extra* I mean fields that are not actual physical model fields, but simply extra 
 information that we wish to include on the API handler's output. Doing so is very easy.
 
-In the model class, simply need to define the ``extra_fields`` tuple, with the
+In the model class,  you simply need to define the ``extra_fields`` tuple, with the
 names of the extra fields. Then we define the class method
-``_extra_fields(self, field)``, which defines the value of the extra field
-``field``.
+``_extra_fields(self, field)``, which should return the values of the extra fields.
 
 For example:
 
@@ -369,12 +368,16 @@ def _extra_fields(self, field):
         return self.tweets.count()            
 
     elif field == 'num_retweets':
-        return Retweet.objects.filter(tweet__in=self.tweets.all()).count() 
+        return Retweet.objects.filter(tweet__in=self.tweets.all()).count()
 ```
 The method ``_extra_fields`` is invoked by the ``Emitter`` class, which
 constructs the output of the handler. The ``field`` parameter is the field name
 that is evaluated. So the ``_extra_fields`` method should be able to compute
 all the field names in the ``extra_fields`` tuple.
+
+From this point on, the API handlers can treat these fields as normal model fields.
+Meaning, they can be included in the tuples ``allowed_out_fields``,
+``exclude_nested``, etc, depending on how you want to treat them.
 
 ### Bulk POST requests
 
