@@ -370,7 +370,7 @@ def _extra_fields(self, field):
 
     elif field == 'num_retweets':
         return Retweet.objects.filter(tweet__in=self.tweets.all()).count() 
-``
+```
 The method ``_extra_fields`` is invoked by the ``Emitter`` class, which
 constructs the output of the handler. The ``field`` parameter is the field name
 that is evaluated. So the ``_extra_fields`` method should be able to compute
