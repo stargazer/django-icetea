@@ -60,21 +60,6 @@ class Emitter:
         if isinstance(self.data, Exception):
             raise
 
-    # TODO: WTF?
-    def method_fields(self, handler, fields):
-        if not handler:
-            return { }
-
-        ret = dict()
-
-        for field in fields - Emitter.RESERVED_FIELDS:
-            t = getattr(handler, str(field), None)
-
-            if t and callable(t):
-                ret[field] = t
-
-        return ret
-            
     def construct(self):
 
         """
