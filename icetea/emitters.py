@@ -1,6 +1,3 @@
-# TODO: What is this
-from __future__ import generators
-
 import decimal, inspect, StringIO
 from django.db.models.query import QuerySet
 from django.db.models import Model
@@ -13,7 +10,6 @@ from django.core.serializers.json import DateTimeAwareJSONEncoder
 # Class which will register MimeTypes to methods which will decode the
 # corresponding MimeType to python data structures.
 from utils import Mimer
-from handlers import ModelHandler
 
 try:
 	import xlwt

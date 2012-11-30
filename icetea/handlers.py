@@ -3,6 +3,7 @@ from authentication import DjangoAuthentication, NoAuthentication
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from custom_filters import filter_to_method
 from exceptions import UnprocessableEntity, ValidationErrorList
+from emitters import Emitter
 
 # mappings of {HTTP Request: API Handler method}
 CALLMAP = {
@@ -366,7 +367,6 @@ class BaseHandler():
         # allowing only fields in ``fields``, if such a selection makes sense.
         # Depending on ``data``'s type, after the serialization, it becomes
         # either a dict, list(of strings, dicts, etc) or string.
-        from emitters import Emitter
         emitter = Emitter(sliced_data, self, fields)       
         ser_data = emitter.construct()
 
