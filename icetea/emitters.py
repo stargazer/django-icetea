@@ -168,14 +168,14 @@ class Emitter:
                         f = data._meta.get_field_by_name(field_name)[0]
                     except FieldDoesNotExist:                         
                         # Field is not a physical model field. So we look in
-                        # the ``extra_fields`` tuple.
+                        # the ``fake_fields`` tuple.
                         # Check if any of the fields that we want to output, are
-                        # included in the model's ``extra_fields`` list. If yes,
-                        # evaluate them using the model's ``_extra_fields()`` method.
-                        if hasattr(data, 'extra_fields'):
-                            if field_name in data.extra_fields:
+                        # included in the model's ``fake_fields`` list. If yes,
+                        # evaluate them using the model's ``_compute_fake_fields()`` method.
+                        if hasattr(data, 'fake_fields'):
+                            if field_name in data.fake_fields:
                                 try:
-                                    ret[field_name] = data._extra_fields(field_name)
+                                    ret[field_name] = data._compute_fake_fields(field_name)
                                 except AttributeError:
                                     raise
                                 else:
