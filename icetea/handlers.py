@@ -373,8 +373,7 @@ class BaseHandler():
         ser_data = emitter.construct()
 
         # Structure the response data
-        ret = {}
-        ret['data'] = ser_data
+        ret = {'data': ser_data}
         if total:
             ret['total'] = total
         # Add extra metadata
