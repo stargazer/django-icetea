@@ -107,7 +107,7 @@ class TestResponseFieldsBase(BaseTest):
         sys.stdout.write("\n--------------------------------------------------------------------\n")
 
         # Print headings
-        sys.stdout.write("{endpoint:30}{payload:40}{expected:40}{actual:40}".format(
+        sys.stdout.write("{endpoint:45}{payload:40}{expected:60}{actual:60}".format(
             endpoint="API Endpoint", 
             payload="Payload",
             expected="Expected",
@@ -143,7 +143,7 @@ class TestResponseFieldsBase(BaseTest):
             else:
                 actual_fields = set()
 
-            sys.stdout.write("{endpoint:30}{payload:40}{expected:40}{actual:40}".format(
+            sys.stdout.write("{endpoint:45}{payload:40}{expected:60}{actual:60}".format(
                 endpoint=endpoint, 
                 payload=payload,
                 expected=expected_fields,
