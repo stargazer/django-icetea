@@ -7,7 +7,7 @@
 *.pycf
 *.pyo
 *.orig
-docs/build/*
+docs/
 dist/
 parts/
 eggs/
