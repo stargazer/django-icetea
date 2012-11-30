@@ -48,25 +48,66 @@ class BaseTest(TestCase):
         return response
 
 
-class TestResponseStatusBase(BaseTest):
-    """ 
-    This class implements tests for response status code. Don't use this.
-    Insteas use :class:`.TestResponseContentBase` which tests for way more
-    response attributes.
+class TestResponseFieldsBase(BaseTest):
     """
+    This class implements tests for:
 
+        * Response fields: Makes sure that the data part of a response,
+         resulting from a valid request, contains all the expected fields. Nothing more, nothing else.
+         This Test class should be used only with requests that return valid
+         responses. It's goal is not to check the validity of requests, but the
+         response fields of valid requests. For checking the validity of
+         requests, see the next Test Class. Invalid requests don't contain any
+         data, so in the scope of this test, their response will always be an
+         empty tuple.
+
+    How to use?
+
+    Inherit from it, and define class attributes:
+
+     * ``fixtures``: List of fixtures to be loaded
+     * ``USERNAME``: Username for authenticated user
+     * ``PASSWORD``: Password for authenticated user
+     * ``endpoints``: Dictionary of pairs ``API Handler class: API url endpoint``
+
+    For every test:
+
+     * Define a class method whose name starts with ``test``
+     * Set method attributes:
+
+      * ``handler``
+      * ``type``: Defines the API method to be tested. Equal to either
+        ``read``, ``create``, ``update``, ``delete``
+
+     * Create the ``test_data``, which is a list of tuples. Every tuple should
+       contain:       
+
+       * URL endpoint suffix. Should be a string.
+       * Payload. Should be a a dictionary
+       * Tuple with the fields that the response should contain.. 
+
+     * Call ``self.execute(type, handler, test_data)``, which checks whether
+       the test succeeds or not.               
+
+    In order to see concrete examples, check the ``tests`` package under
+    ``django-icetea`` folder, which used this class to test ``django-icetea``
+    itself.  
+    """
     def execute(self, type, handler, test_data):
         print '\n'
+        # caller method name (method that called ``execute``)
+        caller_method = inspect.stack()[1][3]
         # Print test information
-        sys.stdout.write("Info: {name}, {handler}, {type}".format(
+        sys.stdout.write("Info: {name}, {caller}, {handler}, {type}".format(
             name=self.__class__.__name__, 
+            caller=caller_method,
             handler=handler.__name__,
             type=type,            
         ))
         sys.stdout.write("\n--------------------------------------------------------------------\n")
 
         # Print headings
-        sys.stdout.write("{endpoint:30}{payload:50}{expected:10}{actual:10}".format(
+        sys.stdout.write("{endpoint:30}{payload:40}{expected:40}{actual:40}".format(
             endpoint="API Endpoint", 
             payload="Payload",
             expected="Expected",
@@ -75,19 +116,41 @@ class TestResponseStatusBase(BaseTest):
         sys.stdout.write("\n")
 
         # Perform test and print results
-        for suffix, payload, expected_code in test_data:            
+        for suffix, payload, expected_fields in test_data:            
+            expected_fields = set(expected_fields)
+
             # construct endpoint
             endpoint = self.endpoints[handler] + suffix
             # execute request
             response = self.request(type, endpoint, payload)
-            sys.stdout.write("{endpoint:30}{payload:50}{expected:10}{actual:10}".format(
+            if response.status_code == 200:
+                
+                if not 'application/json' in response.get('Content-Type', None):
+                    raise AssertionError('Test is only valid for JSON responses')
+                
+                content = json.loads(response.content)
+                data = content['data']
+
+                actual_fields = set()
+                if isinstance(data, list):
+                    for item in data:
+                        for field in item.keys():
+                            actual_fields.add(field)
+                else:
+                    for field in data.keys():
+                        actual_fields.add(field)
+            
+            else:
+                actual_fields = set()
+
+            sys.stdout.write("{endpoint:30}{payload:40}{expected:40}{actual:40}".format(
                 endpoint=endpoint, 
                 payload=payload,
-                expected=str(expected_code),
-                actual=str(response.status_code),
+                expected=expected_fields,
+                actual=actual_fields,
             ))
             sys.stdout.write("\n")
-            assert expected_code == response.status_code
+            assert expected_fields == actual_fields
 
 
 class TestResponseContentBase(BaseTest):
