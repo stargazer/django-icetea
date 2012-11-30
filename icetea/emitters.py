@@ -261,10 +261,10 @@ class Emitter:
             """
             if fields:
                 # If there is no field selection, just output everything.
-                return dict([ (k, _any(v, fields, nested)) for k, v in data.iteritems() if k in fields])
+                return dict([ (k, _any(v, fields=(), nested=True)) for k, v in data.iteritems() if k in fields])
             else:
-                return dict([ (k, _any(v, fields, nested)) for k, v in data.iteritems()])
-        
+                return dict([ (k, _any(v, fields=(), nested=True)) for k, v in data.iteritems()])
+
         return _any(self.data, self.fields, nested=False)
 
 
