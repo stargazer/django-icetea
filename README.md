@@ -29,7 +29,7 @@ Server Errors. It requires that ``DEBUG=True``. Default is ``True``.
 
 The code is thoroughly documented. Use [epydoc](http://epydoc.sourceforge.net/) to parse it and generate a
 document out of it. For example, in order to create an *html* page with the
-documentation, ``cd``` into the ``django-icetea`` folder, and issue:
+documentation, ``cd`` into the *django-icetea* folder, and issue:
 
     epydoc --html icetea -o docs
 
