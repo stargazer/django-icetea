@@ -1,6 +1,6 @@
 from project.app.handlers import AccountHandler, ClientHandler, ContactHandler,\
 InfoHandler
-from icetea.tests import TestResponseContentBase
+from icetea.tests import TestResponseContentBase, TestResponseFieldsBase
 
 """
 The fixtures used have the following form: 
@@ -27,6 +27,10 @@ The fixtures used have the following form:
 """  
 
 class TestResponseContent(TestResponseContentBase):
+    """
+    Testing response codes, response content type, and amount of resources
+    returned.
+    """
     fixtures = ['fixtures_all']
     USERNAME = 'user1'
     PASSWORD = 'pass1'
@@ -680,3 +684,420 @@ class TestResponseContent(TestResponseContentBase):
             ('', {}, 'html', None),
         )
         self.execute(type, handler, test_data)
+
+ 
+class TestResponseFields(TestResponseFieldsBase):
+    """
+    Testing whether the JSON responses contain all the fields they should.
+    """
+    fixtures = ['fixtures_all']
+    USERNAME = 'user1'
+    PASSWORD = 'pass1'
+    endpoints = {
+        AccountHandler: '/api/accounts/',
+        ClientHandler:  '/api/clients/',
+        ContactHandler: '/api/contacts/',
+        InfoHandler: '/api/info/',
+    }
+
+    def test_ClientHandler_read_plural(self):
+        handler = ClientHandler
+        type = 'read'
+        test_data = (
+            ('', {}, ('name', 'accounts', 'contacts')),
+            # When none of the given field exist, all the fields are returned
+            ('?field=whatever', {}, ('name', 'accounts', 'contacts')),
+            ('?field=name', {}, ('name',)),
+            ('?field=accounts', {}, ('accounts',)),
+            ('?field=contacts', {}, ('contacts',)),
+            ('?field=contacts&field=accounts', {}, ('contacts', 'accounts')),
+        )                
+        self.execute(type, handler, test_data)
+
+    def test_ClientHandler_read_singular(self):
+        handler = ClientHandler
+        type = 'read'
+        test_data = (
+            ('1/', {}, ('name', 'accounts', 'contacts',)),         
+            # When none of the given field exist, all the fields are returned
+            ('1/?field=whatever', {}, ('name', 'accounts', 'contacts')),         
+            ('1/?field=name', {}, ('name',)),         
+            ('1/?field=accounts', {}, ('accounts',)),         
+            ('1/?field=contacts&field=accounts', {}, ('contacts', 'accounts')),
+        )
+        self.execute(type, handler, test_data)
+
+    def test_ClientHandler_create_plural(self):
+        """
+        Handler does not allow POST requests, so the data will be empty in this
+        response.
+        """
+        handler = ClientHandler
+        type = 'create'
+        test_data = (
+            ('', {}, ()),
+        )
+        self.execute(type, handler, test_data)
+
+    def test_ClientHandler_create_singular(self):
+        """
+        There is no such thing as a singular POST. 
+        In anycase though, the handler does not allow POST requests.
+        So the data part of the response will be empty always.
+        """
+        handler = ClientHandler
+        type = 'create'
+        test_data = (
+            ('1/',  {}, ()),
+            ('2/',  {}, ()),
+        )
+        self.execute(type, handler, test_data)
+
+    def test_ClientHandler_update_plural(self):
+        """
+        Handler does not allow PUT requests, so the data will be empty in this
+        response.
+        """
+        handler = ClientHandler
+        type = 'update'
+        test_data = (
+            ('', {}, ()),
+        )
+        self.execute(type, handler, test_data)
+
+    def test_ClientHandler_update_singular(self):
+        """
+        Handler does not allow PUT requests, so the data will be empty in this
+        response.
+        """
+        handler = ClientHandler
+        type = 'update'
+        test_data = (
+            ('1/', {}, ()),
+            ('2/', {}, ()),
+        )
+        self.execute(type, handler, test_data)
+
+    def test_ClientHandler_delete_plural(self):
+        """
+        Handler does not allow DELETE requests, so the data will be empty in this
+        response.
+        """
+        handler = ClientHandler
+        type = 'delete'
+        test_data = (
+            ('', {}, ()),
+        )
+        self.execute(type, handler, test_data)
+
+    def test_ClientHandler_delete_singular(self):
+        """
+        Handler does not allow DELETE requests, so the data will be empty in this
+        response.
+        """
+        handler = ClientHandler
+        type = 'delete'
+        test_data = (
+            ('1/', {}, ()),
+            ('2/', {}, ()),
+        )
+        self.execute(type, handler, test_data)
+
+    def test_AccountHandler_read_plural(self):
+        handler = AccountHandler
+        type = 'read'
+        test_data = (
+            ('', {}, 
+                ('id', 'first_name', 'last_name', 'client', 'datetime_now')),                
+            ('?field=whatever', {}, 
+                ('id', 'first_name', 'last_name', 'client', 'datetime_now')),                
+            ('?field=id', {}, ('id',)),                
+            ('?field=client', {}, ('client',)),                
+            ('?field=datetime_now', {}, ('datetime_now',)),                
+            ('?field=client&field=id', {}, ('client', 'id')),                
+        )
+        self.execute(type, handler, test_data)
+
+    def test_AccountHandler_read_singular(self):
+        handler = AccountHandler
+        type = 'read'
+        test_data = (
+            ('1/', {}, 
+                ('id', 'first_name', 'last_name', 'client', 'datetime_now')),
+            ('1/?field=whatever', {}, 
+                ('id', 'first_name', 'last_name', 'client', 'datetime_now')),
+            ('1/?field=id', {}, ('id',)),
+            ('1/?field=client', {}, ('client',)),
+            ('1/?field=datetime_now', {}, ('datetime_now',)),
+            ('1/?field=client&field=id', {}, ('client', 'id')),
+        )
+        self.execute(type, handler, test_data)
+
+    def test_AccountHandler_create_plural(self):
+        handler = AccountHandler
+        type = 'create'
+        test_data = (
+            # Fails
+            ( '', {}, (),),
+            # Successful                
+            (   
+                '',
+                {'username': 'userlalala', 'password': 'pass'},
+                ('id', 'first_name', 'last_name', 'client', 'datetime_now'),    
+            ),
+            # Successful                
+            (   
+                '?field=id&field=client',
+                {'username': 'userlalolo', 'password': 'pass'},
+                ('id', 'client'),    
+            ),
+            # Successful                
+            (   
+                '?field=id&field=datetime_now',
+                {'username': 'userlilili', 'password': 'pass'},
+                ('id', 'datetime_now'),    
+            ),
+        )
+        self.execute(type, handler, test_data)
+    
+    def test_AccountHandler_create_singular(self):
+        """
+        There is no such thing as a singular POST. All these requests will
+        fail, and the data response will therefore be empty.
+        """
+        handler = AccountHandler
+        type = 'create'
+        test_data = (
+            ('1/', {}, ()),                
+            ('1/', {'username': 'user', 'password': 'pass'}, ()),                
+        )
+        self.execute(type, handler, test_data)
+
+    def test_AccountHandler_update_plural(self):
+        """
+        Handler forbids plural PUT requests. All there requests will fail, and
+        the data response will therefore be empty.
+        """
+        handler = AccountHandler
+        type = 'update'
+        test_data = (
+            ('', {}, ()),                
+            ('', {'first_name': 'name', 'last_name': 'surname'}, ()),                
+        )
+        self.execute(type, handler, test_data)
+
+    def test_AccountHandler_update_singular(self):
+        handler = AccountHandler
+        type = 'update'
+        
+        test_data = (
+            ('1/', {}, 
+                ('first_name', 'last_name', 'id', 'client', 'datetime_now')),
+            ('1/?field=whatever', {}, 
+                ('first_name', 'last_name', 'id', 'client', 'datetime_now')),
+            ('1/?field=id&field=client', {}, 
+                ('id', 'client',)),                
+            ('1/?field=datetime_now', {}, 
+                ('datetime_now',)),                
+        )
+        self.execute(type, handler, test_data)
+
+    def test_AccountHandler_delete_plural(self):
+        """
+        Handler forbids plural DELETe requests. All these requests will fail,
+        and the data response will therefore be empty.
+        """
+        handler = AccountHandler
+        type = 'delete'
+        test_data = (
+            ('', {}, ()),                
+        )
+        self.execute(type, handler, test_data)
+
+    def test_AccountHandler_delete_singular(self):
+        """
+        I am logged in as account with id=1. If I delete this resource, I won't
+        be able to issue more requests to the API handler. So instead I delete
+        other Account resources of the same client.
+        """
+        handler = AccountHandler
+        type = 'delete'
+
+        test_data = (
+            ('2/', {}, 
+                ('first_name', 'last_name', 'id', 'client', 'datetime_now')),                
+            # This fails because we already deleted the resource
+            ('2/', {}, ()),                
+
+            ('3/?field=whatever', {}, 
+                ('first_name', 'last_name', 'id', 'client', 'datetime_now',)),                
+            ('4/?field=id&field=last_name', {}, 
+                ('id', 'last_name',)),                
+            ('5/?field=client&field=datetime_now', {}, 
+                ('client', 'datetime_now')),                
+        )
+        self.execute(type, handler, test_data)
+ 
+    def test_ContactHandler_read_singular(self):
+        handler = ContactHandler
+        type = 'read'
+        test_data = (
+             # Resource exists and is Accessible
+            ('1/',    {},
+                ('client', 'name', 'surname', 'gender')),
+            ('1/?field=whatever',    {},
+                ('client', 'name', 'surname', 'gender')),
+            ('1/?field=whatever&field=name',    {},
+                ('name',)),
+            ('1/?field=client&field=name',    {},
+                ('client', 'name')),
+        )
+        self.execute(type, handler, test_data)
+
+    def test_ContactHandler_read_plural(self):
+        handler = ContactHandler
+        type = 'read'
+        test_data = (
+            ('',  {}, 
+                ('client', 'name', 'surname', 'gender')),
+            ('?field=whatever',  {}, 
+                ('client', 'name', 'surname', 'gender')),
+            ('?field=whatever&field=name',  {}, 
+                ('name',)),
+            ('?field=client&field=name',  {}, 
+                ('client', 'name',)),
+        )
+        self.execute(type, handler, test_data)
+
+    def test_ContactHandler_read_filter_id(self):
+        """
+        Plural GET request, applying the filter ``id``.
+        """
+        handler = ContactHandler
+        type = 'read'
+        test_data = (
+            ('?id=1',  {},                                 
+                ('client', 'name', 'surname', 'gender')),
+            ('?id=1&id=2',  {},  
+                ('client', 'name', 'surname', 'gender')),
+            ('?id=3&field=client&field=name',  {},  
+                ('client', 'name',)),
+            ('?id=4&field=whatever',  {},  
+                ('client', 'name', 'surname', 'gender')),
+        )
+        self.execute(type, handler, test_data)
+
+    def test_ContactHandler_create_plural(self):       
+        handler = ContactHandler
+        type = 'create'
+
+        test_data = (
+            ('',    {},
+                ('client', 'name', 'surname', 'gender')),
+
+            ('?field=whatever',    {'name': 'Randy', 'surname': 'Frombelize'},  
+                ('client', 'name', 'surname', 'gender')),
+
+
+            ('?field=whatever&field=name',    {'name': 'Randy', 'surname': 'Frombelize'},  
+                ('name',)),
+
+            ('?field=name&field=client',    {'name': 'Randy', 'surname': 'Frombelize'},  
+                ('client', 'name',)),
+        )
+        self.execute(type, handler, test_data)
+ 
+    def test_ContactHandler_create_singular(self):
+        """
+        There is no such thing as a singular POST, so the data response will
+        always be empty
+        """                                   
+        handler = ContactHandler
+        type = 'create'
+
+        test_data = (
+            ('1/',  {}, ()),
+            ('2/',  {'name': 'lalalala'},  ()),
+        )            
+        self.execute(type, handler, test_data)
+
+    def test_ContactHandler_update_plural(self):    
+        """
+        The handler allows plural PUT requests.
+        """
+        handler = ContactHandler
+        type = 'update'
+
+        test_data = (
+            ('',    {},     
+                ('client', 'name', 'surname', 'gender')),
+
+            ('?field=whatever',  {'name': 'Randy', 'surname': 'Frombelize'}, 
+                ('client', 'name', 'surname', 'gender')),
+
+            ('?field=name&field=client',    {'gender': 'M'},     
+                ('client', 'name')),
+        )
+        self.execute(type, handler, test_data)
+ 
+    def test_ContactHandler_update_singular(self):
+        handler = ContactHandler
+        type = 'update'
+ 
+        test_data = (
+            # Resource exist and is accessible
+            ('1/',  {},
+                ('client', 'name', 'surname', 'gender')),
+
+            ('1/?field=whatever', {},
+                ('client', 'name', 'surname', 'gender')),
+
+            ('1/?field=client', {},
+                ('client',)),
+
+            ('1/?field=client&field=name', {},
+                ('client', 'name',)),
+        )            
+        self.execute(type, handler, test_data)
+ 
+    def test_ContactHandler_delete_plural(self):
+        """
+        The handler allows plural DELETE requests.
+        """
+        handler = ContactHandler
+        type = 'delete'
+        test_data = (
+            ('',  {},  
+                ('client', 'name', 'surname', 'gender')),
+        )
+        self.execute(type, handler, test_data)
+
+    def test_ContactHandler_delete_plural_filter_id(self):
+        """
+        Plural DELETE request, applying the filter ``id``.
+        """
+        handler = ContactHandler
+        type = 'delete'
+        test_data = (
+            ('?id=1&id=2',  {},  
+                ('client', 'name', 'surname', 'gender')),
+            ('?id=3&field=whatever',  {},  
+                ('client', 'name', 'surname', 'gender')),
+            ('?id=4&id=5&field=client&field=name',  {},  
+                ('client', 'name',)),
+        )
+        self.execute(type, handler, test_data)
+ 
+    def test_ContactHandler_delete_singular(self):
+        handler = ContactHandler
+        type = 'delete'
+        test_data = (
+            ('1/',    {},     
+                ('client', 'name', 'surname', 'gender')),
+            ('2/?field=whatever',    {},     
+                ('client', 'name', 'surname', 'gender')),
+            ('3/?field=client&field=name&field=surname',    {},     
+                ('client', 'name', 'surname',)),
+        )
+        self.execute(type, handler, test_data)
+ 

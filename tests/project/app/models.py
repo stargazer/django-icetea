@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from datetime import datetime
 
 class Client(models.Model):
     name = models.CharField(
@@ -15,6 +16,13 @@ class Account(User):
         Client,
         related_name='accounts',
     )
+
+    fake_fields = (
+        'datetime_now',
+    )
+    def _compute_fake_fields(self, field):
+        if field=='datetime_now':
+            return datetime.now()
 
     def __unicode__(self):
         return '%s of client %s' % ( 

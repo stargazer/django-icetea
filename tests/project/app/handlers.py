@@ -11,6 +11,7 @@ class ClientHandler(ModelHandler):
     allowed_out_fields= (    
         'name',
         'accounts',
+        'contacts',
     )
 
     allowed_in_fields = ()
@@ -66,6 +67,8 @@ class AccountHandler(ClientModelHandler):
         'first_name',
         'last_name',
         'client',
+        # fake model field
+        'datetime_now',
     )
     allowed_in_fields = (
         'username',
