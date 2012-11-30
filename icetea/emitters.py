@@ -157,6 +157,14 @@ class Emitter:
             if handler:
                 fields = set(fields)
 
+                # One last check. If the ``data`` model is not nested, and
+                # ``fields`` is still empty, then we use all ``fields`` that
+                # the API handler for ``data`` allowed.
+                # If it is nested then the representation has already been
+                # decided.,
+                if not nested and not fields:
+                    fields = handler.allowed_out_fields
+
                 # Function that retrives the value of the field ``f``
                 v = lambda f: getattr(data, f.attname)
 
@@ -257,13 +265,7 @@ class Emitter:
             else:
                 return dict([ (k, _any(v, fields, nested)) for k, v in data.iteritems()])
         
-
-        # If the handler is a BaseHandler, any models should appear as nested
-        nested = False
-        if not isinstance(self.handler, ModelHandler): nested = True
-        
-        # Kickstart the seralizin'. 
-        return _any(self.data, self.fields, nested)
+        return _any(self.data, self.fields, nested=False)
 
 
     def in_typemapper(self, model):
