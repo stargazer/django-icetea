@@ -7,18 +7,15 @@ from django.utils.xmlutils import SimplerXMLGenerator
 from django.utils.encoding import smart_unicode
 from django.core.serializers.json import DateTimeAwareJSONEncoder
 
-# Class which will register MimeTypes to methods which will decode the
+# Class which will register MimeTypes to methods that will decode the
 # corresponding MimeType to python data structures.
 from utils import Mimer
 
+# Wrapped the ``import xlwt`` in try/catch, otherwise sphinx crashes. WTF!!
 try:
 	import xlwt
 except ImportError:
-	# Needed for sphinx documentation
-	# WTF
 	pass
-
-
 
 class Emitter:
     """
@@ -34,17 +31,10 @@ class Emitter:
     emitter's :meth:`icetea.emitters.Emitter.render` method, should serialize
     the response data, and return them to the calling function.
 
-    TODO: WTF?
-    `RESERVED_FIELDS` was introduced when better resource
-    method detection came, and we accidentially caught these
-    as the methods on the handler. Issue58 says that's no good.
     """
     EMITTERS = { }
     # Maps pairs of {<API Handler class>: <Model>}
     TYPEMAPPER = {}
-    RESERVED_FIELDS = set([ 'read', 'update', 'create',
-                            'delete', 'model', 'anonymous',
-                            'allowed_methods', 'fields', 'exclude' ])
 
     def __init__(self, payload, handler, fields=()):
         # Data to be serialized
@@ -58,7 +48,6 @@ class Emitter:
             raise
 
     def construct(self):
-
         """
         Recursively serialize a lot of types, and
         in cases where it doesn't recognize the type,
@@ -80,50 +69,61 @@ class Emitter:
 
             if isinstance(thing, QuerySet):
                 ret = _qs(thing, fields=fields, nested=nested)
+
             elif isinstance(thing, (tuple, list, set)):
                 ret = _list(thing, fields=fields)
+
             elif isinstance(thing, dict):
                 ret = _dict(thing, fields, nested)
+
             elif isinstance(thing, decimal.Decimal):
                 ret = str(thing)
+
             elif isinstance(thing, Model):
                 ret = _model(thing, fields, nested)
+
             elif inspect.isfunction(thing):
                 if not inspect.getargspec(thing)[0]:
                     ret = _any(thing())
+
             elif hasattr(thing, '__emittable__'):
                 f = thing.__emittable__
                 if inspect.ismethod(f) and len(inspect.getargspec(f)[0]) == 1:
                     ret = _any(f())
+
             elif repr(thing).startswith("<django.db.models.fields.related.RelatedManager"):
-                ret = _any(thing.all(), (), nested)
+                ret = _any(thing.all(), fields, nested)
+
             else:
                 ret = smart_unicode(thing, strings_only=True)
 
             return ret
 
-        def _fk(data, field, nested=True):
+        def _fk(data, field):
             """
             The field ``field`` is a FK of the ``data`` model instance.
-            Fields of foreign keys are always nested.
+            
+            FK fields are always nested.
             """
             return _any(getattr(data, field.name), fields=(), nested=True)
 
-        def _related(data, fields=(), nested=True):
+        def _m2m(data, field):
+            """
+            The field ``field`` is a many-to-many field of the ``data`` model
+            instance.
+
+            Many-to-Many fields are always nested.
+            """
+            return [ _model(m, fields=(), nested=True) for m in getattr(data, field.name).iterator() ]
+
+        def _related(data):
             """
             ``data`` is a RelatedManager, so it represents a Queryset which a
             backwards relationship to the model from which we came here.
 
-            Fields of (related) foreign keys are always nested
+            Related fields are always nested.
             """
-            return [ _model(m, fields, nested) for m in data.iterator() ]
-
-        def _m2m(data, field, nested=True):
-            """
-            The field ``field`` is a many-to-many field of the ``data`` model
-            instance.
-            """
-            return [ _model(m, fields=(), nested=True) for m in getattr(data, field.name).iterator() ]
+            return [ _model(m, fields=(), nested=True) for m in data.iterator() ]
 
         # TODO: Study it again, and get rid of all its garbage.
         def _model(data, fields=(), nested=False):
@@ -131,48 +131,48 @@ class Emitter:
             Models. 
             
             @param data: Model instance
-            @param fields: Model fields that we can output
-            @param nested: True if model is nested in data representation
+            @param fields: Model fields that we are allowed to output. This is
+            only relevant if nested==True. If nested==False, then the
+            fields that we can output are decided by:
+                handler.allowed_out_fields - handler.exclude_nested.
+            @param nested: True if model is nested in the data response
 
-            If nested=True, then the ``fields`` are decided by:
-                handler.fields - handler.exclude_nested.
-
-            If not, the ``fields`` should be given as input to the method.
-
-            If no handler can be found, the emitter will try to construct a
-            default representation of the data.
+            If there is no handler responsible for constructing the
+            representation of the model type that ``data`` belongs to, the
+            methodr will try to construct a default representataion of the
+            data.
             """
-            ret = { }
+            ret = {}
             handler = self.in_typemapper(type(data))
 
             if nested and handler:
-                # TODO: If the request does not ask for nested representation,
-                # then give resource URI instead.
+                # If ``data`` is nested, we assemble the fields to output
                 fields = set(handler.allowed_out_fields) - set(handler.exclude_nested)
             
             if handler:
-                fields = set(fields)
-
-                # One last check. If the ``data`` model is not nested, and
-                # ``fields`` is still empty, then we use all ``fields`` that
-                # the API handler for ``data`` allowed.
-                # If it is nested then the representation has already been
-                # decided.,
+                # If the ``data`` model is not nested, and ``fields`` is still
+                # empty, then we use the ``allowed_out_fields`` that the API
+                # handler for the model type of ``data``, allowes.
+                # (When could that happen? In the case that a BaseHandler would 
+                # like to return a model instance as a first class citizen. The
+                # BaseHandler could have an empty ``allowed_out_fields`` tuple,
+                # but the Handler for the models ``type(data)`` would dictate a
+                # different representation).
                 if not nested and not fields:
                     fields = handler.allowed_out_fields
 
-                # Function that retrives the value of the field ``f``
+                # Function that retrieves the value of the field ``f``
                 v = lambda f: getattr(data, f.attname)
 
                 for field_name in fields:   
                     f = None
 
-                    # Retrieve the field by name
+                    # Try to retrieve the field by name
                     try:
                         f = data._meta.get_field_by_name(field_name)[0]
                     except FieldDoesNotExist:                         
                         # Field is not a physical model field. So we look in
-                        # the ``fake_fields`` tuple.
+                        # the ``fake_fields`` tuple of the model class.
                         # Check if any of the fields that we want to output, are
                         # included in the model's ``fake_fields`` list. If yes,
                         # evaluate them using the model's ``_compute_fake_fields()`` method.
@@ -191,13 +191,13 @@ class Emitter:
                         value = getattr(data, field_name)
                         if hasattr(value, 'all'):
                             # value is a RelatedManager object
-                            ret[field_name] = _related(value, nested=True)
+                            ret[field_name] = _related(value)
                             continue
 
                         # Check if it is a many_to_many field
                         elif f in data._meta.many_to_many:
                             if f.serialize:
-                                ret[field_name] = _m2m(data, f, nested=True)
+                                ret[field_name] = _m2m(data, f)
                                 continue                   
 
                         # Check if it is a local field or virtual field
@@ -210,7 +210,7 @@ class Emitter:
                                 continue
                             # Is it a foreign key?
                             else:
-                                ret[field_name] = _fk(data, f, nested=True)
+                                ret[field_name] = _fk(data, f)
                                 continue
 
                         # Else try to read the value of the field from the
@@ -252,11 +252,12 @@ class Emitter:
             """
             Dictionaries.
 
-            IF the values of the dictionary are models or querysets, they
+            If the values of the dictionary are models or querysets, they
             should appear as nested.
             """
+            # If there is field selection selection, output only allowed
+            # fields. Else, output all fields
             if fields:
-                # If there is no field selection, just output everything.
                 return dict([ (k, _any(v, fields=(), nested=True)) for k, v in data.iteritems() if k in fields])
             else:
                 return dict([ (k, _any(v, fields=(), nested=True)) for k, v in data.iteritems()])
@@ -355,7 +356,9 @@ Emitter.register('xml', XMLEmitter, 'text/xml; charset=utf-8')
 class ExcelEmitter(Emitter):
     def render(self, request):
         def _to_unicode(string):
-            """ Return the unicode repsesentation of string"""
+            """ 
+            Return the unicode repsesentation of string
+            """
             try:
                 return unicode(string)
             except UnicodeDecodeError:
@@ -363,7 +366,9 @@ class ExcelEmitter(Emitter):
                 ascii_text = str(string).encode('string_escape')
                 return unicode(ascii_text)
         def to_utf8(string):
-            """Return the utf-8 encoded representation of the string """
+            """
+            Return the utf-8 encoded representation of the string 
+            """
             unic = _to_unicode(string)
             return unic.encode('utf-8')
 
@@ -377,7 +382,7 @@ class ExcelEmitter(Emitter):
         wb = xlwt.Workbook(encoding='utf-8')
         stream = StringIO.StringIO()
         
-        ws = wb.add_sheet("SmartPR")
+        ws = wb.add_sheet("Sheet")
         
         # Write field names on row 0
         col = 0
@@ -427,7 +432,6 @@ class ExcelEmitter(Emitter):
     # Doesn't really work with outputing nested fields 
 Emitter.register('excel', ExcelEmitter, 'application/vnd.ms-excel')
  
-               
 class HTMLEmitter(Emitter):
     def render(self, request):
         construct = self.construct()
