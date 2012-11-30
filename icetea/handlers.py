@@ -330,18 +330,20 @@ class BaseHandler():
     
     def execute_request(self, request, *args, **kwargs):
         """
-        All requests are entering the handler here.
+        This is the entry point for all incoming requests
+        (To be more precise, the URL mapper calls the
+        `meth:resource.Resource.__call__`, which does some pre-processing,
+        and then executes `meth:.BaseHandler.execute_request`)
 
-        It returns a dictionary of the result. The dictionary only contains:
-
-        * ``data: <data result>``. ``data result`` is serialized to a
-          dictionary, list or is simply a string.
-        * ``total: <Number>``, if slicing was performed
-        * ``<key>: <value>``: if  :meth:`.ModelHandler.enrich_response` has
-          been overwritten, and more metadata added.
-
-        The dictionary values are simply text. The nested models, queryset and
-        everything else, have been serialized as text, within this dictionary.       
+        It returns a dictionary of the result. The dictionary contains the
+        following keys:
+         
+         * "data": Contains the results of running the operation. The results
+           are serialized into a dictionary, list or string.
+         * "total": Is only included if slicing was performed, and indicates
+           the size of the full results.
+         * Any other key can be included, if `meth.BaseHandler.enrich_response` 
+           has been overwritten
         """
         # Validate request body data
         if hasattr(request, 'data') and request.data is not None:
