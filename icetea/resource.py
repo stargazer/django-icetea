@@ -23,11 +23,11 @@ class Resource:
     """
     Instances of this class act as Django views.
     For every API endpoint, one such instance should be created, with the API
-    handler as its argument. The instance then should be used in the URL
-    mapper, to initiate the serving of the HTTP request.
+    handler as its argument. The instance should then be used in the URL mapper
+    to associate the resource instance with an API endpoint.
 
     Instances are callable, and therefore, every request on the application endpoint will start from
-    the :meth:`Resource.__call__`.
+    the L{Resource.__call__}.
     """
     DEFAULT_EMITTER_FORMAT = 'json'
 
@@ -36,10 +36,8 @@ class Resource:
         Initializes the Resource instance. It should happen once for every
         Handler, in the url mapper.
 
-        When requests come in, Resource.__call__ takes off.
-        
         Data assigned on the resource instance, should be read-only. Why?
-        Concurrent requests coming on the same API endpoint, will be server by
+        Concurrent requests coming on the same API endpoint, will be served by
         the same resource. So, the same __call__ method will be called by
         different threads of the wsgi process. If one of the threads modifies
         the resource's attributes, the modifications will affect all threads.
@@ -51,10 +49,9 @@ class Resource:
         will be running it with different input, and therefore different
         behaviour.
 
-
-        # Every ``Resource`` instance pairs up with a ``Handler`` instance.
-        # This handler, resource pair will be responsible to handle all
-        # incoming request of a certain API endpoint.
+        Every L{Resource} instance pairs up with a Handler instance. This
+        resource/handler pair will be responsible of handling all incoming
+        requests on a certain API endpoint.
         """
         # Instantiate Handler instance
         self.handler = handler()
@@ -78,11 +75,12 @@ class Resource:
         Initiates the serving of the request that has just been received.
 
         It analyzes the request, executes it, packs and serializes the response, and
-        sends it back to the caller.
+        returns it back to the caller.
 
-        .. note::
-            This method is invoked by the URL mapper. It is run by a separate
-            thread for every request.
+        I{Note:}
+       
+        This method is invoked by the URL mapper. It is run by a separate
+        thread for every request.
         """                     
         # Reset (request specific) query list
         connection.queries = []
@@ -115,9 +113,8 @@ class Resource:
 
     def authenticate(self, request):
         """
-        ``True`` if the handler is authenticated(or the handler hasn't overwritten
-        the default ``authentication`` parameter).
-        ``False`` otherwise.
+        Returns I{True} if the request is authenticated or the handler does not
+        require authentication. I{False} otherwise.
         """
         if self.authentication.is_authenticated(request):
             return True
@@ -126,11 +123,11 @@ class Resource:
     def determine_emitter_format(self, request, *args, **kwargs):
         """
         Returns the emitter format.
-        Either taken from the ``emitter_format`` keywork argument(should be
-        given in the ``urls.py``, when declaring the urls view function), or by
-        the ``format`` querystring parameter.
+        Either taken from the I{emitter_format} keywork argument(should be
+        given in the I{urls.py}, when declaring the urls view function), or by
+        the I{format} querystring parameter.
 
-        Defaults to ``json``
+        Defaults to I{json}
         """
         emitter_format = kwargs.pop('emitter_format', None)
         if not emitter_format:
@@ -143,9 +140,21 @@ class Resource:
  
     def serialize_result(self, result, request, emitter_format):
         """
-        ``@param result``: Result of the execution of the handler, wrapped in a
-        dictionary where keys and values are simply text.
-        ``@param request``: Request object
+        The request has been executed succefully and we end up here to
+        serialize the result
+
+        @type result: dict
+        @param result: Result of the execution of the handler, wrapped in a
+        dictionary. The dictionary contains the I{data} key, whose value is the
+        result of running the operation. The value can be another dictionary,
+        list or simply a string. If it's a dictionary or list, it might contain
+        other dictionaries/lists, strings, or even I{datetime} functions.
+
+        @type request: HTTPRequest
+        @param request: Incoming request
+
+        @type emitter_format: str
+        @param emitter_format: Emitter format
         """
         # Find the Emitter class, and the corresponding content
         # type
@@ -157,24 +166,23 @@ class Resource:
         serialized_result = serializer.render(request)
 
         return serialized_result, mimetype, emitter_format
- 
 
     def cleanup(self, request, *args, **kwargs):
         """
         Cleanes up the incoming request, makes sure it's valid and allowed. In
         detail, the checks performed are the folowing:
         
-        * If the request is ``PUT``, transform its data to POST.
-        * If request is ``PUT`` or ``POST``, make sure the request body
-          conforms to the ``Content-Type`` header.
+        * If the request is I{PUT}, transform its data to I{POST}.
+        * If request is I{PUT} or I{POST}, make sure the request body
+          conforms to the I{Content-Type} header.
         * Makes sure that the type of HTTP request is allowed.
         * Makes sure that if it is a bulk or plural request, it is allowed.
         * Makes sure that non-allowed incoming fields, are cut off the request
           body.
 
-        .. note::
+        I{Note:}
 
-            Assumes that the `id` keyword argument indicates singular requests on all handlers
+        Assumes that the I{id} keyword argument indicates singular requests on all handlers
         """
         request_method = request.method.upper()
          
@@ -268,12 +276,18 @@ class Resource:
         Here we construct and return the HTTP response object, with the
         appropriate content in the response body.
 
-        @param request: Incoming request object
+        @type request: HTTPRequest
+        @param request: Incoming request
+
+        @type response_dictionary: dict
         @param response_dictionary: Dictionary that includes all the response
         data.
-        @param emitter_format: Emitter format as string
+
+        @type emitter_format: str
+        @param emitter_format: Emitter format
         
-        @return: HttpResponse object
+        @rtype: HTTPResponse
+        @return: Response object
         """
         # Add debug messages to response dictionary
         self.response_add_debug(response_dictionary)
@@ -301,10 +315,14 @@ class Resource:
         Creates and returns the appropriate HttpResponse object, depending on
         the type of exception that has been raised.
 
+        @type e: Exception
         @param e: Exception object
-        @param request: Incoming request objec
+
+        @type request: HTTPRequest
+        @param request: Incoming request
         
-        @return: HttpResponse object
+        @rtype: HTTPResponse
+        @return: Response object
         """
         http_response, message = self.exception_to_http_response(e, request)
 
@@ -326,10 +344,15 @@ class Resource:
         Any exceptions that are raised within the API handler, are taken care
         of here.                   
         
+        @type e: Exception
         @param e: Exception object
-        @param request: Incoming request object
+
+        @type request: HTTPRequest
+        @param request: Incoming request
         
-        @return: Tuple (HttpResponseObject, message).
+        @rtype: tuple
+        @return: Tuple of (HttpResponseObject, message)
+
         The HttpResponseObject, is simply an HttpRespone object of the
         appropriate form, depending on the error that occured.
         The message is any kind of message that we will be included in the
@@ -412,7 +435,7 @@ class Resource:
 
     def email_exception(self, reporter):
         """
-        Sends email to ``ADMINS``, informing them of the crash
+        Sends email to I{ADMINS}, informing them of the crash
         """
         subject = 'django-icetea crash report'
         html = reporter.get_traceback_html()
