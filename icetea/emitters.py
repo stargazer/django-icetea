@@ -1,4 +1,4 @@
-import decimal, inspect, StringIO
+import decimal, StringIO
 from django.db.models.query import QuerySet
 from django.db.models import Model
 from django.db.models.fields import FieldDoesNotExist
@@ -19,20 +19,18 @@ except ImportError:
 
 class Emitter:
     """
-    Super emitter. All other emitters should subclass
-    this one. 
+    Super emitter. All other emitters should subclass this one. 
     
-    Its :meth:~`icetea.emitters.Emitter.construct`method returns a serialized 
-    dictionary of whatever data it is given. This is typically the only method 
-    that a custom emitter needs.
+    Its L{Emitter.construct} method returns a dictionary, list or
+    string, of whatever data it is given. This is basically a serializable
+    representation of I{self.data}, and is typically the only method
+    that a custom emitter needs. 
 
-    Every time we need the API handler needs to return a response, a new
-    instance of the appropriate emitter should be created. Calling the
-    emitter's :meth:`icetea.emitters.Emitter.render` method, should serialize
-    the response data, and return them to the calling function.
-
+    The custom emitter will then take this serializable data, and serialize it into any
+    format(JSON, XML, wtc) it needs to.
     """
-    EMITTERS = { }
+    # List of registered emitters
+    EMITTERS = {}
     # Maps pairs of {<API Handler class>: <Model>}
     TYPEMAPPER = {}
 
@@ -51,24 +49,27 @@ class Emitter:
         """
         Recursively serialize a lot of types, and
         in cases where it doesn't recognize the type,
-        it will fall back to Django's `smart_unicode`.
+        it will fall back to Django's I{smart_unicode}.
 
-        Returns a dictionary representation of ``self.data``.
+        Returns a serializable representation of I{self.data}.
         """
         def _any(thing, fields=(), nested=False):
             """
             Dispatch, all types are routed through here.
 
-            @param thing: Data we are trying to serialize
-            @param fields: The fields of ``thing`` to serialize. Applies only
-            for database models.
-            @param nested: Are the fields of ``thing`` nested, or are they
-            first class fields?
+            @param thing:  Data we are trying to serialize.
+            @param fields: The fields of I{thing} to serialize. Relevant only
+            for models and dictionaries.
+            @param nested: Are the fields of I{thing} nested, or are they
+            first class fields? This is relevant only for models.
             """        
             ret = None
 
             if isinstance(thing, QuerySet):
                 ret = _qs(thing, fields, nested)
+
+            elif isinstance(thing, Model):
+                ret = _model(thing, fields, nested)
 
             elif isinstance(thing, (tuple, list, set)):
                 ret = _list(thing, fields, nested)
@@ -79,21 +80,6 @@ class Emitter:
             elif isinstance(thing, decimal.Decimal):
                 ret = str(thing)
 
-            elif isinstance(thing, Model):
-                ret = _model(thing, fields, nested)
-
-            elif inspect.isfunction(thing):
-                if not inspect.getargspec(thing)[0]:
-                    ret = _any(thing())
-
-            elif hasattr(thing, '__emittable__'):
-                f = thing.__emittable__
-                if inspect.ismethod(f) and len(inspect.getargspec(f)[0]) == 1:
-                    ret = _any(f())
-
-            elif repr(thing).startswith("<django.db.models.fields.related.RelatedManager"):
-                ret = _any(thing.all(), fields, nested)
-
             else:
                 ret = smart_unicode(thing, strings_only=True)
 
@@ -103,12 +89,20 @@ class Emitter:
             """
             Models. 
             
-            @param data: Model instance
+            @type data: Model
+            @param data: Model instance that we need to represent as a dict
+
+            @type fields: tuple
             @param fields: Model fields that we are allowed to output. This is
-            only relevant if nested==True. If nested==False, then the
+            only relevant if nested==False. If nested==True, then the
             fields that we can output are decided by:
                 handler.allowed_out_fields - handler.exclude_nested.
+
+            @type nested: bool                
             @param nested: True if model is nested in the data response
+
+            @rtype: dict
+            @return: Serializable representation of model I{data}
 
             If there is no handler responsible for constructing the
             representation of the model type that ``data`` belongs to, the
@@ -234,9 +228,9 @@ class Emitter:
         def _qs(data, fields=(), nested=False):
             """
             Querysets.
-            ``data`` is a queryset
-
-            Queryset data might as well be nested or first class fields.
+            
+            Queryset data might be both nested or first class citizens of the
+            representation.
             """
             return [ _any(v, fields, nested) for v in data ]
 
@@ -263,7 +257,7 @@ class Emitter:
 
     def in_typemapper(self, model):
         """
-        Returns the ``model``'s associated API handler.
+        Returns the I{model}'s associated API handler.
         """
         for _handler, _model in self.TYPEMAPPER.iteritems():
             if model is _model:
@@ -271,7 +265,7 @@ class Emitter:
 
     def render(self):
         """
-        This super emitter does not implement `render`,
+        This super emitter does not implement I{render},
         this is a job for the specific emitter below.
         """
         raise NotImplementedError("Please implement render.")
@@ -291,10 +285,11 @@ class Emitter:
         """
         Register an emitter.
 
-        Parameters::
-         - `name`: The name of the emitter ('json', 'xml', 'yaml', ...)
-         - `klass`: The emitter class.
-         - `content_type`: The content type to serve response as.
+        Parameters:
+
+        * name: The name of the emitter ('json', 'xml', 'yaml', ...)
+        * klass: The emitter class.
+        * content_type: The content type to serve response as.
         """
         cls.EMITTERS[name] = (klass, content_type)
 
@@ -311,6 +306,15 @@ class JSONEmitter(Emitter):
     JSON emitter, understands timestamps.
     """
     def render(self, request):
+        #if self.handler.__class__.__name__.startswith('User'):
+        #    import pdb; pdb.set_trace()
+
+        # self.data is already a dictionary, list, or string. self.construct()
+        # serializes 
+
+        # To be precise, the L{construct} method, does not necessarily
+        # serialize data to a dictionary. It serializes data to either a
+        # dictionary, list, or string.
         data_as_dic = self.construct()
         return simplejson.dumps(data_as_dic, cls=DateTimeAwareJSONEncoder, ensure_ascii=False, indent=4)
 Emitter.register('json', JSONEmitter, 'application/json; charset=utf-8')
