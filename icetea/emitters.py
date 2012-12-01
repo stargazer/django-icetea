@@ -306,17 +306,10 @@ class JSONEmitter(Emitter):
     JSON emitter, understands timestamps.
     """
     def render(self, request):
-        #if self.handler.__class__.__name__.startswith('User'):
-        #    import pdb; pdb.set_trace()
-
-        # self.data is already a dictionary, list, or string. self.construct()
-        # serializes 
-
-        # To be precise, the L{construct} method, does not necessarily
-        # serialize data to a dictionary. It serializes data to either a
-        # dictionary, list, or string.
-        data_as_dic = self.construct()
-        return simplejson.dumps(data_as_dic, cls=DateTimeAwareJSONEncoder, ensure_ascii=False, indent=4)
+        # I{self.data} is already in a serializable form, since it can only
+        # contain any of the following python data structures: dict, list, str.
+        # So here we simply serialize it into JSON.
+        return simplejson.dumps(self.data, cls=DateTimeAwareJSONEncoder, ensure_ascii=False, indent=4)
 Emitter.register('json', JSONEmitter, 'application/json; charset=utf-8')
 Mimer.register(simplejson.loads, ('application/json',))
 
