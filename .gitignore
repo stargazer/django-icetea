@@ -8,6 +8,7 @@
 *.pyo
 *.orig
 docs/
+doc/
 dist/
 parts/
 eggs/
