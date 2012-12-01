@@ -144,10 +144,8 @@ formats:
 
 The default is ``application/json``.
 Please not that in the case of outputting ``json``, or ``xml``, it is easy to serialize
-nested data structures in the response. However in the case of ``html`` and
-especially 
-``xls``
-format, there should (probably) be application specific semantics applied to the output
+data structures in the response. However in the case of ``html`` and
+especially ``xls`` format, there should (probably) be application specific semantics applied to the output
 emitters.
 
 ### Status codes
