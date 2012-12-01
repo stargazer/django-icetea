@@ -171,7 +171,7 @@ class Emitter:
                         if hasattr(data, 'fake_fields'):
                             if field_name in data.fake_fields:
                                 try:
-                                    ret[field_name] = data._compute_fake_fields(field_name)
+                                    ret[field_name] = _any(data._compute_fake_fields(field_name))
                                 except AttributeError:
                                     raise
                                 else:
