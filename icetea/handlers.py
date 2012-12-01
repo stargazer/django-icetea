@@ -94,96 +94,107 @@ class BaseHandler():
     Specifies the set of fields that are allowed to be included in a response.
     It's an iterable of field names.
 
-    Mandatory to declare it
+    In case that we wish a different output field selection algorithm, we should override
+    method L{get_output_fields}.
 
-    In case that we wish a more flexible output field selection, we should
-    overwrite method :meth:`.get_output_fields`
-
-    It only makes sense in the case of ModelHandler classes. BaseHandler
-    classes, return whatever they want anyway.
+    In the case of a L{ModelHandler}, it indicates the model fields that we
+    wish to output. In the case of a L{BaseHandler} that for example returns a
+    dictionary, it indicates the dictionary keys that we wish to output
     """
 
     allowed_in_fields = ()
     """
     Specifies the set of allowed incoming fields. 
-
-    Mandatory to declare it.
-
-    TODO: Add check in metaclass, and make sure that no primary keys are
-    allowed. EG. no 'id' field should be allowed here.
     """
 
     request_fields = True
     """
-    Determines if request-level fields selection is enabled. Should be the
-    name of the query string parameter in which the selection can be found.
-    If this attribute is defined as ``True`` (which is the default) the
-    default parameter name ``field`` will be used. Note that setting to (as
-    opposed to "defining as") ``True`` will not work. Disable request-level
-    fields selection by defining this as ``False``.
+    Specifies if request-level fields selection is enabled. 
+    
+    Should be the name of the query string parameter in which the 
+    selection can be found.
+    
+    If this attribute is defined as I{True} (which is the default) the
+    default parameter I{field} will be used. 
+    If I{False}, request-level field selection is disabled.
     """
     
     authentication = None
     """
-    The authenticator that should be in effect on this handler. If
-    defined as ``True`` (which is not the same as assigning ``True``, as this
-    will not work) an instance of
-    :class:`.authentication.DjangoAuthentication` is used. A value of ``None``
-    implies no authentication, which is the default.
+    The authenticator that should be in effect on this handler. If defined as
+    I{True}, an instance of I{authentication.DjangoAuthentication} is used. A
+    value of I{None}, implies no authentication
     """
 
     bulk_create = False
     """
-    Indicates whether bulk POST(creating multiple items with one request) requests are allowed.
+    Specifies whether bulk POST requests(creating multiple resources in one
+    request) are allowed.
     """                
 
     plural_update = False
     """
-    Indicates whether plural PUT(updating multiple resources at once) requests
+    Specifies whether plural PUT requests(updating multiple resources at in one request)
     are allowed.
     """
 
     plural_delete = False
     """
-    Indicates whether plural DELETE(Deleting multiple resources at once)
-    requests are allowed.
+    Specifies whether plural DELETE requests(deleting multiple resources in one
+    request) requests are allowed.
     """
                          
     order = False
     """
-    Order data query string parameter, or ``True`` if the default (``order``)
-    should be used. Disabled (``False``) by default.
+    Specifies the querystring parameter for requesting ordering of data.
+    If I{True}, the default parameter I{order} will be used. 
+    If I{False}, ordering is disabled.
     """
 
     slice = False
     """
-    Slice data query string parameter, or ``True`` if the default (``slice``)
-    should be used. Disabled (``False``) by default.
+    Specifies the querystring parameter for requesting slicing of data.
+    If I{True}, the querystring parameter ``slice`` is used. If ``False``,
+    slicing is disabled.
     """
 
+    # TODO: Instead of doing so, why not simply doing like the ``slice`` and
+    # ``order`` parameters.
+    # excel = True # allows output to excel. default file name(file.xls) is
+    #              # used
+    # excel = 'string' or <callable> # allows output to excel. defiles filename
+    #                                # to use.
+    # excel = False # Disables excel output
+    #  
+    # Of course this implies that I will have some check for the requested
+    # output format, and return an error if the request asks for a forbidden
+    # output format.
     excel_filename = 'file.xls'
     """
-    Default filename in case the handler needs to output to excel. If the handler defines it, it
-    can either be a string, or a callable.
+    Specifies the filename used for the attachment generated when the response
+    is an I{Excel} type file.
+
+    It can either be a string, or a callable.
     """
-    
 
     def get_output_fields(self, request):
         """
-        Returns the fields that the handler can output, for the current request
+        Returns a tuple of the fields that the handler should output, for the current request
         being served.
-        It takes into account the ``allowed_out_fields`` tuple, as well as
-        any request-level field selection that might have taken place.
+        It takes into account the L{allowed_out_fields} tuple, as well as
+        any request-level field selection indicated by the querystring.
 
         If the selection of fields indicates that the response should contain
-        no fields at all(which doesn't really make sense), we instead respond
-        with all fields in ``allowed_out_fields``.
+        no fields at all(which doesn't really make sense), the response will
+        instead contain all fields in L{allowed_out_fields}.
 
-        In the case of a BaseHandler, the fields returned
-        by this function, basically have the sense of dictionary keys allowed
-        to be returned, If the data which is resulf ot the execution of the operation(say the
-        read() method) is a dictionary. If the response is for example a
-        string, the fields returned by this method have no sense at all..
+        For a L{ModelHandler}, the tuple returned by this method, indicates the
+        model fields that the handler should output. For a L{BaseHandler}, it
+        only has sense if the handler returns a dictionary, or a list of
+        dictionaries. In that case, the tuple returned by this method,
+        indicates the dictionary keys that the handler can output. If however
+        the handler returns strings, the output of this method has no real
+        meaning at all.
         """
         selection = ()
         requested = request.GET.getlist(self.request_fields)
@@ -200,8 +211,8 @@ class BaseHandler():
     
     def validate(self, request, *args, **kwargs):
         """
-        Should be overwritten if we need any specific validation of the
-        request body
+        Request body(I{request.data}) validation. Should be overridden if any
+        specific validation is needed.
         """
         pass        
     
@@ -210,7 +221,6 @@ class BaseHandler():
         Returns the data that is the result of the current operation, without
         having to specify if the request is singular or plural.
         """
-        
         data = self.data_item(request, *args, **kwargs)
         if data is None:
             data = self.data_set(request, *args, **kwargs)
@@ -221,17 +231,16 @@ class BaseHandler():
         Returns the data item that is being worked on. This is how the handler
         decides if the requested data is singular or not. By returning
         ``None`` we signal that this request should be handled as a request
-        for a set of data, as opposed to a request for a single record.
+        for a set of data, as opposed to a request for a single resource.
         """
         return None
      
     def data_set(self, request, *args, **kwargs):
         """
         Returns the operation's result data set, which is always an iterable.
-        The difference with :meth:`~working_set` is that it returns the data
-        *after* all filters and ordering (not slicing) are applied.
+        The difference with L{working_set} is that it returns the data
+        B{after} all filters and ordering (not slicing) are applied.
         """
-        
         data = self.working_set(request, *args, **kwargs)
         
         filters = self.filters or {}
@@ -254,22 +263,16 @@ class BaseHandler():
 
     def working_set(self, request, *args, **kwargs):
         """                                                          
-        Returns the operation's base dataset. No data beyond this set will be
-        accessed or modified.
         Returns the operation's base data set. No data beyond this set will be
-        accessed or modified. The reason why we need this one in addition to
-        :meth:`~data_set` is that :meth:`~data_item` needs to have a data set
-        to pick from -- we need to define which items it is allowed to obtain
-        (and which not). This data set should not have user filters applied
-        because those do not apply to item views.
+        accessed or modified. 
         """
         raise NotImplementedError
   
     def filter_data(self, data, definition, values):
         """
-        Applies user filters (as specified in :attr:`.filters`) to the
-        provided data. Does nothing unless overridden with a method that
-        implements filter logic.
+        Applies filters to the provided data.
+        Does nothing unless overridden with a method that implements filter
+        logic.
         """
         return data
     
@@ -282,17 +285,21 @@ class BaseHandler():
     
     def response_slice_data(self, data, request, total=None):
         """
-        ``@param data``: Dataset to slice
-        ``@param request``: Incoming request object 
-        ``@total``: Total items in dataset (Has a value only if invoked by
-        :meth:`.ModelHandler.response_slice_data`
+        Returns the sliced data, as well as its total size.
 
-        ``@return``: Returns a list (sliced_data, total):
+        @param data: Dataset to slice
+        @param request: Incoming request object
+        @param total: Total items in dataset (Has a value only if invoked by
+        the L{ModelHandler.response_slice_data} method.
         
-        * ``sliced_data``: The final data set, after slicing. If no slicing has
-          been performed, the initial dataset will be returned
-        * ``total``:  Total size of initial dataset. None if no slicing was
-          performed.
+        @rtype: list
+        @return: sliced_data, total
+        
+        * sliced_data: The final data set, after slicing. If no slicing has
+        been performed, it will be equal to the initial dataset.
+        
+        * total:  Total size of initial dataset. I{None} if no slicing was
+        performed.
         """
         # Is slicing allowed, and has it been requested?
         slice = request.GET.get(self.slice, None)
@@ -318,32 +325,46 @@ class BaseHandler():
         
     def slice_data(self, data, start=None, stop=None, step=None):
         """
-        Slices and returns the provided data according to *start*, *stop* and *step*.
-        If the data is not sliceable, simply return it
+        Slices and returns the provided data.
+        
+        @param start: Start slicing here
+        @param stop:  Stop slicing here - 1
+        @param step:  Step
+
+        @return: Sliced data. If data is not sliceable, simply return it as is.
         """
         try:
             return data[start:stop:step]
         except:
-            # Allows us to run *response_slice_data* without having to worry
-            # about if the data is actually sliceable.
+            # Allows us to run L{response_slice_data} without having to worry
+            # whether the data is actually sliceable.
             return data
     
     def execute_request(self, request, *args, **kwargs):
         """
         This is the entry point for all incoming requests
         (To be more precise, the URL mapper calls the
-        `meth:resource.Resource.__call__`, which does some pre-processing,
-        and then executes `meth:.BaseHandler.execute_request`)
+        L{resource.Resource.__call__} that does
+        some pre-processing, which then calls L{execute_request} )
 
-        It returns a dictionary of the result. The dictionary contains the
+        It guides the request through all the necessary steps up to the point
+        that its result is serialized into a dictionary.
+
+        @type request: HTTPRequest object
+        @param request: Incoming request
+
+        @rype: dict
+        @return: Dictionary of the result. The dictionary contains the
         following keys:
-         
-         * "data": Contains the results of running the operation. The results
-           are serialized into a dictionary, list or string.
-         * "total": Is only included if slicing was performed, and indicates
-           the size of the full results.
-         * Any other key can be included, if `meth.BaseHandler.enrich_response` 
-           has been overwritten
+        
+        * data: Contains the result of running the requested operation. It is
+        either a dict, list, or string.
+
+        * total: Is only included if slicing was performed, and indicates the
+        total result size.
+
+        * Any other key can be included, if L{BaseHandler.enrich_response} has
+        been overridden
         """
         # Validate request body data
         if hasattr(request, 'data') and request.data is not None:
@@ -365,11 +386,18 @@ class BaseHandler():
         # Slice
         sliced_data, total = self.response_slice_data(data, request)
         
-        # Use the emitter to serialize the ``data``. The emitter is responsible for
-        # allowing only fields in ``fields``, if such a selection makes sense.
-        # Depending on ``data``'s type, after the serialization, it becomes
-        # either a dict, list(of strings, dicts, etc) or string.
-        emitter = Emitter(sliced_data, self, fields)       
+        # Use the emitter to serialize the I{sliced_data} to a:
+        # * dict: If the I{sliced_data} is a model instance(that a
+        #   L{ModelHandler} has returned), or a dict(that a L{BaseHandler} has
+        #   returned.
+        # * list: If the I{sliced_data} is a QuerySet that a L{ModelHandler} has
+        #   returned (in that case, the emitter will return a list of
+        #   dictionaries), or a list that a BaseHandler has returned.
+        # * str: If the I{sliced_data} is a string that a L{BaseHandler} has
+        #   returned.
+        # The emitter is responsible for making sure that only fields contained in
+        # I{fields} will be included in the result.
+        emitter = Emitter(sliced_data, self, fields)      
         ser_data = emitter.construct()
 
         # Structure the response data
@@ -386,33 +414,53 @@ class BaseHandler():
 
     def enrich_response(self, response_structure, data):
         """
-        Overwrite this method in your handler, in order to add more (meta)data
+        Override this method in your handler, in order to add more (meta)data
         within the response data structure.
     
-        ``@param response_structure``: Dictionary that includes at least the
-        {'data': <data>} pair.
-        ``@param data``: The (unsliced) data result of the operation 
+        @type response_structure: dict
+        @param response_structure: Dictionary that includes the I{data} key.
+        I{data} contains the sliced dataset that will be returned in the
+        response.
+
+        @param data: Contains the full(unsliced) data result of the operation
+
+        @return: None
         """
         pass
 
     def create(self, request, *args, **kwargs):
         """
         Default implementation of a create operation, put in place when the
-        handler defines ``create = True``.
+        handler defines I{create = True}.
+
+        @type request: HTTPRequest object
+        @param request: Incoming request
+
+        @return: Result dataset
         """
         return request.data
     
     def read(self, request, *args, **kwargs):
         """
         Default implementation of a read operation, put in place when the
-        handler defines ``read = True``.
+        handler defines I{read = True}.
+
+        @type request: HTTPRequest object
+        @param request: Incoming request
+
+        @return: Result dataset
         """
         return self.data(request, *args, **kwargs)
     
     def update(self, request, *args, **kwargs):
         """
         Default implementation of an update operation, put in place when the
-        the handler defines ``update = True``.
+        the handler defines I{update = True}.
+
+        @type request: HTTPRequest object
+        @param request: Incoming request
+
+        @return: Result dataset
         """
         # If *request.data* is not an appropriate response, we should *make*
         # it an appropriate response. Never directly use *self.data*, as that
@@ -422,7 +470,12 @@ class BaseHandler():
     def delete(self, request, *args, **kwargs):
         """
         Default implementation of a delete operation, put in place when the
-        the handler defines ``delete = True``.
+        the handler defines I{delete = True}.
+
+        @type request: HTTPRequest object
+        @param request: Incoming request
+
+        @return: Result dataset
         """
         return self.data(request, *args, **kwargs)
     
@@ -433,7 +486,6 @@ class BaseHandler():
         """
         pass
 
-
 class ModelHandler(BaseHandler):
     """
     Provides off-the-shelf CRUD operations on data of a certain model type.
@@ -441,11 +493,11 @@ class ModelHandler(BaseHandler):
     Note that in order to prevent accidental exposure of data that was never
     intended to be public, model data fields will not be included in the
     response if they are not explicitly mentioned in
-    :attr:`~BaseHandler.allowed_in_fields`. 
+    I{BaseHandler.allowed_out_fields}. 
     """    
     model = None
     """
-    A model class of type :class:`django.db.models.Model`.
+    A Django model class.
     """
     
     exclude_nested = ()
@@ -457,17 +509,17 @@ class ModelHandler(BaseHandler):
  
     filters = False
     """
-    Dictionary specifying data filters, in pairs of ``name: filter``. 
+    Dictionary specifying data filters, in pairs of I{name: filter}. 
     
-    ``name`` is the querystring parameter used to trigger the filter.
+    I{name} is the querystring parameter used to trigger the filter.
 
-    ``filter`` defines the field on  which the filter will be applied on, as well as (implicitly or explicitly)
+    {filter} defines the field on  which the filter will be applied on, as well as (implicitly or explicitly)
     the type of field lookup.
 
-    For example, ``filters = dict(id=id__in)``, defines that the querystring
+    For example, {filters = dict(id=id__in)}, defines that the querystring
     parameter ``id``, will trigger the Django field lookup ``id__in``, with the
-    value given to ``id``. So, the querystring ``?id=12&id=14``, will perform
-    the filter ``filter(id__in=[12, 14]``), on the corresponding model.
+    value given to ``id``. So, the querystring I{?id=12&id=14}, will perform
+    the filter I{filter(id__in=[12, 14])}, on the corresponding model.
     """
     
     read = True
@@ -477,10 +529,11 @@ class ModelHandler(BaseHandler):
 
     def validate(self, request, *args, **kwargs):
         """
-        Turns the data on the request into model instances; a new instance
-        with the ``POST``'ed data or a current instance to be updated with the 
-        ``PUT``'ed data.
-        The model instances have been validated using Django's ``full_clean()``
+        Turns the data on the request(I{request.data}) into a model instance, or list of model
+        instances; New instance(s) for I{POST}'ed data, or current instance(s)
+        to be updated, for I{PUT}'ed data.
+
+        The model instances are validated using Django's I{full_clean()}
         method, so we can be sure that they are valid model instances, ready to
         hit the database. This can be seen as something totally similar to Django ModelForm
         validation.         
@@ -488,21 +541,25 @@ class ModelHandler(BaseHandler):
         After this method, we shouldn't perform modifications on the model
         instances, since any modifications might make the data models invalid.
 
-        For Bulk create or plural update requests, if some of the data
-        instances fail to validate, we raise an ErrorList exception, which
+        For Bulk POST or plural PUT requests, if some of the data
+        instances fail to validate, we raise an L{authentication.ErrorList} exception, which
         includes the validation errors of the corresponding data instances.
+
+        @type request: HTTPRequest object
+        @param request: Incoming request
+
+        @rtype: None
+        @return: None
         """
         def validate_all_post(instances):
             """
-            Generator that validates a list of ``self.model`` instances.
+            Generator that validates a list of L{model} instances.
             Should be used to validate the model instance in the case of Bulk
             POST and plural PUT requests.
 
-            @param instances: List of ``self.model`` instances
-            @param specifier: String to indicate the position of erroneous
-            instances.
+            @param instances: List of L{model} instances
 
-            For every instance in ``instances``, it returns None if the
+            For every instance in I{instances}, it returns None if the
             instance validates correctly, or a ValidationError if not.
             """
             for i, instance in enumerate(instances):
@@ -598,16 +655,22 @@ class ModelHandler(BaseHandler):
         queryset of the model instances, with filtering made only based on
         keyword arguments.
 
-        .. note::
-            Keyword arguments are defined in the URL mapper, and are usually in
-            the form of ``/api endpoint/<id>/``.
+        @type request: HTTPRequest object
+        @param request: Incoming request
 
-            For faster query execution, consider the
-            use of `select_related
-            <https://docs.djangoproject.com/en/dev/ref/models/querysets/#select-related>`_
-            Be aware though, that it is very `memory-intensive
-            <https://code.djangoproject.com/ticket/17>`_. A middle-of-the-way
-            solution would probably be to use it with the ``depth`` parameter.
+        @rtype: QuerySet
+        @return: Model Queryset
+        
+        I{Notes:}
+
+        * Keyword arguments are defined in the URL mapper, and are usually in
+        the form of I{/api_endpoint/<id>/}.
+
+        * For faster query execution, consider the use of
+        U{select_related<https://docs.djangoproject.com/en/dev/ref/models/querysets/#select-related>}
+        Be aware though, that it can be very U{memory-intensive
+        <https://code.djangoproject.com/ticket/17>}. A middle-of-the-way
+        solution would probably be to use it with the I{depth} parameter.
         """
         return self.model.objects.filter(**kwargs)
     
@@ -615,6 +678,11 @@ class ModelHandler(BaseHandler):
         """
         Returns a single model instance, if such has been pointed out. Else the
         super class returns None.
+        
+        @type request: HTTPRequest object
+        @param request: Incoming request
+
+        @return: Model instance, or None
         """
         # First we check if we have been provided with conditions that are
         # capable of denoting a single item. If we would try to ``get`` an
@@ -636,22 +704,30 @@ class ModelHandler(BaseHandler):
     
     def filter_data(self, data, definition, values):
         """
-        ``@param data``: Data on which the filter will be applied
+        @type data: QuerySet
+        @param data: Data on which the filter iwll be applied
 
-        ``@param definition``: Filter definition. Could be:
+        @type definition: str, tuple
+        @param definition: Filter definition. Could be:
+
+        * A Django U{field lookup
+        <https://docs.djangoproject.com/en/dev/topics/db/queries/#field-lookups>},
+        defining both the field and the lookup. For example I{id__in}, which
+        defines the field {id} and the lookup filter to be applied upon it.
         
-        * A Django `field lookup
-          <https://docs.djangoproject.com/en/dev/topics/db/queries/#field-lookups>`_,
-          defining both the field and the lookup. For example ``id__in``, which
-          defines the field ``id`` and the lookup filter to be applied upon it.
-        * A `a custom filter` as defined in :mod:`~custom_filters`, defining
-          both the field and the filter. For example, ``emails__in_list``,
-          which defines the field ``emails`` and the filter ``__in_list`` to be
-          applied upon it.
+        * A {a custom filter} as defined in L{custom_filters}, defining
+        both the field and the filter. For example, I{emails__in_list},
+        which defines the field {emails} and the filter {__in_list} to be
+        applied upon it.
+        
         * A tuple defining the fields on which an OR based Full Text search will be performed.
-          For example ``('name', 'surname')``.
+        For example I{('name', 'surname')}.
 
-        ``@param values``: The values to be applied on the filter.
+        @type values: list
+        @param values: The values to be applied on the filter.
+
+        @rtype: QuerySet
+        @return: Filtered queryset
         """
         if isinstance(definition, basestring):
             # If the definition's suffix is equal to the name of a custom
@@ -679,22 +755,22 @@ class ModelHandler(BaseHandler):
         return data
     
     def order_data(self, data, *order):
+        """
+        """
         return data.order_by(*order)
     
     def response_slice_data(self, data, request):
         """
-        Slices the ``data`` and limits it to a certain range.
+        Slices the data and limits it to a certain range.
 
-        ``@param data``: Dataset to slice
+        @type data: Model or Queryset
+        @param data: Dataset to slice
 
-        ``@param request``: Incoming request
+        @type request: HTTPRequest
+        @param request: Incoming request
 
-        ``@return``: Returns a tuple (sliced_data, total)
-
-         * sliced_data: The final data set, after slicing. If no slicing has
-           been performed, the initial dataset will be returned
-         * total:       Total size of initial dataset. None if no slicing was
-           performed.
+        @rtype: list
+        @return: List of (sliced_data, total)
         """
         # Single model instance cannot be sliced
         if isinstance(data, self.model) or not request.GET.get(self.slice, None):
@@ -711,18 +787,25 @@ class ModelHandler(BaseHandler):
 
     def create(self, request, *args, **kwargs):
         """
-        Saves the model instances available in ``request.data``. 
+        Writes the model instances available in I{request.data}, to the
+        database.
         
-        After this method, ``request.data`` only contains the successfully
+        After this method, I{request.data} only contains the successfully
         created model instance(s).
 
         When can a model instance fail to be created?
-         * In very rare cases, when a model instance will escape the uniqueness
-           constraints(eg, bulk create: More that one entries are the same.
-           They both escape the uniqueness constraints since they are not yet
-           created, but only the first of them managed to be created eventually), 
-           and only fail upon hitting the database.
-         * Database failure
+        * In very rare cases, when a model instance will escape the uniqueness
+        constraints(eg, bulk create: More that one entries are the same.
+        They both escape the uniqueness constraints since they are not yet
+        created, but only the first of them managed to be created eventually), 
+        and the second only fails upon hitting the database.
+        * Database failure
+
+        @type request: HTTPRequest
+        @param request: Incoming request
+
+        @rtype: Model or Queryset
+        @return: Succesfully created instance(s)
         """
         def persist(instance):
             try:
@@ -756,9 +839,15 @@ class ModelHandler(BaseHandler):
     
     def update(self, request, *args, **kwargs):
         """
-        Saves (updates) the model instances in ``request.data``. Returns the
-        subset of ``request.data`` which contains the successfully updated
+        Saves (updates) the model instances contained in I{request.data}. Returns the
+        subset of {request.data} which contains the successfully updated
         model instances.
+
+        @type request: HTTPRequest
+        @param request: Incoming request
+
+        @rtype: Model or Queryset
+        @return: Succesfully updated instance(s)
         """
         def persist(instance):
             try:
@@ -780,9 +869,15 @@ class ModelHandler(BaseHandler):
         """
         We only run this method AFTER the result data have been serialized into
         text. If we had ran it earlier, then the model instances of the result
-        set would have been deleted, hence their ``id `` field would have been
-        equal to ``None``, and hence their ``id`` would not be available for
+        set would have been deleted, hence their I{id} field would have been
+        equal to I{None}, and hence their I{id} would not be available for
         serialization.        
+
+        @type data: Model or QuerySet
+        @param data: Model instance(s) to be deleted
+
+        @rtype: None
+        @return: None
         """
         if data:
             data.delete()
