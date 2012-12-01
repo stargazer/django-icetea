@@ -68,13 +68,13 @@ class Emitter:
             ret = None
 
             if isinstance(thing, QuerySet):
-                ret = _qs(thing, fields=fields, nested=nested)
+                ret = _qs(thing, fields, nested)
 
             elif isinstance(thing, (tuple, list, set)):
-                ret = _list(thing, fields=fields)
+                ret = _list(thing, fields, nested)
 
             elif isinstance(thing, dict):
-                ret = _dict(thing, fields, nested)
+                ret = _dict(thing, fields)
 
             elif isinstance(thing, decimal.Decimal):
                 ret = str(thing)
@@ -99,33 +99,6 @@ class Emitter:
 
             return ret
 
-        def _fk(data, field):
-            """
-            The field ``field`` is a FK of the ``data`` model instance.
-            
-            FK fields are always nested.
-            """
-            return _any(getattr(data, field.name), fields=(), nested=True)
-
-        def _m2m(data, field):
-            """
-            The field ``field`` is a many-to-many field of the ``data`` model
-            instance.
-
-            Many-to-Many fields are always nested.
-            """
-            return [ _model(m, fields=(), nested=True) for m in getattr(data, field.name).iterator() ]
-
-        def _related(data):
-            """
-            ``data`` is a RelatedManager, so it represents a Queryset which a
-            backwards relationship to the model from which we came here.
-
-            Related fields are always nested.
-            """
-            return [ _model(m, fields=(), nested=True) for m in data.iterator() ]
-
-        # TODO: Study it again, and get rid of all its garbage.
         def _model(data, fields=(), nested=False):
             """
             Models. 
@@ -142,6 +115,31 @@ class Emitter:
             methodr will try to construct a default representataion of the
             data.
             """
+            def _fk(data, field):
+                """
+                Serializes and returns the FK field ``field`` of the data model
+                ``data``.
+                FK fields are always nested.
+                """
+                return _any(getattr(data, field.name), fields=(), nested=True)
+
+            def _m2m(data, field):
+                """
+                Serializes and returns the many-to-many field ``field`` of the
+                ``data`` model instance.
+                Many-to-Many fields are always nested.
+                """
+                return [ _model(m, fields=(), nested=True) for m in getattr(data, field.name).iterator() ]
+
+            def _related(data):
+                """
+                Serializes and returns the RelatedManager ``data``. ``data``
+                represents a QuerySet which is a backwards relationshop to the
+                model from which we came here.
+                Related fields are always nested.
+                """
+                return [ _model(m, fields=(), nested=True) for m in data.iterator() ]
+            
             ret = {}
             handler = self.in_typemapper(type(data))
 
@@ -242,18 +240,17 @@ class Emitter:
             """
             return [ _any(v, fields, nested) for v in data ]
 
-        def _list(data, fields=()):
+        def _list(data, fields=(), nested=False):
             """
             Lists.
             """
-            return [ _any(v, fields) for v in data ]
+            return [ _any(v, fields, nested) for v in data ]
 
-        def _dict(data, fields=(), nested=False):
+        def _dict(data, fields=()):
             """
             Dictionaries.
 
-            If the values of the dictionary are models or querysets, they
-            should appear as nested.
+            The values of dictionaries should always be considered nested.
             """
             # If there is field selection selection, output only allowed
             # fields. Else, output all fields
@@ -263,7 +260,6 @@ class Emitter:
                 return dict([ (k, _any(v, fields=(), nested=True)) for k, v in data.iteritems()])
 
         return _any(self.data, self.fields, nested=False)
-
 
     def in_typemapper(self, model):
         """
@@ -316,9 +312,7 @@ class JSONEmitter(Emitter):
     """
     def render(self, request):
         data_as_dic = self.construct()
-        seria = simplejson.dumps(data_as_dic, cls=DateTimeAwareJSONEncoder, ensure_ascii=False, indent=4)
-
-        return seria
+        return simplejson.dumps(data_as_dic, cls=DateTimeAwareJSONEncoder, ensure_ascii=False, indent=4)
 Emitter.register('json', JSONEmitter, 'application/json; charset=utf-8')
 Mimer.register(simplejson.loads, ('application/json',))
 
