@@ -357,8 +357,11 @@ class BaseHandler():
         @return: Dictionary of the result. The dictionary contains the
         following keys:
         
-        * data: Contains the result of running the requested operation. It is
-        either a dict, list, or string.
+        * data: Contains the result of running the requested operation. The
+        value to this key can be a dictionary, list, or string. Within this
+        data structure, any dictionaries or lists are made of strings, with the
+        exception of dates, which appear as I{datetime} functions, and will be
+        serialized by the JSONEmitter.
 
         * total: Is only included if slicing was performed, and indicates the
         total result size.
@@ -386,16 +389,11 @@ class BaseHandler():
         # Slice
         sliced_data, total = self.response_slice_data(data, request)
         
-        # Use the emitter to serialize the I{sliced_data} to a:
-        # * dict: If the I{sliced_data} is a model instance(that a
-        #   L{ModelHandler} has returned), or a dict(that a L{BaseHandler} has
-        #   returned.
-        # * list: If the I{sliced_data} is a QuerySet that a L{ModelHandler} has
-        #   returned (in that case, the emitter will return a list of
-        #   dictionaries), or a list that a BaseHandler has returned.
-        # * str: If the I{sliced_data} is a string that a L{BaseHandler} has
-        #   returned.
-        # The emitter is responsible for making sure that only fields contained in
+        # Use the emitter to serialize any python objects / data structures
+        # within I{sliced_data}, to serializable forms(dict, list, string), 
+        # so that the specific emitter we use for returning
+        # the response, can easily serialize them in some other format,
+        # The L{Emitter} is responsible for making sure that only fields contained in
         # I{fields} will be included in the result.
         emitter = Emitter(sliced_data, self, fields)      
         ser_data = emitter.construct()

@@ -148,7 +148,10 @@ class Resource:
         dictionary. The dictionary contains the I{data} key, whose value is the
         result of running the operation. The value can be another dictionary,
         list or simply a string. If it's a dictionary or list, it might contain
-        other dictionaries/lists, strings, or even I{datetime} functions.
+        other dictionaries/lists, strings, or even I{datetime} functions. All
+        dictionary key/value pairs, and list elements, should be strings, other
+        than the I{datetime} functions. In anycase, I{self.data} should be
+        serializable very easily, without any magic.
 
         @type request: HTTPRequest
         @param request: Incoming request

@@ -253,6 +253,7 @@ class Emitter:
             else:
                 return dict([ (k, _any(v, fields=(), nested=True)) for k, v in data.iteritems()])
 
+        # kickstart
         return _any(self.data, self.fields, nested=False)
 
     def in_typemapper(self, model):
