@@ -47,6 +47,16 @@ class BaseTest(TestCase):
         )
         return response
 
+    def truncate(self, string, limit):
+        """
+        Truncates and returns the string I{string} to I{limit} characters.
+        """
+        string = str(string)
+
+        if len(string) < (limit - 4):
+            return string
+        else:
+            return string[:(limit - 4)] + "..."
 
 class TestResponseFieldsBase(BaseTest):
     """
@@ -144,10 +154,10 @@ class TestResponseFieldsBase(BaseTest):
                 actual_fields = set()
 
             sys.stdout.write("{endpoint:45}{payload:40}{expected:60}{actual:60}".format(
-                endpoint=endpoint, 
-                payload=payload,
-                expected=expected_fields,
-                actual=actual_fields,
+                endpoint=self.truncate(endpoint, 45), 
+                payload=self.truncate((payload), 40),
+                expected=self.truncate(expected_fields, 60),
+                actual=self.truncate(actual_fields, 60),
             ))
             sys.stdout.write("\n")
             assert expected_fields == actual_fields
@@ -293,7 +303,7 @@ class TestResponseContentBase(BaseTest):
 
         # Print headings
         sys.stdout.write(\
-"{endpoint:60}{payload:50}{expected_response:18}{actual_response:18}{expected_length:13}{actual_length:13}".format(
+"{endpoint:50}{payload:40}{expected_response:25}{actual_response:25}{expected_length:13}{actual_length:13}".format(
                 endpoint="API Endpoint", 
                 payload="Payload",
                 expected_response="Expected",
@@ -313,13 +323,13 @@ class TestResponseContentBase(BaseTest):
             # analyze response
             actual_response, actual_length = self.analyze(response)
             sys.stdout.write(\
-"{endpoint:60}{payload:50}{expected_response:18}{actual_response:18}{expected_length:<13}{actual_length:<13}".format(
-                    endpoint=endpoint, 
-                    payload=payload,
-                    expected_response=expected_response,
-                    actual_response=actual_response,
-                    expected_length=expected_length,
-                    actual_length=actual_length,
+"{endpoint:50}{payload:40}{expected_response:25}{actual_response:25}{expected_length:13}{actual_length:13}".format(
+                    endpoint=self.truncate(endpoint, 50), 
+                    payload=self.truncate(payload, 40),
+                    expected_response=self.truncate(expected_response, 25),
+                    actual_response=self.truncate(actual_response, 25),
+                    expected_length=self.truncate(expected_length, 13),
+                    actual_length=self.truncate(actual_length, 13),
                 )
             )
             sys.stdout.write("\n")
