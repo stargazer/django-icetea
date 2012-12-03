@@ -116,7 +116,7 @@ class TestResponseFieldsBase(BaseTest):
         sys.stdout.write("\n")
 
         # Perform test and print results
-        for suffix, payload, expected_fields in test_data:            
+        for suffix, payload, expected_fields in test_data:  
             expected_fields = set(expected_fields)
 
             # construct endpoint
@@ -133,12 +133,12 @@ class TestResponseFieldsBase(BaseTest):
 
                 actual_fields = set()
                 if isinstance(data, list):
-                    for item in data:
-                        for field in item.keys():
-                            actual_fields.add(field)
-                else:
-                    for field in data.keys():
-                        actual_fields.add(field)
+                    # data is a list of resources
+                    data = data[0] # assume that all resources in the list of
+                                   # results contain the same fields, so I only
+                                   # check the first one.
+
+                actual_fields.update(data.keys())                    
             
             else:
                 actual_fields = set()
