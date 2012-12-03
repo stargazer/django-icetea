@@ -7,7 +7,7 @@ class BaseTest(TestCase):
     """
     Base Test Class.
     Don't inherit directly from this class, but from one of its subclasses.
-    """
+    """    
     def setUp(self):
         self.browser = Client()        
         self.method_mapping = {
@@ -103,6 +103,13 @@ class TestResponseFieldsBase(BaseTest):
     ``django-icetea`` folder, which used this class to test ``django-icetea``
     itself.  
     """
+    # Length of test outputs
+    LEN_ENDPOINT = 45
+    LEN_PAYLOAD = 40
+    LEN_EXPECTED = 60
+    LEN_ACTUAL = 60
+
+
     def execute(self, type, handler, test_data):
         print '\n'
         # caller method name (method that called ``execute``)
@@ -117,7 +124,12 @@ class TestResponseFieldsBase(BaseTest):
         sys.stdout.write("\n--------------------------------------------------------------------\n")
 
         # Print headings
-        sys.stdout.write("{endpoint:45}{payload:40}{expected:60}{actual:60}".format(
+        sys.stdout.write(("{endpoint:%d}{payload:%d}{expected:%d}{actual:%d}" % (
+            self.LEN_ENDPOINT,
+            self.LEN_PAYLOAD,
+            self.LEN_EXPECTED,
+            self.LEN_ACTUAL,
+        )).format(
             endpoint="API Endpoint", 
             payload="Payload",
             expected="Expected",
@@ -153,11 +165,16 @@ class TestResponseFieldsBase(BaseTest):
             else:
                 actual_fields = set()
 
-            sys.stdout.write("{endpoint:45}{payload:40}{expected:60}{actual:60}".format(
-                endpoint=self.truncate(endpoint, 45), 
-                payload=self.truncate((payload), 40),
-                expected=self.truncate(expected_fields, 60),
-                actual=self.truncate(actual_fields, 60),
+            sys.stdout.write(("{endpoint:%d}{payload:%d}{expected:%d}{actual:%d}" % (
+                self.LEN_ENDPOINT,
+                self.LEN_PAYLOAD,
+                self.LEN_EXPECTED,
+                self.LEN_ACTUAL,
+            )).format(
+                endpoint=self.truncate(endpoint, self.LEN_ENDPOINT), 
+                payload=self.truncate((payload), self.LEN_PAYLOAD),
+                expected=self.truncate(expected_fields, self.LEN_EXPECTED),
+                actual=self.truncate(actual_fields, self.LEN_ACTUAL),
             ))
             sys.stdout.write("\n")
             assert expected_fields == actual_fields
@@ -216,6 +233,14 @@ class TestResponseContentBase(BaseTest):
     itself.               
 
     """
+    # Lengths of test outputs
+    LEN_ENDPOINT = 45 
+    LEN_PAYLOAD = 40
+    LEN_EXPECTED_RES = 25
+    LEN_ACTUAL_RES = 25
+    LEN_EXPECTED_LEN = 13
+    LEN_ACTUAL_LEN = 13
+
     def analyze(self, response):
         """
         Returns the type and length of the ``response``
@@ -302,14 +327,22 @@ class TestResponseContentBase(BaseTest):
         sys.stdout.write("\n--------------------------------------------------------------------\n")
 
         # Print headings
-        sys.stdout.write(\
-"{endpoint:50}{payload:40}{expected_response:25}{actual_response:25}{expected_length:13}{actual_length:13}".format(
-                endpoint="API Endpoint", 
-                payload="Payload",
-                expected_response="Expected",
-                actual_response="Actual",
-                expected_length="Expected",
-                actual_length="Actual",
+        sys.stdout.write((
+            "{endpoint:%d}{payload:%d}{expected_response:%d}{actual_response:%d}{expected_length:%d}{actual_length:%d}" % (
+                self.LEN_ENDPOINT, 
+                self.LEN_PAYLOAD, 
+                self.LEN_EXPECTED_RES,
+                self.LEN_ACTUAL_RES, 
+                self.LEN_EXPECTED_LEN,
+                self.LEN_ACTUAL_LEN
+            )
+       ).format(
+            endpoint="API Endpoint", 
+            payload="Payload",
+            expected_response="Expected",
+            actual_response="Actual",
+            expected_length="Expected",
+            actual_length="Actual",
             )
         )
         sys.stdout.write("\n")
@@ -322,16 +355,22 @@ class TestResponseContentBase(BaseTest):
             response = self.request(type, endpoint, payload)
             # analyze response
             actual_response, actual_length = self.analyze(response)
-            sys.stdout.write(\
-"{endpoint:50}{payload:40}{expected_response:25}{actual_response:25}{expected_length:13}{actual_length:13}".format(
-                    endpoint=self.truncate(endpoint, 50), 
-                    payload=self.truncate(payload, 40),
-                    expected_response=self.truncate(expected_response, 25),
-                    actual_response=self.truncate(actual_response, 25),
-                    expected_length=self.truncate(expected_length, 13),
-                    actual_length=self.truncate(actual_length, 13),
-                )
-            )
+            sys.stdout.write((\
+            "{endpoint:%d}{payload:%d}{expected_response:%d}{actual_response:%d}{expected_length:%d}{actual_length:%d}" % (
+                self.LEN_ENDPOINT, 
+                self.LEN_PAYLOAD,
+                self.LEN_EXPECTED_RES,
+                self.LEN_ACTUAL_RES,
+                self.LEN_EXPECTED_LEN,
+                self.LEN_ACTUAL_LEN,
+            )).format(
+                endpoint=self.truncate(endpoint, self.LEN_ENDPOINT),
+                payload=self.truncate(payload, self.LEN_PAYLOAD),
+                expected_response=self.truncate(expected_response, self.LEN_EXPECTED_RES), 
+                actual_response=self.truncate(actual_response, self.LEN_ACTUAL_RES),
+                expected_length=self.truncate(expected_length, self.LEN_EXPECTED_LEN),
+                actual_length=self.truncate(actual_length, self.LEN_ACTUAL_LEN),
+            ))
             sys.stdout.write("\n")
 
             assert expected_response == actual_response
