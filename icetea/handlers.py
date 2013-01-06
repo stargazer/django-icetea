@@ -306,33 +306,37 @@ class BaseHandler():
         if not slice:
             return data, None
         
-        if not total:
+        if total is None:
             total = len(data)
+    
+        return self.slice_data(data, slice), total
+
+    def slice_data(self, data, slice):
+        """
+        Slices and returns the provided data.
+
+        @param data: Dataset to slice
+        @param slice: Querydict with ``slice`` parameter, as captured from the
+        querystring
         
+        @return: Sliced data. If data is not sliceable, simply return it as is.
+        """
         slice = slice.split(':')
 
         # Gather all slice arguments
-        process = []
+        slice_args = []
         for i in range(3):
             try:
-                slice_arg = int(slice[i])
+                param = int(slice[i])
             except (IndexError, ValueError):
-                slice_arg = None
+                param = None
             finally:
-                process.append(slice_arg)
-        
-        return self.slice_data(data, *process), total
-        
-    def slice_data(self, data, start=None, stop=None, step=None):
-        """
-        Slices and returns the provided data.
-        
-        @param start: Start slicing here
-        @param stop:  Stop slicing here - 1
-        @param step:  Step
+                slice_args.append(param)
+        # start: Slicing starts here
+        # stop:  Stop slicing here -1
+        # step:  Step    
+        start, stop, step = slice_args
 
-        @return: Sliced data. If data is not sliceable, simply return it as is.
-        """
         try:
             return data[start:stop:step]
         except:
