@@ -404,7 +404,7 @@ class BaseHandler():
 
         # Structure the response data
         ret = {'data': ser_data}
-        if total:
+        if total is not None:
             ret['total'] = total
         # Add extra metadata
         self.enrich_response(ret, data)
