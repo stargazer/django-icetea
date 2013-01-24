@@ -214,14 +214,7 @@ class Emitter:
             # No handler could be found. So trying to construct a default
             # representation for the model.
             else:
-                for f in data._meta.fields:
-                    ret[f.attname] = _any(getattr(data, f.attname))
-
-                fields = dir(data.__class__) + ret.keys()
-                add_ons = [k for k in dir(data) if k not in fields]
-
-                for k in add_ons:
-                    ret[k] = _any(getattr(data, k))
+                ret = smart_unicode(data, strings_only=True)
 
             return ret
 
