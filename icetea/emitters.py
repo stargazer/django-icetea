@@ -1,6 +1,7 @@
 import decimal, StringIO
 from django.db.models.query import QuerySet
 from django.db.models import Model
+from django.db.models.related import RelatedObject
 from django.db.models.fields import FieldDoesNotExist
 from django.utils import simplejson
 from django.utils.xmlutils import SimplerXMLGenerator
@@ -197,7 +198,14 @@ class Emitter:
                         elif f in data._meta.many_to_many:
                             if f.serialize:
                                 ret[field_name] = _m2m(data, f)
-                                continue                   
+                                continue           
+
+                        # Check if the field is a RelatedObject instance.
+                        # Happens when a modelB inherits from modelA. In that
+                        # case, in the representation of modelA, the modelB instance appears
+                        # as a RelatedObject.
+                        elif isinstance(f, RelatedObject): 
+                            ret[field_name] = _model(value)                            
 
                         # Check if it is a local field or virtual field
                         elif f in (data._meta.local_fields + data._meta.virtual_fields)\
