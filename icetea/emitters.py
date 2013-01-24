@@ -166,17 +166,13 @@ class Emitter:
                 fields = get_fields(handler, fields, nested)
 
                 for field_name in fields:  
-                    f = None
-
                     # Try to retrieve the field by name
                     try:
                         f = data._meta.get_field_by_name(field_name)[0]
                     except FieldDoesNotExist:                         
-                        # Field is not a physical model field. So we look in
-                        # the ``fake_fields`` tuple of the model class.
-                        # Check if any of the fields that we want to output, are
-                        # included in the model's ``fake_fields`` list. If yes,
-                        # evaluate them using the model's ``_compute_fake_fields()`` method.
+                        # Field is not a physical model field. We check if it's
+                        # defined in the model's ``fake_fields`` tuple. If yes,
+                        # we evaluate it using the model's ``_compute_fake_fields()`` method.
                         if hasattr(data, 'fake_fields'):
                             if field_name in data.fake_fields:
                                 try:
