@@ -134,29 +134,36 @@ class Emitter:
                 """
                 return [ _model(m, fields=(), nested=True) for m in data.iterator() ]
             
+
+            def get_fields(handler, fields, nested):
+                """
+                Returns a tuple with the final output field names.
+                """
+                # If the model is nested, we assemble the fields with the
+                # following formula
+                if nested:
+                    fields = set(handler.allowed_out_fields) - set(handler.exclude_nested)
+
+                # If the model is not nested, and the ``fields`` is still
+                # empty, then we use the ``allowed_out_fields`` that the API
+                # handler for model type of ``data`` defined.
+                # (When could this happen? In the case that a BaseHandler would
+                # like to return a model instance of type A as a first class citizen. If
+                # that BaseHandler has an empty ``allowed_out_fields`` tuple,
+                # but the Handler for the model A would dictate a different
+                # representation. Then we use the representation that the
+                # handler for A defined.
+                elif not fields:
+                    fields = handler.allowed_out_fields
+                return fields
+
             ret = {}
             handler = self.in_typemapper(type(data))
-
-            if nested and handler:
-                # If ``data`` is nested, we assemble the fields to output
-                fields = set(handler.allowed_out_fields) - set(handler.exclude_nested)
             
             if handler:
-                # If the ``data`` model is not nested, and ``fields`` is still
-                # empty, then we use the ``allowed_out_fields`` that the API
-                # handler for the model type of ``data``, allowes.
-                # (When could that happen? In the case that a BaseHandler would 
-                # like to return a model instance as a first class citizen. The
-                # BaseHandler could have an empty ``allowed_out_fields`` tuple,
-                # but the Handler for the models ``type(data)`` would dictate a
-                # different representation).
-                if not nested and not fields:
-                    fields = handler.allowed_out_fields
+                fields = get_fields(handler, fields, nested)
 
-                # Function that retrieves the value of the field ``f``
-                v = lambda f: getattr(data, f.attname)
-
-                for field_name in fields:   
+                for field_name in fields:  
                     f = None
 
                     # Try to retrieve the field by name
