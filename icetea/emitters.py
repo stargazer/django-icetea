@@ -3,6 +3,7 @@ from django.db.models.query import QuerySet
 from django.db.models import Model
 from django.db.models.related import RelatedObject
 from django.db.models.fields import FieldDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils import simplejson
 from django.utils.xmlutils import SimplerXMLGenerator
 from django.utils.encoding import smart_unicode
@@ -187,14 +188,28 @@ class Emitter:
 
                     # The field ``f`` is a physical model field.
                     else:                               
-                        # Check if it is a related field
-                        value = getattr(data, field_name)
+                        try:
+                            value = getattr(data, field_name)
+                        except (AttributeError, ObjectDoesNotExist):
+                            # Happens if the field f does not exist on this
+                            # model instance. 
+                            # For example: model class B inherits from model
+                            # class A. Therefore, every instance of A has
+                            # ReverseObject references to B. However, a pure
+                            # instance of model A, will throw a DoesNotExist
+                            # exception when trying to read the reference to B.
+                            continue
+                            
+                        # ``field_name``: Name of the field (string)
+                        # ``value``: Value of the field
+                        # ``f``: Instance of a subclass of ``django.models.db.fields.Field``
+
+                        # Check if the field is a RelatedManager object(reverse FK)
                         if hasattr(value, 'all'):
-                            # value is a RelatedManager object
                             ret[field_name] = _related(value)
                             continue
 
-                        # Check if it is a many_to_many field
+                        # Check if the field is many_to_many
                         elif f in data._meta.many_to_many:
                             if f.serialize:
                                 ret[field_name] = _m2m(data, f)
@@ -213,21 +228,20 @@ class Emitter:
                         and f.serialize:
                             # Is it a serializable physical field on the model?
                             if not f.rel:
-                                ret[field_name] = _any(v(f))
+                                ret[field_name] = _any(value)
                                 continue
                             # Is it a foreign key?
                             else:
                                 ret[field_name] = _fk(data, f)
                                 continue
 
-                        # Else try to read the value of the field from the
-                        # model
+                        # Else simple try to serialize the value
                         else:
-                            ret[field_name] = _any(v(f))
+                            ret[field_name] = _any(value)
                             continue
 
-            # No handler could be found. So trying to construct a default
-            # representation for the model.
+            # No handler could be found. So we fallback to the string
+            # represenation of the model instance
             else:
                 ret = smart_unicode(data, strings_only=True)
 
