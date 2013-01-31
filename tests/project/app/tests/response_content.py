@@ -69,6 +69,7 @@ class TestResponseContent(TestResponseContentBase):
             ('100/',    {},     'gone', None),
             ('1000/',    {},     'gone', None),
             ('10000/',    {},     'gone', None),
+            ('aaaaaa/',    {},     'gone', None),
         )
         self.execute(type, handler, test_data)
 
@@ -117,6 +118,7 @@ class TestResponseContent(TestResponseContentBase):
             ('100/',  {'name': 'lalalala'}, 'not_allowed', None),
             ('1000/',  {}, 'not_allowed', None),
             ('1000/',  {'name': 'lalalala'}, 'not_allowed', None),
+            ('aaaaaa/', {'name': 'lalala'}, 'not_allowed', None),
         )            
         self.execute(type, handler, test_data)
 
@@ -166,6 +168,7 @@ class TestResponseContent(TestResponseContentBase):
             ('100/',  {'name': 'lalalala'}, 'not_allowed', None),
             ('1000/',  {}, 'not_allowed', None),
             ('1000/',  {'name': 'lalalala'}, 'not_allowed', None),
+            ('aaaaa/',  {'name': 'lalalala'}, 'not_allowed', None),
         )            
         self.execute(type, handler, test_data)
 
@@ -205,6 +208,7 @@ class TestResponseContent(TestResponseContentBase):
             ('100/',    {},     'not_allowed', None),
             ('1000/',    {},     'not_allowed', None),
             ('10000/',    {},     'not_allowed', None),
+            ('aaaaaa/',    {},     'not_allowed', None),
         )
         self.execute(type, handler, test_data)
 
@@ -237,6 +241,7 @@ class TestResponseContent(TestResponseContentBase):
             ('100/',    {},   'gone', None),
             ('1000/',    {},  'gone', None),
             ('10000/',    {}, 'gone', None),
+            ('aaaaa/',    {}, 'gone', None),
         )
         self.execute(type, handler, test_data)
  
@@ -291,6 +296,7 @@ class TestResponseContent(TestResponseContentBase):
             ('100/',  {'name': 'lalalala'}, 'not_allowed', None),
             ('1000/',  {}, 'not_allowed', None),
             ('1000/',  {'name': 'lalalala'}, 'not_allowed', None),
+            ('aaaaa/',  {'name': 'lalalala'}, 'not_allowed', None),
         )            
         self.execute(type, handler, test_data)
  
@@ -348,6 +354,7 @@ class TestResponseContent(TestResponseContentBase):
             ('100/',  {'name': 'lalalala'}, 'gone', None),
             ('1000/',  {}, 'gone', None),
             ('1000/',  {'name': 'lalalala'}, 'gone', None),
+            ('aaaaa/',  {'name': 'lalalala'}, 'gone', None),
         )            
         self.execute(type, handler, test_data)
                                 
@@ -400,6 +407,7 @@ class TestResponseContent(TestResponseContentBase):
             ('10/',    {},     'forbidden', None),
             ('100/',    {},     'forbidden', None),
             ('1000/',    {},     'forbidden', None),
+            ('aaaaa/',    {},     'forbidden', None),
         )
         self.execute(type, handler, test_data)
 
@@ -423,6 +431,7 @@ class TestResponseContent(TestResponseContentBase):
             ('100/',    {},   'gone', None),
             ('1000/',    {},  'gone', None),
             ('10000/',    {}, 'gone', None),
+            ('aaaaaa/',    {}, 'gone', None),
         )
         self.execute(type, handler, test_data)
 
@@ -449,6 +458,7 @@ class TestResponseContent(TestResponseContentBase):
             ('100/?format=excel',    {},   'gone', None),
             ('1000/?format=excel',    {},  'gone', None),
             ('10000/?format=excel',    {}, 'gone', None),
+            ('aaaaaa/?format=excel',    {}, 'gone', None),
         )
         self.execute(type, handler, test_data)
 
@@ -548,6 +558,7 @@ class TestResponseContent(TestResponseContentBase):
             ('100/',  {'name': 'lalalala'}, 'not_allowed', None),
             ('1000/',  {}, 'not_allowed', None),
             ('1000/',  {'name': 'lalalala'}, 'not_allowed', None),
+            ('aaaaaa/',  {'name': 'lalalala'}, 'not_allowed', None),
         )            
         self.execute(type, handler, test_data)
 
@@ -613,6 +624,7 @@ class TestResponseContent(TestResponseContentBase):
             ('100/',  {'name': 'lalalala'}, 'gone', None),
             ('100/',  {}, 'gone', None),
             ('100/',  {'name': 'lalalala'}, 'gone', None),
+            ('aaa/',  {'name': 'lalalala'}, 'gone', None),
         )            
         self.execute(type, handler, test_data)
  
@@ -664,7 +676,8 @@ class TestResponseContent(TestResponseContentBase):
             ('10/',    {},     'gone', None),
             ('100/',    {},     'gone', None),
             ('1000/',    {},     'gone', None),
-            ('10000/',    {},     'gone', None),
+            ('10000/',    {},     'gone', None),      
+            ('aaaaa/',    {},     'gone', None),
         )
         self.execute(type, handler, test_data)
 
