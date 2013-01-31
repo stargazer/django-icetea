@@ -674,7 +674,10 @@ class ModelHandler(BaseHandler):
         <https://code.djangoproject.com/ticket/17>}. A middle-of-the-way
         solution would probably be to use it with the I{depth} parameter.
         """
-        return self.model.objects.filter(**kwargs)
+        try:
+            return self.model.objects.filter(**kwargs)
+        except ValueError:
+            raise
     
     def data_item(self, request, *args, **kwargs):
         """

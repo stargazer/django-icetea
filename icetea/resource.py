@@ -399,7 +399,7 @@ class Resource:
             message = unprocessable_entity_message(e)
             http_response = HttpResponse(status=422)
 
-        elif isinstance(e, (NotImplementedError, ObjectDoesNotExist)):
+        elif isinstance(e, (NotImplementedError, ObjectDoesNotExist, ValueError)):
             http_response = HttpResponseGone()
 
         elif isinstance(e, MethodNotAllowed): 
