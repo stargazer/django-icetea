@@ -377,4 +377,114 @@ class TestResponseContentBase(BaseTest):
             assert expected_length == actual_length
 
 
+class TestDatabaseOperations(BaseTest):
+    """
+    This class implements tests for:
 
+        * Counting the amount of queries of certain types.
+
+    How to use?
+
+    Inherit from it, and define class attributes:
+
+     * ``USERNAME``: Username for authenticated user
+     * ``PASSWORD``: Password for authenticated user
+     * ``endpoints``: Dictionary of pairs ``API Handler class: API url endpoint``
+     * ``fixtures``: List of fixtures to be loadd
+
+    For every test:
+
+     * Define a class method whose name starts with ``test``
+     * Set method attributes:
+
+      * ``handler``
+      * ``type``: Defines the API method to be tested. Equal to either
+        ``read``, ``create``, ``update``, ``delete``
+     * ``query``: Defins the SQL query type that we want to count. Could be
+       for example 'SELECT' or 'UPDATE'
+
+     * Create the ``test_data``, which is a list of tuples. Every tuple should
+       contain:       
+
+       * URL endpoint suffix. Should be a string.
+       * Payload. Should be a a dictionary
+       * Integer that defines the number of expected db queries of type ``QUERY``.
+
+     * Call ``self.execute(type, handler, test_data)``, which checks whether
+       the test succeeds or not.               
+
+    In order to see concrete examples, check the ``tests`` package under
+    ``django-icetea`` folder, which used this class to test ``django-icetea``
+    itself.  
+    """
+    # Length of test outputs
+    LEN_ENDPOINT = 45
+    LEN_PAYLOAD = 40
+    LEN_EXPECTED = 10
+    LEN_ACTUAL = 10
+
+    def execute(self, type, handler, query, test_data):
+        print '\n'
+        # caller method name (method that called ``execute``)
+        caller_method = inspect.stack()[1][3]
+        # Print test information
+        sys.stdout.write("Info: {name}, {caller}, {handler}, {type}, {query}".format(
+            name=self.__class__.__name__, 
+            caller=caller_method,
+            handler=handler.__name__,
+            query=query,
+            type=type,            
+        ))
+        sys.stdout.write("\n--------------------------------------------------------------------\n")
+
+        # Print headings
+        sys.stdout.write(("{endpoint:%d}{payload:%d}{expected:%d}{actual:%d}" % (
+            self.LEN_ENDPOINT,
+            self.LEN_PAYLOAD,
+            self.LEN_EXPECTED,
+            self.LEN_ACTUAL,
+        )).format(
+            endpoint="API Endpoint", 
+            payload="Payload",
+            expected="Expected",
+            actual="Actual",
+        ))
+        sys.stdout.write("\n")
+        
+        # DEBUG = True, to enable query monitoring
+        from django.conf import settings
+        settings.DEBUG = True
+
+        # Perform test and print results
+        for suffix, payload, expected  in test_data:  
+            expected = expected
+
+            # construct endpoint
+            endpoint = self.endpoints[handler] + suffix
+            # execute request
+            response = self.request(type, endpoint, payload)
+
+            # Count the type of queries we want
+            from django.db import connection
+            queries = connection.queries
+            actual = 0
+            for item in queries:
+                if query in item['sql']:
+                    actual = actual + 1         
+
+            sys.stdout.write(("{endpoint:%d}{payload:%d}{expected:%d}{actual:%d}\n" % (
+                self.LEN_ENDPOINT,
+                self.LEN_PAYLOAD,
+                self.LEN_EXPECTED,
+                self.LEN_ACTUAL,
+            )).format(
+                endpoint=self.truncate(endpoint, self.LEN_ENDPOINT), 
+                payload=self.truncate((payload), self.LEN_PAYLOAD),
+                expected=self.truncate(expected, self.LEN_EXPECTED),
+                actual=self.truncate(actual,     self.LEN_ACTUAL)
+            ))
+            assert expected == actual
+        
+        # Set it back to False            
+        settings.DEBUG = False
+ 
