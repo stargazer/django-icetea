@@ -700,8 +700,11 @@ class ModelHandler(BaseHandler):
                     # We found a parameter that identifies a single item, so
                     # we assume that singular data was requested. If the data
                     # turns out not to be there, an ``ObjectDoesNotExist``
-                    # exception will be raised.
-                    return self.working_set(request, *args, **kwargs).get(**{ field: kwargs.get(field) })
+                    # exception will be raised.        
+                    value = kwargs.get(field)
+                    if value is not None:
+                        # Ignore ``None`` valued keyword-arguments
+                        return self.working_set(request, *args, **kwargs).get(**{ field: value })
             except models.FieldDoesNotExist:
                 # No field named *field* on *self.model*, try next field.
                 pass
