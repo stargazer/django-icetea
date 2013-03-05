@@ -357,32 +357,86 @@ string. Default value is ``file.xls``
 
 ## Notes
 
-### Adding extra (fake) fields on a ModelHandler
+### Adding extra (fake) fields on the response
 
-It's possible that we want to add fake fields on the output of a ``ModelHandler``. 
-By *fake* I mean fields that are not actual physical model fields, but simply extra 
-information that we wish to include on the API handler's output. Doing so is very easy.
+Sometimes you might want to add fake fields on the output of a
+``ModelHandler``. *Fake* means fields which are not actual physical model
+fields, but simply extra information that we wish to include on the handler's
+output, for every model instance.
 
-In the model class,  you simply need to define the ``fake_fields`` tuple, with the
-names of the fake fields. Then we define the class method
-``compute_fake_fields(self, field)``, which should return the values of the fake fields.
+Note that *fake* fields have no sense in ``BaseHandler`` handlers, since in
+that case there are no fields, but simply information that the handler
+emits. 
 
-For example:
+*Fake* fields can be divided in 2 categories, ``static`` and
+``dynamic``. 
 
+Fake ``static`` fields are fields  that are not aware of requests,
+and for a given model instance ``X`` are generated based on other fields of
+``X``, or even some external factor like some timestamp. These are declared in the ``Model`` class.
+
+Fake ``dynamic`` fields are fields that are aware of requests, and based on the
+request, generate their values. These are declared in the ``ModelHandler``
+class.
+
+#### Fake static fields
+
+Assume that a model has defined some ``IntegerField``s, ``value1``, ``value2``,
+``value3``, and we want to define the extra fake fields ``average`` and
+``median``.
+
+In the model class:
 ``` python
-fake_fields = ('num_tweets', 'num_retweets',)
+_fake_static_fields = ('average', 'median')
 
-def _compute_fake_fields(self, field):
-    if field == 'num_tweets':
-        return self.tweets.count()            
+def _compute_fake_static_field(self, field):
+    if field == 'average':
+        return float((self.value1 + self.value2 + self.value3)) / 3
 
-    elif field == 'num_retweets':
-        return Retweet.objects.filter(tweet__in=self.tweets.all()).count()
+    elif field == 'median':
+        numbers = [self.value1, self.value2, self.value3]
+        numbers.sort()
+        return numbers[1]
+
 ```
-The method ``_compute_fake_fields`` is invoked by the ``Emitter`` class, which
+The method ``_compute_fake_static_field`` is invoked by the ``Emitter`` class, which
 constructs the output of the handler. The ``field`` parameter is the field name
-that is evaluated. So the ``_compute_fake_fields`` method should be able to compute
-all the field names in the ``fake_fields`` tuple.
+that is evaluated. So the ``_compute_fake_static_field`` method should be able to compute
+all the field names in the ``_fake_fields`` tuple.
+
+#### Fake dynamic fields
+
+Assume that for some requests on a ``ModelHandler``, we want to return, along
+with the regular model fields, a field that indicates whether the authenticated
+user who has invoked the request, has a permission to perform some action. So,
+for every model instance that the response contains we add the ``permission``
+field, which has a boolean value ``True`` of ``False``.
+
+Since this requires checking the request session, it's part of the handler
+class, instead of the model class.
+
+In the handler class:
+``` python
+def inject_fake_dynamic_fields(self, request, data, fields):
+    if 'permission' in fields:
+        if isinstance(data, self.model):
+            if request.user...:
+                data.permission = True
+            else:
+                data.permission = False
+        else:
+            for instance in data:
+                if request.user...:
+                    instance.permission = True
+                else:
+                    instance.permission = False
+    return data
+```
+
+Note that this method is called ``inject...`` because it injects
+the fields in the already generated data response, and returns the ``enriched``
+response. In the case of the static fake fields, it's called ``compute...``, 
+since it's called by the ``Emitter`` class for every static fake field, and returns the value of the field.
 
 From this point on, the API handlers can treat these fields as normal model fields.
 Meaning, they can be included in the tuples ``allowed_out_fields``,
