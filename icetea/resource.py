@@ -164,7 +164,7 @@ class Resource:
         emitter_class, mimetype = Emitter.get(emitter_format)
 
         # create instance of the emitter class
-        serializer = emitter_class(result, self.handler, None)
+        serializer = emitter_class(self.handler, result, None)
         # serialize the result
         serialized_result = serializer.render(request)
 
@@ -337,7 +337,7 @@ class Resource:
         # Else return the error message as JSON
         out = ''
         if message:
-            out = JSONEmitter(message, self.handler).render(request)
+            out = JSONEmitter(self.handler, message).render(request)
         http_response.content = out
         http_response.mimetype = 'application/json; charset=utf-8'
         return http_response

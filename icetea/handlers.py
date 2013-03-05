@@ -283,7 +283,7 @@ class BaseHandler():
         """
         return data
     
-    def response_slice_data(self, data, request, total=None):
+    def response_slice_data(self, request, data, total=None):
         """
         Returns the sliced data, as well as its total size.
 
@@ -391,7 +391,7 @@ class BaseHandler():
         # Select output fields
         fields = self.get_output_fields(request) 
         # Slice
-        sliced_data, total = self.response_slice_data(data, request)
+        sliced_data, total = self.response_slice_data(request, data)
         
         # Use the emitter to serialize any python objects / data structures
         # within I{sliced_data}, to serializable forms(dict, list, string), 
@@ -399,7 +399,7 @@ class BaseHandler():
         # the response, can easily serialize them in some other format,
         # The L{Emitter} is responsible for making sure that only fields contained in
         # I{fields} will be included in the result.
-        emitter = Emitter(sliced_data, self, fields)      
+        emitter = Emitter(self, sliced_data, fields)      
         ser_data = emitter.construct()
 
         # Structure the response data
@@ -767,15 +767,15 @@ class ModelHandler(BaseHandler):
         """
         return data.order_by(*order)
     
-    def response_slice_data(self, data, request):
+    def response_slice_data(self, request, data):
         """
         Slices the data and limits it to a certain range.
 
-        @type data: Model or Queryset
-        @param data: Dataset to slice
-
         @type request: HTTPRequest
         @param request: Incoming request
+
+        @type data: Model or Queryset
+        @param data: Dataset to slice
 
         @rtype: list
         @return: List of (sliced_data, total)
@@ -788,7 +788,7 @@ class ModelHandler(BaseHandler):
         total = data.count()
                  
         # ``data`` gets sliced
-        sliced_data, _ = super(ModelHandler, self).response_slice_data(data, request, total)
+        sliced_data, _ = super(ModelHandler, self).response_slice_data(request, data, total)
                             
         # Return sliced, total
         return sliced_data, total

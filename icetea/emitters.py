@@ -36,11 +36,11 @@ class Emitter:
     # Maps pairs of {<API Handler class>: <Model>}
     TYPEMAPPER = {}
 
-    def __init__(self, payload, handler, fields=()):
-        # Data to be serialized
-        self.data = payload
+    def __init__(self, handler, payload, fields=()):
         # API Handler, handling this request        
         self.handler = handler
+        # Data to be serialized
+        self.data = payload
         # Fields that the handler needs to output
         self.fields = fields
 
