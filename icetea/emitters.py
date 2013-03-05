@@ -173,10 +173,10 @@ class Emitter:
                         # Field is not a physical model field. We check if it's
                         # defined in the model's ``fake_fields`` tuple. If yes,
                         # we evaluate it using the model's ``_compute_fake_fields()`` method.
-                        if hasattr(data, 'fake_fields'):
-                            if field_name in data.fake_fields:
+                        if hasattr(data, '_fake_static_fields'):
+                            if field_name in data._fake_static_fields:
                                 try:
-                                    ret[field_name] = _any(data._compute_fake_fields(field_name))
+                                    ret[field_name] = _any(data._compute_fake_static_field(field_name))
                                 except AttributeError:
                                     raise
                                 else:
