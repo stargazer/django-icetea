@@ -67,8 +67,11 @@ class AccountHandler(ClientModelHandler):
         'first_name',
         'last_name',
         'client',
-        # fake model field
+        # fake static field
         'datetime_now',
+
+        # fake dynamic field
+        'superuser', 
     )
     allowed_in_fields = (
         'username',
@@ -83,6 +86,23 @@ class AccountHandler(ClientModelHandler):
         'client',
     )
 
+    def inject_fake_dynamic_fields(self, request, data, fields):
+        """
+        Inject the ``superuser`` field in every data element in the response.
+        """
+        if 'superuser' in fields:
+            if request.user.is_superuser:
+                superuser = True
+            else:
+                superuser = False
+
+            if isinstance(data, self.model):
+                data.superuser = superuser
+            else:
+                for instance in data:
+                    instance.superuser = superuser
+
+        return data
 
 class ContactHandler(ClientModelHandler):
     model = Contact

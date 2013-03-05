@@ -17,11 +17,11 @@ class Account(User):
         related_name='accounts',
     )
 
-    fake_fields = (
+    _fake_static_fields = (
         'datetime_now',
     )
-    def _compute_fake_fields(self, field):
-        if field=='datetime_now':
+    def _compute_fake_static_field(self, field):
+        if field == 'datetime_now':
             return datetime.now()
 
     def __unicode__(self):
