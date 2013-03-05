@@ -392,6 +392,8 @@ class BaseHandler():
         fields = self.get_output_fields(request) 
         # Slice
         sliced_data, total = self.response_slice_data(request, data)
+
+        data = self.inject_fake_dynamic_fields(request, sliced_data, fields)            
         
         # Use the emitter to serialize any python objects / data structures
         # within I{sliced_data}, to serializable forms(dict, list, string), 
@@ -399,7 +401,7 @@ class BaseHandler():
         # the response, can easily serialize them in some other format,
         # The L{Emitter} is responsible for making sure that only fields contained in
         # I{fields} will be included in the result.
-        emitter = Emitter(self, sliced_data, fields)      
+        emitter = Emitter(self, data, fields)      
         ser_data = emitter.construct()
 
         # Structure the response data
@@ -413,6 +415,20 @@ class BaseHandler():
             self.data_safe_for_delete(data)
 
         return ret
+
+    def inject_fake_dynamic_fields(self, request, data, fields):
+        """
+        @param request: Incoming request object
+        @param data:    Sliced data
+        @param fields:  Fields to output
+
+        Override this method in your ``ModelHandler`` class, if you want to add
+        any artificial fields within the data that will be packed in the
+        response.
+        It follows the slicing of the data, so that it only processes the data
+        that will actually be returned.
+        """
+        return data
 
     def enrich_response(self, response_structure, data):
         """
