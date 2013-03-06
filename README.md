@@ -359,30 +359,30 @@ string. Default value is ``file.xls``
 
 ### Adding extra (fake) fields on the response
 
-Sometimes you might want to add fake fields on the output of a
-``ModelHandler``. *Fake* means fields which are not actual physical model
+Sometimes we want to add fake fields on the output of a
+``ModelHandler``. *Fake fields* are fields which are not actual physical model
 fields, but simply extra information that we wish to include on the handler's
-output, for every model instance.
+response for every model instance.
 
 Note that *fake* fields have no sense in ``BaseHandler`` handlers, since in
 that case there are no fields, but simply information that the handler
 emits. 
 
 *Fake* fields can be divided in 2 categories, ``static`` and
-``dynamic``. 
+``dynamic``: 
 
-Fake ``static`` fields are fields  that are not aware of requests,
-and for a given model instance ``X`` are generated based on other fields of
-``X``, or even some external factor like some timestamp. These are declared in the ``Model`` class.
+* Fake ``static`` fields are fields  that are not aware of requests,
+  and for a given model instance ``X`` are generated based on other fields of
+  ``X``, or even some external factor like some timestamp. These are declared in the ``Model`` class.
 
-Fake ``dynamic`` fields are fields that are aware of requests, and based on the
-request, generate their values. These are declared in the ``ModelHandler``
-class.
+* Fake ``dynamic`` fields are fields that are aware of requests, and based on the
+  request, generate their values. These are declared in the ``ModelHandler``
+  class.
 
 #### Fake static fields
 
-Assume that a model has defined some ``IntegerField``s, ``value1``, ``value2``,
-``value3``, and we want to define the extra fake fields ``average`` and
+Assume that a model has defined fields ``value1``, ``value2``,
+``value3``, of type ``IntegerField``. We want to define the fake fields ``average`` and
 ``median``.
 
 In the model class:
@@ -402,7 +402,7 @@ def _compute_fake_static_field(self, field):
 The method ``_compute_fake_static_field`` is invoked by the ``Emitter`` class, which
 constructs the output of the handler. The ``field`` parameter is the field name
 that is evaluated. So the ``_compute_fake_static_field`` method should be able to compute
-all the field names in the ``_fake_fields`` tuple.
+all the field names in the ``_fake_static_fields`` tuple.
 
 #### Fake dynamic fields
 
@@ -434,7 +434,7 @@ def inject_fake_dynamic_fields(self, request, data, fields):
 ```
 
 Note that this method is called ``inject...`` because it injects
-the fields in the already generated data response, and returns the ``enriched``
+the fields in the already generated data response, and returns the *enriched*
 response. In the case of the static fake fields, it's called ``compute...``, 
 since it's called by the ``Emitter`` class for every static fake field, and returns the value of the field.
 
