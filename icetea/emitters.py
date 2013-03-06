@@ -170,9 +170,18 @@ class Emitter:
                     try:
                         f = data._meta.get_field_by_name(field_name)[0]
                     except FieldDoesNotExist:                         
-                        # Field is not a physical model field. We check if it's
-                        # defined in the model's ``fake_fields`` tuple. If yes,
-                        # we evaluate it using the model's ``_compute_fake_fields()`` method.
+                        # Field is not a physical model field. 
+                        # So it's either a fake static field, or a fake dynamic
+                        # field. 
+                        # In the first case, it is defined in the model's
+                        # ``_fake_static_fields`` tuple. So we invoke the
+                        # ``_compute_fake_static_field`` method to get its
+                        # value.
+                        # In the second case, its value has already been
+                        # computed in the handler, so we simple read the value
+                        # and serialize it.
+
+                        # So, is it a fake static field?
                         if hasattr(data, '_fake_static_fields'):
                             if field_name in data._fake_static_fields:
                                 try:
@@ -180,7 +189,19 @@ class Emitter:
                                 except AttributeError:
                                     raise
                                 else:
-                                    continue
+                                    continue       
+
+                        # Then it's a fake dynamic field
+                        try:
+                            ret[field_name] = _any(getattr(data, field_name))
+                        except:
+                            # Field hasn't been found on this model. 
+                            # It's most likely defined as a fake dynamic field,
+                            # but has never been populated on this model
+                            # instance. This means there's most likely a bug in
+                            # the handler's ``inject_fake_dynamic_fields``
+                            # method.
+                            continue
 
                     # The field ``f`` is a physical model field.
                     else:                               
