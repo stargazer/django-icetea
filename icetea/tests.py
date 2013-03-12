@@ -216,6 +216,7 @@ class TestResponseContentBase(BaseTest):
          * ``empty_dict``: (200 OK)
          * ``populated_list``: (200 OK)
          * ``empty_list``: (200 OK)
+         * ``None``: (200 OK)
          * ``bad_request``: (400 Bad Request)
          * ``not_found``: (4o4 Not Found)
          * ``not_allowed``: (405 Method Not Allowed)
@@ -274,6 +275,9 @@ class TestResponseContentBase(BaseTest):
                     type = 'html'
                     length = None
             else:
+                if content == None:
+                    type = 'None'
+                    length = None
                 if isinstance(content, dict):
                     if len(content) == 0:
                         type = 'empty_dict'
