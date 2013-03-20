@@ -106,6 +106,11 @@ class BaseHandler():
     """
     Specifies the set of allowed incoming fields. 
     """
+    # Flag that indicates that all fields are allowed in the request body. If
+    # ``allowed_in_fields = ALL_FIELDS``, then no incoming fields will be
+    # stripped out of the request body.
+    ALL_FIELDS = 'ALL_FIELDS'
+
 
     request_fields = True
     """
