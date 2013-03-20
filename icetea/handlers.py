@@ -73,7 +73,9 @@ class BaseHandlerMeta(type):
         # keys. We wouldn't like anyone to try to alter a primary key of any
         # model instance. 
         # TODO: Is it enough to just forbid the ``id`` field?
-        if 'model' in attrs and cls.model != None:
+        if 'model' in attrs\
+        and cls.model != None\
+        and cls.allowed_in_fields != cls.ALL_FIELDS:
             cls.allowed_in_fields = [ \
                 field for field in cls.allowed_in_fields if \
                 field != 'id'
