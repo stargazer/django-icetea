@@ -253,7 +253,8 @@ class Resource:
 
         # Ok, the request has survived all the checks. At this point we strip
         # off the disallowed fields from the request body.
-        if request_method in ('POST', 'PUT'):
+        if request_method in ('POST', 'PUT')\
+        and self.handler.allowed_in_fields != self.handler.ALL_FIELDS:
             if isinstance(request.data, list):
                 # We assume it's a list of dictionaries, and reject any non dicts.
                 new_request_data = []
