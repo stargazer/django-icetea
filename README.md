@@ -153,6 +153,7 @@ emitters.
 The Status codes have the following meanings:
 
 *   ``200 OK``: Request was served successfully
+*   ``400 Bad Request``: Validation error on request body
 *   ``403 Forbidden``: The client is not authenticated
 *   ``405 Method Not Allowed``: The request method was performed on a resource that does not support that method
 *   ``410 Gone``: The resource is not available
