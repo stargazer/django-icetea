@@ -104,7 +104,7 @@ class Resource:
         try:      
             # Dictionary containing {'data': <Serialized result>}                
             response_dictionary = self.handler.execute_request(request, *args, **kwargs)
-        except Exception, e:        
+        except Exception, e:
             http_response = self.error_response(e, request)
         else:           
             http_response = self.non_error_response(request, response_dictionary, emitter_format)
@@ -340,7 +340,7 @@ class Resource:
         if message:
             out = JSONEmitter(self.handler, message).render(request)
         http_response.content = out
-        http_response.mimetype = 'application/json; charset=utf-8'
+        http_response['Content-type'] = 'application/json; charset=utf-8'
         return http_response
 
     def exception_to_http_response(self, e, request):
