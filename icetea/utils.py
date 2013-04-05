@@ -47,17 +47,9 @@ class Mimer(object):
                     
     def content_type(self):
         """
-        Returns the content type of the request in all cases where it is
-        different than a submitted form - application/x-www-form-urlencoded
+        Returns the content type of the request
         """
-        type_formencoded = "application/x-www-form-urlencoded"
-
-        ctype = self.request.META.get('CONTENT_TYPE', type_formencoded)
-        
-        if type_formencoded in ctype:
-            return None
-        
-        return ctype
+        return self.request.META.get('CONTENT_TYPE', None)
 
     def translate(self):
         """
@@ -72,25 +64,34 @@ class Mimer(object):
         way to tell what's going on. `request.content_type` will always be
         None for form-encoded and/or multipart form data (what your browser sends.)
         """    
-        ctype = self.content_type()
-        self.request.content_type = ctype
-        
-        if not self.is_multipart() and ctype:
-            loadee = self.loader_for_type(ctype)
+        content_type = self.request.META.get('CONTENT_TYPE', None)
+        self.request.content_type = content_type
+
+        if self.is_multipart():
+            raise ValidationError('API cannot interpret multipart requests')
+
+        if content_type:
+            loadee = self.loader_for_type(content_type)
             
             if loadee:
+                # Is there a loader for the given content type?
                 try:
                     self.request.data = loadee(self.request.raw_post_data)
-                        
-                    # Reset both POST and PUT from request, as its
-                    # misleading having their presence around.
-                    self.request.POST = self.request.PUT = dict()
                 except (TypeError, ValueError):
                     # This also catches if loadee is None.
                     raise ValidationError('Invalid request body')
+                else:
+                    # Reset both POST and PUT from request, as its
+                    # misleading having their presence around.
+                    self.request.POST = self.request.PUT = {}
             else:
-                self.request.data = None
-
+                raise ValidationError(
+                    'API cannot interpret the given Content-Type'
+                )
+        else:
+            raise ValidationError(
+                'Please define a Content-Type that the API can interpret'
+            )
         return self.request
                 
     @classmethod
