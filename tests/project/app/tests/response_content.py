@@ -717,9 +717,9 @@ class TestResponseFields(TestResponseFieldsBase):
         handler = ClientHandler
         type = 'read'
         test_data = (
-            ('', {}, ('name', 'accounts', 'contacts')),
+            ('', {}, handler.allowed_out_fields),
             # When none of the given field exist, all the fields are returned
-            ('?field=whatever', {}, ('name', 'accounts', 'contacts')),
+            ('?field=whatever', {}, handler.allowed_out_fields),
             ('?field=name', {}, ('name',)),
             ('?field=accounts', {}, ('accounts',)),
             ('?field=contacts', {}, ('contacts',)),
@@ -731,9 +731,9 @@ class TestResponseFields(TestResponseFieldsBase):
         handler = ClientHandler
         type = 'read'
         test_data = (
-            ('1/', {}, ('name', 'accounts', 'contacts',)),         
+            ('1/', {}, handler.allowed_out_fields),         
             # When none of the given field exist, all the fields are returned
-            ('1/?field=whatever', {}, ('name', 'accounts', 'contacts')),         
+            ('1/?field=whatever', {}, handler.allowed_out_fields),         
             ('1/?field=name', {}, ('name',)),         
             ('1/?field=accounts', {}, ('accounts',)),         
             ('1/?field=contacts&field=accounts', {}, ('contacts', 'accounts')),
@@ -820,10 +820,8 @@ class TestResponseFields(TestResponseFieldsBase):
         handler = AccountHandler
         type = 'read'
         test_data = (
-            ('', {}, 
-                ('id', 'first_name', 'last_name', 'client', 'datetime_now')),                
-            ('?field=whatever', {}, 
-                ('id', 'first_name', 'last_name', 'client', 'datetime_now')),                
+            ('', {}, handler.allowed_out_fields),
+            ('?field=whatever', {}, handler.allowed_out_fields), 
             ('?field=id', {}, ('id',)),                
             ('?field=client', {}, ('client',)),                
             ('?field=datetime_now', {}, ('datetime_now',)),                
@@ -835,10 +833,8 @@ class TestResponseFields(TestResponseFieldsBase):
         handler = AccountHandler
         type = 'read'
         test_data = (
-            ('1/', {}, 
-                ('id', 'first_name', 'last_name', 'client', 'datetime_now')),
-            ('1/?field=whatever', {}, 
-                ('id', 'first_name', 'last_name', 'client', 'datetime_now')),
+            ('1/', {}, handler.allowed_out_fields),
+            ('1/?field=whatever', {}, handler.allowed_out_fields), 
             ('1/?field=id', {}, ('id',)),
             ('1/?field=client', {}, ('client',)),
             ('1/?field=datetime_now', {}, ('datetime_now',)),
@@ -856,7 +852,7 @@ class TestResponseFields(TestResponseFieldsBase):
             (   
                 '',
                 {'username': 'userlalala', 'password': 'pass'},
-                ('id', 'first_name', 'last_name', 'client', 'datetime_now'),    
+                handler.allowed_out_fields,
             ),
             # Successful                
             (   
@@ -904,10 +900,8 @@ class TestResponseFields(TestResponseFieldsBase):
         type = 'update'
         
         test_data = (
-            ('1/', {}, 
-                ('first_name', 'last_name', 'id', 'client', 'datetime_now')),
-            ('1/?field=whatever', {}, 
-                ('first_name', 'last_name', 'id', 'client', 'datetime_now')),
+            ('1/', {}, handler.allowed_out_fields),
+            ('1/?field=whatever', {}, handler.allowed_out_fields), 
             ('1/?field=id&field=client', {}, 
                 ('id', 'client',)),                
             ('1/?field=datetime_now', {}, 
@@ -937,13 +931,11 @@ class TestResponseFields(TestResponseFieldsBase):
         type = 'delete'
 
         test_data = (
-            ('2/', {}, 
-                ('first_name', 'last_name', 'id', 'client', 'datetime_now')),                
+            ('2/', {}, handler.allowed_out_fields),                
             # This fails because we already deleted the resource
             ('2/', {}, ()),                
 
-            ('3/?field=whatever', {}, 
-                ('first_name', 'last_name', 'id', 'client', 'datetime_now',)),                
+            ('3/?field=whatever', {}, handler.allowed_out_fields),                
             ('4/?field=id&field=last_name', {}, 
                 ('id', 'last_name',)),                
             ('5/?field=client&field=datetime_now', {}, 
@@ -956,8 +948,7 @@ class TestResponseFields(TestResponseFieldsBase):
         type = 'read'
         test_data = (
              # Resource exists and is Accessible
-            ('1/',    {},
-                ('client', 'name', 'surname', 'gender')),
+            ('1/', {}, handler.allowed_out_fields),
             ('1/?field=whatever',    {},
                 ('client', 'name', 'surname', 'gender')),
             ('1/?field=whatever&field=name',    {},
@@ -971,8 +962,7 @@ class TestResponseFields(TestResponseFieldsBase):
         handler = ContactHandler
         type = 'read'
         test_data = (
-            ('',  {}, 
-                ('client', 'name', 'surname', 'gender')),
+            ('',  {}, handler.allowed_out_fields),
             ('?field=whatever',  {}, 
                 ('client', 'name', 'surname', 'gender')),
             ('?field=whatever&field=name',  {}, 
@@ -989,8 +979,7 @@ class TestResponseFields(TestResponseFieldsBase):
         handler = ContactHandler
         type = 'read'
         test_data = (
-            ('?id=1',  {},                                 
-                ('client', 'name', 'surname', 'gender')),
+            ('?id=1', {}, handler.allowed_out_fields),
             ('?id=1&id=2',  {},  
                 ('client', 'name', 'surname', 'gender')),
             ('?id=3&field=client&field=name',  {},  
@@ -1005,8 +994,7 @@ class TestResponseFields(TestResponseFieldsBase):
         type = 'create'
 
         test_data = (
-            ('',    {},
-                ('client', 'name', 'surname', 'gender')),
+            ('',    {}, handler.allowed_out_fields),
 
             ('?field=whatever',    {'name': 'Randy', 'surname': 'Frombelize'},  
                 ('client', 'name', 'surname', 'gender')),
@@ -1042,8 +1030,7 @@ class TestResponseFields(TestResponseFieldsBase):
         type = 'update'
 
         test_data = (
-            ('',    {},     
-                ('client', 'name', 'surname', 'gender')),
+            ('',    {}, handler.allowed_out_fields),
 
             ('?field=whatever',  {'name': 'Randy', 'surname': 'Frombelize'}, 
                 ('client', 'name', 'surname', 'gender')),
@@ -1059,11 +1046,9 @@ class TestResponseFields(TestResponseFieldsBase):
  
         test_data = (
             # Resource exist and is accessible
-            ('1/',  {},
-                ('client', 'name', 'surname', 'gender')),
+            ('1/', {}, handler.allowed_out_fields),
 
-            ('1/?field=whatever', {},
-                ('client', 'name', 'surname', 'gender')),
+            ('1/?field=whatever', {}, handler.allowed_out_fields),
 
             ('1/?field=client', {},
                 ('client',)),
@@ -1080,8 +1065,7 @@ class TestResponseFields(TestResponseFieldsBase):
         handler = ContactHandler
         type = 'delete'
         test_data = (
-            ('',  {},  
-                ('client', 'name', 'surname', 'gender')),
+            ('',  {}, handler.allowed_out_fields),
         )
         self.execute(type, handler, test_data)
 
@@ -1092,8 +1076,7 @@ class TestResponseFields(TestResponseFieldsBase):
         handler = ContactHandler
         type = 'delete'
         test_data = (
-            ('?id=1&id=2',  {},  
-                ('client', 'name', 'surname', 'gender')),
+            ('?id=1&id=2',  {}, handler.allowed_out_fields),
             ('?id=3&field=whatever',  {},  
                 ('client', 'name', 'surname', 'gender')),
             ('?id=4&id=5&field=client&field=name',  {},  
@@ -1105,10 +1088,8 @@ class TestResponseFields(TestResponseFieldsBase):
         handler = ContactHandler
         type = 'delete'
         test_data = (
-            ('1/',    {},     
-                ('client', 'name', 'surname', 'gender')),
-            ('2/?field=whatever',    {},     
-                ('client', 'name', 'surname', 'gender')),
+            ('1/',    {}, handler.allowed_out_fields),
+            ('2/?field=whatever', {}, handler.allowed_out_fields),
             ('3/?field=client&field=name&field=surname',    {},     
                 ('client', 'name', 'surname',)),
         )
