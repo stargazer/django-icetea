@@ -256,7 +256,7 @@ class BaseHandler():
                 values = request.GET.getlist(name)
                 if values:
                     try:
-                        data = self.filter_data(data, definition, values)
+                        data = self.filter_data(request, data, definition, values)
                     except ValueError:
                         # Happens when giving invalid filter type data, like
                         # for example providing a string instead of integer.
@@ -275,7 +275,7 @@ class BaseHandler():
         """
         raise NotImplementedError
   
-    def filter_data(self, data, definition, values):
+    def filter_data(self, request, data, definition, values):
         """
         Applies filters to the provided data.
         Does nothing unless overridden with a method that implements filter
@@ -733,8 +733,11 @@ class ModelHandler(BaseHandler):
                 pass
         return super(ModelHandler, self).data_item(request, *args, **kwargs)
     
-    def filter_data(self, data, definition, values):
+    def filter_data(self, request, data, definition, values):
         """
+        @type request: HTTPRequest object
+        @param request: Incoming request
+
         @type data: QuerySet
         @param data: Data on which the filter iwll be applied
 
