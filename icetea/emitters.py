@@ -351,7 +351,6 @@ class JSONEmitter(Emitter):
         # So here we simply serialize it into JSON.
         return simplejson.dumps(self.data, cls=DateTimeAwareJSONEncoder, ensure_ascii=False, indent=4)
 Emitter.register('json', JSONEmitter, 'application/json; charset=utf-8')
-Mimer.register(simplejson.loads, ('application/json',))
 
 class XMLEmitter(Emitter):
     def _to_xml(self, xml, data):

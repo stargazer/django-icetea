@@ -1,4 +1,7 @@
 from django.core.exceptions import ValidationError
+from django.utils import simplejson
+
+import urlparse
 
 def coerce_put_post(request):
     if request.method.upper() == 'PUT':
@@ -101,4 +104,27 @@ class Mimer(object):
     @classmethod
     def unregister(cls, loadee):
         return cls.TYPES.pop(loadee)
+
+def mimer_for_form_encoded_data(data):
+    """
+    Mimer for application/x-www-form-urlencoded
+
+    @param data: Should be a string in querystring format
+    """
+    try:
+        # dic is in the form ``key: [value]``
+        dic = urlparse.parse_qs(data, strict_parsing=True)
+    except ValidationError:
+        raise
+
+    # I transform it in the form ``key: value``, by taking only the first value
+    # of each key.
+    return dict([(key, value[0]) for key, value in dic.iteritems()])
+
+# Registering mimer for application/x-www-form-urlencoded
+Mimer.register(mimer_for_form_encoded_data, ('application/x-www-form-urlencoded',))
+
+# Mimer for application/json data
+Mimer.register(simplejson.loads, ('application/json',))
+
 
