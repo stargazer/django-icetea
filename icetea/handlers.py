@@ -399,8 +399,8 @@ class BaseHandler():
         fields = self.get_output_fields(request) 
         # Slice
         sliced_data, total = self.response_slice_data(request, data)
-
-        data = self.inject_fake_dynamic_fields(request, sliced_data, fields)            
+        # inject fake dynamic fields to the response data
+        sliced_data = self.inject_fake_dynamic_fields(request, sliced_data, fields)            
         
         # Use the emitter to serialize any python objects / data structures
         # within I{sliced_data}, to serializable forms(dict, list, string), 
@@ -408,7 +408,7 @@ class BaseHandler():
         # the response, can easily serialize them in some other format,
         # The L{Emitter} is responsible for making sure that only fields contained in
         # I{fields} will be included in the result.
-        emitter = Emitter(self, data, fields)      
+        emitter = Emitter(self, sliced_data, fields)      
         ser_data = emitter.construct()
 
         # Structure the response data
