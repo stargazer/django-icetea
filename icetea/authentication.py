@@ -37,7 +37,6 @@ class HTTPSignatureAuthentication(Authentication):
     @staticmethod
     def compute_signature(url, qs, method):
 
-
         # Remove the ``signature`` parameter from the querystring, sort the
         # querystring parameters to alphabetic order based on key, and
         # reconstruct the querystring.
@@ -49,7 +48,8 @@ class HTTPSignatureAuthentication(Authentication):
         querystring = '&'.join(strings)
 
         # Construct the full url
-        url = '%s?%s' % (url, querystring)
+        if querystring:
+            url = '%s?%s' % (url, querystring)
 
         # Message to hash
         message = '%s%s' % (method, url)
@@ -63,7 +63,7 @@ class HTTPSignatureAuthentication(Authentication):
         url = '%s://%s%s' % (
             request.is_secure() and 'https' or 'http',                
             request.get_host(),
-            request.get_full_path()
+            request.path,
         )
         
         # retrieve signature from querystring
