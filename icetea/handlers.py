@@ -1,7 +1,7 @@
 from django.db import models
-from authentication import DjangoAuthentication, NoAuthentication,\
-    HTTPSignature
-from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from authentication import Authentication, DjangoAuthentication, NoAuthentication,\
+    HTTPSignatureAuthentication
+from django.core.exceptions import ValidationError, ObjectDoesNotExist, ImproperlyConfigured
 from custom_filters import filter_to_method
 from exceptions import UnprocessableEntity, ValidationErrorList
 from emitters import Emitter
@@ -65,12 +65,18 @@ class BaseHandlerMeta(type):
             cls.slice = 'slice'
 
         # Indicates Authentication method.
-        if cls.authentication is True:
-            cls.authentication = DjangoAuthentication()
-        elif cls.authentication == 'signature':
-            cls.authentication = HTTPSignature() 
-        else:
+        if cls.authentication is None:
             cls.authentication = NoAuthentication()      
+        elif cls.authentication is True:
+            cls.authentication = DjangoAuthentication()            
+        elif isinstance(cls.authentication, Authentication):
+            pass
+        elif (isinstance(cls.authentication, tuple)\
+        or isinstance(cls.authentication, list))\
+        and all([isinstance(auth, Authentication) for auth in cls.authentication]):
+            pass
+        else:
+            raise ImproperlyConfigured('Invalid Authentication method')
 
         # For ``ModelHandler`` classes, forbid incoming fields that are primary
         # keys. We wouldn't like anyone to try to alter a primary key of any
