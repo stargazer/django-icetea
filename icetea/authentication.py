@@ -8,11 +8,14 @@ from hashlib import sha1
 from urllib import urlencode
 from urlparse import urlparse, urlunparse, parse_qs
 
-class NoAuthentication():
+class Authentication:
+    pass
+
+class NoAuthentication(Authentication):
 	def is_authenticated(self, request):
 		return True
 
-class DjangoAuthentication():
+class DjangoAuthentication(Authentication):
 	"""
 	Authenticator. Blocks all request with non-authenticated sessions.
 	"""
@@ -22,7 +25,7 @@ class DjangoAuthentication():
 	def challenge(self):
 		return HttpResponseForbidden()
 
-class HTTPSignature():
+class HTTPSignatureAuthentication(Authentication):
     def __init__(self):
         try:
             settings.HTTP_SIGNATURE_SECRET
