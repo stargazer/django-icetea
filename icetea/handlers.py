@@ -1,5 +1,6 @@
 from django.db import models
-from authentication import DjangoAuthentication, NoAuthentication
+from authentication import DjangoAuthentication, NoAuthentication,\
+    HTTPSignature
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from custom_filters import filter_to_method
 from exceptions import UnprocessableEntity, ValidationErrorList
@@ -65,7 +66,9 @@ class BaseHandlerMeta(type):
 
         # Indicates Authentication method.
         if cls.authentication is True:
-            cls.authentication = DjangoAuthentication() 
+            cls.authentication = DjangoAuthentication()
+        elif cls.authentication == 'signature':
+            cls.authentication = HTTPSignature() 
         else:
             cls.authentication = NoAuthentication()      
 
