@@ -60,14 +60,13 @@ class HTTPSignatureAuthentication(Authentication):
         return hmac_object.hexdigest()
 
     def is_authenticated(self, request):
-        url = 'http://%s%s' % (settings.DOMAIN, request.META['PATH_INFO'])
+        url = 'http://%s%s' % (request.META['HTTP_HOST'], request.META['PATH_INFO'])
         
-        if request.META['QUERY_STRING']:
-            # retrieve signature from querystring
-            signature = request.GET.get('signature', '')
+        # retrieve signature from querystring
+        signature = request.GET.get('signature', '')
         
         # Compute the signature for this incoming rquest
-        computed_signature = HTTPSignature.compute_signature(
+        computed_signature = HTTPSignatureAuthentication.compute_signature(
             url,
             request.META['QUERY_STRING'],
             request.method.upper(),
