@@ -1,3 +1,9 @@
+from utils import coerce_put_post, translate_mime
+from exceptions import MethodNotAllowed, UnprocessableEntity,\
+    ValidationErrorList, UnprocessableEntityList
+from emitters import Emitter, JSONEmitter
+from authentication import Authentication
+                   
 from django.views.decorators.vary import vary_on_headers
 from django.http import HttpResponse
 from django.conf import settings
@@ -10,11 +16,6 @@ from django.http import HttpResponseBadRequest, \
 
 from django.db import connection
         
-from utils import coerce_put_post, translate_mime
-from exceptions import MethodNotAllowed, UnprocessableEntity,\
-    ValidationErrorList, UnprocessableEntityList
-from emitters import Emitter, JSONEmitter
-                   
 from django.views.debug import ExceptionReporter   
 from django.core.mail import EmailMessage
 import sys
@@ -116,8 +117,14 @@ class Resource:
         Returns I{True} if the request is authenticated or the handler does not
         require authentication. I{False} otherwise.
         """
-        if self.authentication.is_authenticated(request):
-            return True
+        if isinstance(self.authentication, Authentication):
+            if self.authentication.is_authenticated(request):
+                return True
+        else:
+            # ``self.authentication`` is a list
+            for auth in self.authentication:
+                if auth.is_authenticated(request):
+                    return True
         return False 
              
     def determine_emitter_format(self, request, *args, **kwargs):
