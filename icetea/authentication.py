@@ -26,14 +26,6 @@ class DjangoAuthentication(Authentication):
 		return HttpResponseForbidden()
 
 class HTTPSignatureAuthentication(Authentication):
-    def __init__(self):
-        try:
-            settings.HTTP_SIGNATURE_SECRET
-        except:
-            raise ImproperlyConfigured(
-                'Parameter HTTP_SIGNATURE_SECRET is not set'
-            )
-
     @staticmethod
     def compute_signature(url, qs, method):
 
@@ -54,7 +46,7 @@ class HTTPSignatureAuthentication(Authentication):
         # Message to hash
         message = '%s%s' % (method, url)
         # Hash key
-        key = settings.HTTP_SIGNATURE_SECRET
+        key = settings.SECRET_KEY
         
         hmac_object = hmac.new(key, message, sha1)
         return hmac_object.hexdigest()
@@ -75,7 +67,7 @@ class HTTPSignatureAuthentication(Authentication):
             request.META['QUERY_STRING'],
             request.method.upper(),
         )
-        
+
         if computed_signature == signature:
             return True
         return False
