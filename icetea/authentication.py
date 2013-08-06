@@ -45,12 +45,11 @@ class HTTPSignatureAuthentication(Authentication):
         strings = ['%s=%s' % (key, value[0]) for key, value in query]
         querystring = '&'.join(strings)
 
-        # Construct the full url
-        if querystring:
-            url = '%s?%s' % (url, querystring)
-
         # Message to hash
-        message = '%s%s' % (method, url)
+        if querystring:
+            message = '%s%s?%s' % (method, url, querystring)
+        else:
+            message = '%s%s' % (method, url)
         # Hash key
         key = settings.SECRET_KEY
         
