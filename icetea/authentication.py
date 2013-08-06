@@ -28,6 +28,12 @@ class DjangoAuthentication(Authentication):
 class HTTPSignatureAuthentication(Authentication):
     @staticmethod
     def compute_signature(url, qs, method):
+        """
+        Computes the signature, given the following ingredients:
+        @param url: URL of the API endpoint
+        @param qs : Querystring, given as string
+        @method   : HTTP Method 
+        """
 
         # Remove the ``signature`` parameter from the querystring, sort the
         # querystring parameters to alphabetic order based on key, and
