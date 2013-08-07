@@ -90,6 +90,12 @@ class Resource:
         if not self.authenticate(request):
             return self.error_response(PermissionDenied(), request)
 
+        # Is this HTTP method allowed?
+        try:
+            self.authorize(request, *args, **kwargs)
+        except MethodNotAllowed, e:
+            return self.error_response(e, request)
+
         # Cleanup request
         try:
             self.cleanup(request, *args, **kwargs)
@@ -112,7 +118,7 @@ class Resource:
         finally:
             return http_response
 
-    def authenticate(self, request):
+    def authenticate(self, request, *args, **kwargs):
         """
         Returns I{True} if the request is authenticated or the handler does not
         require authentication. I{False} otherwise.
@@ -127,6 +133,40 @@ class Resource:
                     return True
         return False 
              
+    def authorize(self, request, *args, **kwargs):   
+        """
+        Is this HTTP method allowed?
+
+        I{Note:}
+
+        Assumes that the I{id} keyword argument indicates singular requests on all handlers
+        """
+        request_method = request.method.upper()
+
+        if not request_method in self.handler.allowed_methods:
+            raise MethodNotAllowed(*self.handler.allowed_methods)
+
+        #  Singular POST request? (eg contacts/1/)
+        #  This makes no sense at all.
+        #  Note: We assume that any ``id`` keyword argument in the request, indicates a
+        #  singular request.       
+        if request_method == 'POST':
+            if 'id' in kwargs.keys():
+                raise MethodNotAllowed(*self.handler.allowed_methods)
+
+        #  Check if the request is a plural PUT or DELETE. Allow only if
+        #  explicitly enabled through ``plural_update`` and ``plural_delete``. 
+        #  Note: We assume that any ``id`` keyword argument in the request, indicates a
+        #  singular request.       
+        if request_method == 'PUT' and \
+            not self.handler.plural_update and \
+            not 'id' in kwargs.keys():
+            raise MethodNotAllowed(*self.handler.allowed_plural)
+        if request_method == 'DELETE' and \
+            not self.handler.plural_delete and \
+            not 'id' in kwargs.keys():
+            raise MethodNotAllowed(*self.handler.allowed_plural)
+
     def determine_emitter_format(self, request, *args, **kwargs):
         """
         Returns the emitter format.
@@ -185,21 +225,14 @@ class Resource:
         * If the request is I{PUT}, transform its data to I{POST}.
         * If request is I{PUT} or I{POST}, make sure the request body
           conforms to the I{Content-Type} header.
-        * Makes sure that the type of HTTP request is allowed.
-        * Makes sure that if it is a bulk or plural request, it is allowed.
+        * If request is I{PUT} with a list in the request body, raise
+          exception. If request is I{Bulk-POST} and ``bulk_create`` has not
+          been set, raise exception.
         * Makes sure that non-allowed incoming fields, are cut off the request
           body.
-
-        I{Note:}
-
-        Assumes that the I{id} keyword argument indicates singular requests on all handlers
         """
         request_method = request.method.upper()
          
-         # Is this HTTP method allowed?
-        if not request_method in self.handler.allowed_methods:
-            raise MethodNotAllowed(*self.handler.allowed_methods)
-
         # Construct the request.data dictionary, if the request is PUT/POST
         if request_method in ('PUT', 'POST'):
             if request_method == 'PUT':
@@ -222,30 +255,6 @@ class Resource:
                     raise ValidationError('Please make sure the header '+ \
                     '"Content-Type: application/json" is given')
 
-        # Checks start at this point:
-
-        # 1. Singular POST request? (eg contacts/1/)
-        #    This makes no sense at all.
-        #    Note: We assume that any ``id`` keyword argument in the request, indicates a
-        #    singular request.       
-        if request_method == 'POST':
-            if 'id' in kwargs.keys():
-                raise MethodNotAllowed(*self.handler.allowed_methods)
- 
-        # 2. Check if the request is a plural PUT or DELETE. Allow only if
-        #    explicitly enabled through ``plural_update`` and ``plural_delete``. 
-        #    Note: We assume that any ``id`` keyword argument in the request, indicates a
-        #    singular request.       
-        if request_method == 'PUT' and \
-            not self.handler.plural_update and \
-            not 'id' in kwargs.keys():
-            raise MethodNotAllowed(*self.handler.allowed_plural)
-        if request_method == 'DELETE' and \
-            not self.handler.plural_delete and \
-            not 'id' in kwargs.keys():
-            raise MethodNotAllowed(*self.handler.allowed_plural)
- 
-        # 3. Check for Bulk-PUT and Bulk-POST requests.
         #    Bulk-PUT makes no sense at all, so it gives a ValidationError.
         #    Bulk-POST should only be allowed if it has been explicitly enabled
         #    by the ``bulk_create`` parameter.
