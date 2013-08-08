@@ -125,11 +125,13 @@ class Resource:
         """
         if isinstance(self.authentication, Authentication):
             if self.authentication.is_authenticated(request):
+                request.authenticated_using = self.authentication
                 return True
         else:
             # ``self.authentication`` is a list
             for auth in self.authentication:
                 if auth.is_authenticated(request):
+                    request.authenticated_using = auth
                     return True
         return False 
              
