@@ -27,33 +27,18 @@ class DjangoAuthentication(Authentication):
 
 class HTTPSignatureAuthentication(Authentication):
     @staticmethod
-    def compute_signature(url, qs, method):
+    def compute_signature(url, method, nonce, expires):
         """
         Computes the signature, given the following ingredients:
-        @param url: URL of the API endpoint
-        @param qs : Querystring, given as string
-        @method   : HTTP Method 
+        @param url       : URL of the API endpoint
+        @oaram methodd   : HTTP Method
+        @param nonce     : 
+        @param expires:  :
         """
-
-        # Remove the ``signature`` parameter from the querystring, sort the
-        # querystring parameters to alphabetic order based on key, and
-        # reconstruct the querystring.
-        query = parse_qs(qs)
-        query.pop('signature', None)
-        query = query.items()
-        query.sort()
-        strings = ['%s=%s' % (key, value[0]) for key, value in query]
-        querystring = '&'.join(strings)
-
-        # Message to hash
-        if querystring:
-            message = '%s%s?%s' % (method, url, querystring)
-        else:
-            message = '%s%s' % (method, url)
-        # Hash key
+        message = '%s%s%s%s' % (url, method, nonce, expires)
         key = settings.SECRET_KEY
-        
         hmac_object = hmac.new(key, message, sha1)
+        
         return hmac_object.hexdigest()
 
     def is_authenticated(self, request):
@@ -62,18 +47,19 @@ class HTTPSignatureAuthentication(Authentication):
             request.get_host(),
             request.path,
         )
-        
-        # retrieve signature from querystring
-        signature = request.GET.get('signature', '')
-        
+        method = request.method.upper()
+        nonce = request.GET.get('nonce', None)
+        expires = request.GET.get('expires', None)
+
         # Compute the signature for this incoming rquest
         computed_signature = HTTPSignatureAuthentication.compute_signature(
             url,
-            request.META['QUERY_STRING'],
             request.method.upper(),
+            request.GET.get('nonce'),
+            request.GET.get('expires'),
         )
 
-        if computed_signature == signature:
+        if computed_signature == request.GET.get('signature'):
             return True
         return False
 
