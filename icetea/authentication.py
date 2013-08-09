@@ -4,9 +4,9 @@ from django.core.exceptions import ImproperlyConfigured
 
 import hmac
 from hashlib import sha1
-
 from urllib import urlencode
 from urlparse import urlparse, urlunparse, parse_qs
+from datetime import datetime
 
 class Authentication:
     pass
@@ -29,9 +29,10 @@ class HTTPSignatureAuthentication(Authentication):
     @staticmethod
     def compute_signature(url, method, nonce, expires):
         """
-        Computes the signature, given the following ingredients:
+        The signature recipe only takes into account the bare essentials. It's
+        computed given the following ingredients:
         @param url       : URL of the API endpoint
-        @oaram methodd   : HTTP Method
+        @oaram method   : HTTP Method
         @param nonce     : 
         @param expires:  :
         """
@@ -59,7 +60,8 @@ class HTTPSignatureAuthentication(Authentication):
             request.GET.get('expires'),
         )
 
-        if computed_signature == request.GET.get('signature'):
+        if computed_signature == request.GET.get('signature')\
+        and datetime.utcfromtimestamp(float(expires)) > datetime.now():
             return True
         return False
 
