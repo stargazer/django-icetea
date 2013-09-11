@@ -435,19 +435,14 @@ class ExcelEmitter(Emitter):
                 value = ""
                 field_value = record[key]
                 
-                # I merge lists or dicts to "\r\n"-separated strings
-                # Why?                                      
-                # 2. There's not really any reasonable way to represent nested
-                # fields/dics in excel.
-                # 1. They look better thatn simply dumping them as
-                # dictionaries.
+                # I show lists or dicts to comma-separated strings
                 if isinstance(field_value, list):
                     if field_value:
                         field_value = [to_utf8(item) for item in field_value]
-                        value = "\r\n".join(field_value)
+                        value = ", ".join(field_value)
                 elif isinstance(field_value, dict):
                     if field_value:
-                        value = "\r\n".join(to_utf8(key) + ":" + to_utf8(value)  for key, value in
+                        value = ", ".join(to_utf8(key) + ": " + to_utf8(value)  for key, value in
                             field_value.items())
                 else:
                     value = to_utf8(record[key])
