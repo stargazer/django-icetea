@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import *
+from django.conf.urls import *
 from icetea.resource import Resource
 from handlers import ClientHandler, AccountHandler, ContactHandler, \
 InfoHandler

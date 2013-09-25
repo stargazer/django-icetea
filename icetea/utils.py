@@ -79,7 +79,7 @@ class Mimer(object):
             if loadee:
                 # Is there a loader for the given content type?
                 try:
-                    self.request.data = loadee(self.request.raw_post_data)
+                    self.request.data = loadee(self.request.body)
                 except (TypeError, ValueError):
                     # This also catches if loadee is None.
                     raise ValidationError('Invalid request body')

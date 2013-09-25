@@ -1,5 +1,5 @@
-from django.conf.urls.defaults import *
-from django.contrib import admin, databrowse
+from django.conf.urls import *
+from django.contrib import admin
 
 import project.app.urls
 
