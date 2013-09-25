@@ -14,7 +14,7 @@ setup(
 	url="http://github.com/stargazer/django-icetea",
     keywords=("rest", "restful", "api", "crud"),
 	install_requires=(
-		"Django==1.3.1",
+		"Django==1.5.4",
         "xlwt",
 	),
     zip_safe=False,

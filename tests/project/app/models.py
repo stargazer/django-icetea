@@ -58,7 +58,7 @@ class Contact(models.Model):
         choices=GENDER_CHOICES,
     )    
 
-from django.contrib import admin, databrowse
+from django.contrib import admin
 admin.site.register(Client)
 admin.site.register(Account)
 admin.site.register(Contact)

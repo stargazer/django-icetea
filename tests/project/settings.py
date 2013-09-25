@@ -7,6 +7,8 @@ DATABASES = {
     }
 }
 
+SECRET_KEY = '$hfod0%^osk)d^isdp*'
+
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -22,5 +24,4 @@ INSTALLED_APPS = (
 )
 
 ROOT_URLCONF = 'project.urls'
-
 
