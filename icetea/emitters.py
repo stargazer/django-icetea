@@ -4,10 +4,10 @@ from django.db.models import Model
 from django.db.models.related import RelatedObject
 from django.db.models.fields import FieldDoesNotExist
 from django.core.exceptions import ObjectDoesNotExist
-from django.utils import simplejson
 from django.utils.xmlutils import SimplerXMLGenerator
 from django.utils.encoding import smart_unicode
 from django.core.serializers.json import DateTimeAwareJSONEncoder
+import json
 
 # Class which will register MimeTypes to methods that will decode the
 # corresponding MimeType to python data structures.
@@ -349,7 +349,7 @@ class JSONEmitter(Emitter):
         # I{self.data} is already in a serializable form, since it can only
         # contain any of the following python data structures: dict, list, str.
         # So here we simply serialize it into JSON.
-        return simplejson.dumps(self.data, cls=DateTimeAwareJSONEncoder, ensure_ascii=False, indent=4)
+        return json.dumps(self.data, cls=DateTimeAwareJSONEncoder, ensure_ascii=False, indent=4)
 Emitter.register('json', JSONEmitter, 'application/json; charset=utf-8')
 
 class XMLEmitter(Emitter):

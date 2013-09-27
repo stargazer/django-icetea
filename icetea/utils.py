@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
-from django.utils import simplejson
 
+import json
 import urlparse
 
 def coerce_put_post(request):
@@ -125,6 +125,6 @@ def mimer_for_form_encoded_data(data):
 Mimer.register(mimer_for_form_encoded_data, ('application/x-www-form-urlencoded',))
 
 # Mimer for application/json data
-Mimer.register(simplejson.loads, ('application/json',))
+Mimer.register(json.loads, ('application/json',))
 
 

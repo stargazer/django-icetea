@@ -1,7 +1,8 @@
-import sys, inspect
 from django.test import TestCase
 from django.test import Client
-from django.utils import simplejson as json
+import json
+import sys
+import inspect
 
 class BaseTest(TestCase):
     """
