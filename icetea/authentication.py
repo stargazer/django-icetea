@@ -27,41 +27,43 @@ class DjangoAuthentication(Authentication):
 
 class HTTPSignatureAuthentication(Authentication):
     @staticmethod
-    def compute_signature(url, method, nonce, expires):
+    def compute_signature(url, method):
         """
         The signature recipe only takes into account the bare essentials. It's
         computed given the following ingredients:
-        @param url       : URL of the API endpoint
-        @oaram method   : HTTP Method
-        @param nonce     : 
-        @param expires:  :
+        @param url      : Full URI, including all querystring parameters.
+        @param method   : HTTP Method
         """
-        message = '%s%s%s%s' % (url, method, nonce, expires)
+        message = 'url=%s&method=%s' % (url, method)
         key = settings.SECRET_KEY
         hmac_object = hmac.new(key, message, sha1)
         
         return hmac_object.hexdigest()
 
     def is_authenticated(self, request):
-        url = '%s://%s%s' % (
-            request.is_secure() and 'https' or 'http',                
-            request.get_host(),
-            request.path,
-        )
+        """
+        Checks whether the HTTP signed request can be authorized to proceed.
+        """
+        if not request.GET.get('signature', None):
+            return False
+
+        # Full request Uri, including querystring parameters
+        url = request.build_absolute_uri()
         method = request.method.upper()
-        nonce = request.GET.get('nonce', None)
-        expires = request.GET.get('expires', None)
+        
+        # Assume that the signature parameter is the last one in the
+        # querystring, and remove it.
+        url, signature = url.split('&signature=')
 
         # Compute the signature for this incoming rquest
         computed_signature = HTTPSignatureAuthentication.compute_signature(
             url,
-            request.method.upper(),
-            request.GET.get('nonce'),
-            request.GET.get('expires'),
+            method,
         )
 
-        if computed_signature == request.GET.get('signature')\
-        and datetime.utcfromtimestamp(float(expires)) > datetime.now():
+        expires = request.GET.get('expires', None)
+        if computed_signature == signature and\
+        datetime.utcfromtimestamp(float(expires)) > datetime.now():
             return True
         return False
 
