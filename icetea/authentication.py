@@ -6,8 +6,8 @@ import hmac
 import binascii
 import os
 import time
+import urllib
 from hashlib import sha1
-from urllib import urlencode
 from urlparse import urlparse, urlunparse, parse_qs
 from datetime import datetime
 from datetime import timedelta
@@ -34,7 +34,7 @@ class HTTPSignatureAuthentication(Authentication):
     @staticmethod
     def compute_signature(url, method):
         """
-        @param url      : Full URI, including all querystring parameters
+        @param url      : Full URI, including url encoded querystring
         (without ``signature`` parameter).
         @param method   : HTTP Method
         
@@ -48,17 +48,15 @@ class HTTPSignatureAuthentication(Authentication):
         return hmac_object.hexdigest()
 
     @staticmethod
-    def get_signed_url(api_endpoint, method, expires_after, **params):
+    def get_querystring(api_endpoint, method, expires_after, **params):
         """
         @param api_endpoint:  API endpoint to which the signed request will talk to
         @param method:        HTTP method
         @param expires_after: After how long it should expire (in hours)
         @param params:        Extra querystring parameters for request
 
-        Returns a signed request URI, for a request to the ``api_endpoint``,
-        for the http method ``method``, with querystring parameters
-        ``params``(in addition to ``nonce`` and ``expires``),
-        that expires after ``expires_after`` hours.
+        Returns the querystring of the signed request, including the signature
+        parameter. The querystring is url-encoded.        
         """
         # generate nonce
         nonce = binascii.b2a_hex(os.urandom(15))
@@ -67,17 +65,29 @@ class HTTPSignatureAuthentication(Authentication):
             (datetime.now() + timedelta(hours=expires_after)).timetuple()
         ))
 
-        # compute the full url, with all the querystring parameters
-        query = '?nonce=%s&expires=%s' % (nonce, expires)
+        # Querystring key-value pairs
+        query = [
+            ('nonce', nonce),
+            ('expires', expires),
+        ]
+        # Add the rest key-value pairs
         if params:
             for key, value in params.items():
-                query = '%s&%s=%s' % (query, key, value)
-        url = api_endpoint + query
+                query.append((key, value))
+
+        # parse the query list, to a url encoded querystring
+        querystring = urllib.urlencode(query)
+
+        # Compute the full API url with the querystring        
+        url = '%s?%s' % (
+            api_endpoint,
+            querystring,
+        )            
+
         # compute signature
         signature = HTTPSignatureAuthentication.compute_signature(url, method)
-
-        # append the signature to the signed url
-        return '%s&signature=%s' % (url, signature)
+        
+        return querystring + '&signature=%s' % signature
 
     def is_authenticated(self, request):
         """
