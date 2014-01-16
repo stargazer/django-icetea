@@ -9,8 +9,8 @@ import time
 import urllib
 from hashlib import sha1
 from urlparse import urlparse, urlunparse, parse_qs
-from datetime import datetime
-from datetime import timedelta
+from django.utils import timezone
+from datetime import timedelta, datetime
 
 
 class Authentication:
@@ -62,7 +62,7 @@ class HTTPSignatureAuthentication(Authentication):
         nonce = binascii.b2a_hex(os.urandom(15))
         # timestamp of expiration date & time
         expires = int(time.mktime(
-            (datetime.now() + timedelta(hours=expires_after)).timetuple()
+            (timezone.now() + timedelta(hours=expires_after)).timetuple()
         ))
 
         # Querystring key-value pairs
