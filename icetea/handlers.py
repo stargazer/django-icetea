@@ -320,7 +320,7 @@ class BaseHandler():
         if not slice:
             return data, None
 
-        if total is None and self.count is True:
+        if total is None and (request.GET.get('count', None) or self.count is True):
             total = len(data)
 
         return self.slice_data(data, slice), total
@@ -817,7 +817,7 @@ class ModelHandler(BaseHandler):
         if isinstance(data, self.model) or not request.GET.get(self.slice, None):
             return data, None
 
-        if self.count is True:
+        if request.GET.get('count', None) or self.count is True:
             # Slicing is allowed, and has been requested, AND we have a queryset
             total = data.count()
         else:
