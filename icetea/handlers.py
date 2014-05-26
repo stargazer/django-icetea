@@ -165,6 +165,13 @@ class BaseHandler():
     slicing is disabled.
     """
 
+    count = True
+    """
+    Specifies if the handler should calculate the total of records.
+    If I{True}, it will concatenate a total attribute in the response data. If ``False``,
+    only the data will be returned.
+    """
+
     # TODO: Instead of doing so, why not simply doing like the ``slice`` and
     # ``order`` parameters.
     # excel = True # allows output to excel. default file name(file.xls) is
@@ -312,10 +319,10 @@ class BaseHandler():
         slice = request.GET.get(self.slice, None)
         if not slice:
             return data, None
-        
-        if total is None:
+
+        if total is None and self.count is True:
             total = len(data)
-    
+
         return self.slice_data(data, slice), total
 
     def slice_data(self, data, slice):
@@ -809,13 +816,16 @@ class ModelHandler(BaseHandler):
         # Single model instance cannot be sliced
         if isinstance(data, self.model) or not request.GET.get(self.slice, None):
             return data, None
-        
-        # Slicing is allowed, and has been requested, AND we have a queryset
-        total = data.count()
-                 
+
+        if self.count is True:
+            # Slicing is allowed, and has been requested, AND we have a queryset
+            total = data.count()
+        else:
+            total = None
+
         # ``data`` gets sliced
         sliced_data, _ = super(ModelHandler, self).response_slice_data(request, data, total)
-                            
+
         # Return sliced, total
         return sliced_data, total
 
