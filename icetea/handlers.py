@@ -325,7 +325,7 @@ class BaseHandler():
             if self.count and total is None: # uses default behavior defined in the class
                 total = len(data)
         else:
-            if request.GET.get('count', None) != 'false' and total is None:
+            if user_want_to_count != 'false' and total is None:
                 total = len(data)
 
         return self.slice_data(data, slice), total
@@ -829,7 +829,7 @@ class ModelHandler(BaseHandler):
                 # Slicing is allowed, and has been requested, AND we have a queryset
                 total = data.count()
         else:
-            if request.GET.get('count', None) != 'false':
+            if user_want_to_count != 'false':
                 # Slicing is allowed, and has been requested, AND we have a queryset
                 total = data.count()
 
