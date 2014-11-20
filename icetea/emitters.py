@@ -160,7 +160,7 @@ class Emitter:
                 return fields
 
             ret = {}
-            handler = self.in_typemapper(type(data))
+            handler = self.in_typemapper(data)
             
             if handler:
                 fields = get_fields(handler, fields, nested)
@@ -295,12 +295,21 @@ class Emitter:
         # kickstart
         return _any(self.data, self.fields, nested=False)
 
-    def in_typemapper(self, model):
+    def in_typemapper(self, model_instance):
         """
         Returns the I{model}'s associated API handler.
         """
-        for _handler, _model in self.TYPEMAPPER.iteritems():
-            if model is _model:
+        # First check whether this model instance belongs to a class
+        # which is directly mapped in the TYPEMAPPER
+        for _handler, _model in self.TYPEMAPPER.items():
+            if type(model_instance) is _model:
+                return _handler
+
+        # Else, check whether one of its superclasses is mapped
+        # in the typemapper (this is useful in cases ``model_instance`` 
+        # is not a pure model instance, but rather a Deferred one.
+        for _handler, _model in self.TYPEMAPPER.items():
+            if isinstance(model_instance, _model):
                 return _handler
 
     def render(self):
