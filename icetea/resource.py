@@ -111,11 +111,9 @@ class Resource:
             # Dictionary containing {'data': <Serialized result>}                
             response_dictionary = self.handler.execute_request(request, *args, **kwargs)
         except Exception, e:
-            http_response = self.error_response(e, request)
-        else:           
-            http_response = self.non_error_response(request, response_dictionary, emitter_format)
-        finally:
-            return http_response
+            return self.error_response(e, request)
+
+        return self.non_error_response(request, response_dictionary, emitter_format)
 
     def authenticate(self, request, *args, **kwargs):
         """
