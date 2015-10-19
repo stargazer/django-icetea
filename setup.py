@@ -6,7 +6,7 @@ except ImportError:
 setup(
 	name="django-icetea",
 	packages=('icetea', ),
-	version="0.5",
+	version="0.5.1",
     description="REST API Framework",
 	author="C. Paschalides",
 	author_email="already.late@gmail.com",
@@ -14,7 +14,7 @@ setup(
 	url="http://github.com/stargazer/django-icetea",
     keywords=("rest", "restful", "api", "crud"),
 	install_requires=(
-		"Django==1.5.4",
+		"Django>=1.5.4",
         "xlwt",
 	),
     zip_safe=False,
