@@ -309,7 +309,8 @@ class Resource:
             emitter_format) 
         
         # Construct HTTP response       
-        response = HttpResponse(serialized_result, mimetype=content_type,status=200)
+        response = HttpResponse(serialized_result,
+                content_type=content_type, status=200)
 
         if emitter_format == 'excel':
             if callable(self.handler.excel_filename):
