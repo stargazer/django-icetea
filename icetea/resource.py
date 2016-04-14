@@ -89,6 +89,18 @@ class Resource:
         if not self.authenticate(request):
             return self.error_response(PermissionDenied(), request)
 
+        # Handle OPTIONS requests
+        if request.method.upper() == "OPTIONS":
+            allowed_methods = set()
+            allowed_methods.update(self.handler.allowed_methods)
+            allowed_methods.update(self.handler.allowed_plural)
+            header_allow = ", ".join(sorted(allowed_methods))
+
+            return self.non_error_response(
+                    request, response_dictionary={},
+                    emitter_format=self.DEFAULT_EMITTER_FORMAT,
+                    additional_headers={"Allow": header_allow})
+
         # Is this HTTP method allowed?
         try:
             self.authorize(request, *args, **kwargs)
@@ -281,7 +293,7 @@ class Resource:
                     (key, value) for key, value in request.data.iteritems() \
                     if key in self.handler.allowed_in_fields))
 
-    def non_error_response(self, request, response_dictionary, emitter_format):           
+    def non_error_response(self, request, response_dictionary, emitter_format, additional_headers={}):
         """
         No exception has been raised in the handler. 
         Here we construct and return the HTTP response object, with the
@@ -296,7 +308,11 @@ class Resource:
 
         @type emitter_format: str
         @param emitter_format: Emitter format
-        
+
+        @type emitter_format: dict
+        @param response_headers: Dictionary that includes additional headers to
+        be added to the response ``Http-Header: Value``
+
         @rtype: HTTPResponse
         @return: Response object
         """
@@ -319,7 +335,11 @@ class Resource:
                 filename = self.handler.excel_filename
             response['Content-Disposition'] = 'attachment; filename=%s' % \
                 filename
-        
+
+        # Add additional headers
+        for key, value in additional_headers.iteritems():
+            response[key] = value
+
         return response
 
     def error_response(self, e, request):            
