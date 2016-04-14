@@ -85,10 +85,6 @@ class Resource:
         # Reset (request specific) query list
         connection.queries = []
 
-        # Is user authenticated?
-        if not self.authenticate(request):
-            return self.error_response(PermissionDenied(), request)
-
         # Handle OPTIONS requests
         if request.method.upper() == "OPTIONS":
             allowed_methods = set()
@@ -100,6 +96,10 @@ class Resource:
                     request, response_dictionary={},
                     emitter_format=self.DEFAULT_EMITTER_FORMAT,
                     additional_headers={"Allow": header_allow})
+
+        # Is user authenticated?
+        if not self.authenticate(request):
+            return self.error_response(PermissionDenied(), request)
 
         # Is this HTTP method allowed?
         try:
