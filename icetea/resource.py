@@ -87,7 +87,7 @@ class Resource:
 
         # Handle OPTIONS requests
         if request.method.upper() == "OPTIONS":
-            allowed_methods = set()
+            allowed_methods = set(["OPTIONS"])
             allowed_methods.update(self.handler.allowed_methods)
             allowed_methods.update(self.handler.allowed_plural)
             header_allow = ", ".join(sorted(allowed_methods))
