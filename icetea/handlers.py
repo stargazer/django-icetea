@@ -1,9 +1,16 @@
-from django.db import models
-from authentication import DjangoAuthentication, NoAuthentication
+import logging
+
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from custom_filters import filter_to_method
-from exceptions import UnprocessableEntity, ValidationErrorList
-from emitters import Emitter
+from django.db import models
+
+from .authentication import DjangoAuthentication, NoAuthentication
+from .custom_filters import filter_to_method
+from .emitters import Emitter
+from .exceptions import UnprocessableEntity, ValidationErrorList
+
+
+logger = logging.getLogger(__name__)
+
 
 # mappings of {HTTP Request: API Handler method}
 CALLMAP = {
@@ -13,15 +20,16 @@ CALLMAP = {
     'DELETE': 'delete',
 }
 
+
 class BaseHandlerMeta(type):
     """
     Allows a handler class definition to be different from a handler class
     type. This is useful because it enables us to set attributes to default
-    values without requiring an explicit value in their definition. 
+    values without requiring an explicit value in their definition.
     """
-    
+
     def __new__(meta, name, bases, attrs):
-        
+
         # For operations which have been declared in a handler with
         # ``operation=True``, eg ``read=True``, we remove the operation from
         # the handler's attributes, so that the attribute instead points to the
@@ -30,14 +38,14 @@ class BaseHandlerMeta(type):
             attrs.setdefault(operation, False)
             if attrs.get(operation) is True:
                 del attrs[operation]
-        
+
         # At this point, the  enabled operations are:
-        #       - those that have been enabled as <operation> = True. These keep    
+        #       - those that have been enabled as <operation> = True. These keep
         #         the default implementation of the superclass.
         #       - the ones that have been overwritten explicitly in the handler.
 
         cls = type.__new__(meta, name, bases, attrs)
-        
+
         # Construct the `allowed_methods`` attribute
         cls.allowed_methods = tuple([method
             for method, operation in CALLMAP.iteritems()
@@ -46,7 +54,7 @@ class BaseHandlerMeta(type):
         # Construct the ``allowed_plural`` attribute, which indicates which plural methods
         # will be permitted.
         cls.allowed_plural = list(cls.allowed_methods[:])
-        if not cls.plural_update and 'PUT' in cls.allowed_plural:            
+        if not cls.plural_update and 'PUT' in cls.allowed_plural:
             cls.allowed_plural.remove('PUT')
         if not cls.plural_delete and 'DELETE' in cls.allowed_plural:
             cls.allowed_plural.remove('DELETE')
@@ -65,23 +73,24 @@ class BaseHandlerMeta(type):
 
         # Indicates Authentication method.
         if cls.authentication is True:
-            cls.authentication = DjangoAuthentication() 
+            cls.authentication = DjangoAuthentication()
         else:
-            cls.authentication = NoAuthentication()      
+            cls.authentication = NoAuthentication()
 
         # For ``ModelHandler`` classes, forbid incoming fields that are primary
         # keys. We wouldn't like anyone to try to alter a primary key of any
-        # model instance. 
+        # model instance.
         # TODO: Is it enough to just forbid the ``id`` field?
         if 'model' in attrs\
         and cls.model != None\
         and cls.allowed_in_fields != cls.ALL_FIELDS:
-            cls.allowed_in_fields = [ \
+            cls.allowed_in_fields = [
                 field for field in cls.allowed_in_fields if \
                 field != 'id'
             ]
 
         return cls
+
 
 class BaseHandler():
     """
@@ -106,26 +115,25 @@ class BaseHandler():
 
     allowed_in_fields = ()
     """
-    Specifies the set of allowed incoming fields. 
+    Specifies the set of allowed incoming fields.
     """
     # Flag that indicates that all fields are allowed in the request body. If
     # ``allowed_in_fields = ALL_FIELDS``, then no incoming fields will be
     # stripped out of the request body.
     ALL_FIELDS = 'ALL_FIELDS'
 
-
     request_fields = True
     """
-    Specifies if request-level fields selection is enabled. 
-    
-    Should be the name of the query string parameter in which the 
+    Specifies if request-level fields selection is enabled.
+
+    Should be the name of the query string parameter in which the
     selection can be found.
-    
+
     If this attribute is defined as I{True} (which is the default) the
-    default parameter I{field} will be used. 
+    default parameter I{field} will be used.
     If I{False}, request-level field selection is disabled.
     """
-    
+
     authentication = None
     """
     The authenticator that should be in effect on this handler. If defined as
@@ -137,7 +145,7 @@ class BaseHandler():
     """
     Specifies whether bulk POST requests(creating multiple resources in one
     request) are allowed.
-    """                
+    """
 
     plural_update = False
     """
@@ -150,11 +158,11 @@ class BaseHandler():
     Specifies whether plural DELETE requests(deleting multiple resources in one
     request) requests are allowed.
     """
-                         
+
     order = False
     """
     Specifies the querystring parameter for requesting ordering of data.
-    If I{True}, the default parameter I{order} will be used. 
+    If I{True}, the default parameter I{order} will be used.
     If I{False}, ordering is disabled.
     """
 
@@ -179,7 +187,7 @@ class BaseHandler():
     # excel = 'string' or <callable> # allows output to excel. defiles filename
     #                                # to use.
     # excel = False # Disables excel output
-    #  
+    #
     # Of course this implies that I will have some check for the requested
     # output format, and return an error if the request asks for a forbidden
     # output format.
@@ -221,15 +229,15 @@ class BaseHandler():
         if requested:
             selection = set(requested).intersection(self.allowed_out_fields)
 
-        return selection or self.allowed_out_fields            
-    
+        return selection or self.allowed_out_fields
+
     def validate(self, request, *args, **kwargs):
         """
         Request body(I{request.data}) validation. Should be overridden if any
         specific validation is needed.
         """
-        pass        
-    
+        pass
+
     def data(self, request, *args, **kwargs):
         """
         Returns the data that is the result of the current operation, without
@@ -239,7 +247,7 @@ class BaseHandler():
         if data is None:
             data = self.data_set(request, *args, **kwargs)
         return data
-                              
+
     def data_item(self, request, *args, **kwargs):
         """
         Returns the data item that is being worked on. This is how the handler
@@ -248,7 +256,7 @@ class BaseHandler():
         for a set of data, as opposed to a request for a single resource.
         """
         return None
-     
+
     def data_set(self, request, *args, **kwargs):
         """
         Returns the operation's result data set, which is always an iterable.
@@ -256,7 +264,7 @@ class BaseHandler():
         B{after} all filters and ordering (not slicing) are applied.
         """
         data = self.working_set(request, *args, **kwargs)
-        
+
         filters = self.filters or {}
         if filters:
             for name, definition in filters.iteritems():
@@ -268,20 +276,20 @@ class BaseHandler():
                         # Happens when giving invalid filter type data, like
                         # for example providing a string instead of integer.
                         raise UnprocessableEntity('Invalid filter data')
-        
+
         order = request.GET.getlist(self.order)
         if order:
             data = self.order_data(data, *order)
-        
+
         return data
 
     def working_set(self, request, *args, **kwargs):
-        """                                                          
+        """
         Returns the operation's base data set. No data beyond this set will be
-        accessed or modified. 
+        accessed or modified.
         """
         raise NotImplementedError
-  
+
     def filter_data(self, request, data, definition, values):
         """
         Applies filters to the provided data.
@@ -289,14 +297,14 @@ class BaseHandler():
         logic.
         """
         return data
-    
+
     def order_data(self, data, *order):
         """
         Orders the provided data. Does nothing unless overridden with a method
         that implements ordering logic.
         """
         return data
-    
+
     def response_slice_data(self, request, data, total=None):
         """
         Returns the sliced data, as well as its total size.
@@ -305,13 +313,13 @@ class BaseHandler():
         @param request: Incoming request object
         @param total: Total items in dataset (Has a value only if invoked by
         the L{ModelHandler.response_slice_data} method.
-        
+
         @rtype: list
         @return: sliced_data, total
-        
+
         * sliced_data: The final data set, after slicing. If no slicing has
         been performed, it will be equal to the initial dataset.
-        
+
         * total:  Total size of initial dataset. I{None} if no slicing was
         performed.
         """
@@ -337,7 +345,7 @@ class BaseHandler():
         @param data: Dataset to slice
         @param slice: Querydict with ``slice`` parameter, as captured from the
         querystring
-        
+
         @return: Sliced data. If data is not sliceable, simply return it as is.
         """
         slice = slice.split(':')
@@ -353,7 +361,7 @@ class BaseHandler():
                 slice_args.append(param)
         # start: Slicing starts here
         # stop:  Stop slicing here -1
-        # step:  Step    
+        # step:  Step
         start, stop, step = slice_args
 
         try:
@@ -362,7 +370,7 @@ class BaseHandler():
             # Allows us to run L{response_slice_data} without having to worry
             # whether the data is actually sliceable.
             return data
-    
+
     def execute_request(self, request, *args, **kwargs):
         """
         This is the entry point for all incoming requests
@@ -379,7 +387,7 @@ class BaseHandler():
         @rype: dict
         @return: Dictionary of the result. The dictionary contains the
         following keys:
-        
+
         * data: Contains the result of running the requested operation. The
         value to this key can be a dictionary, list, or string. Within this
         data structure, any dictionaries or lists are made of strings, with the
@@ -400,27 +408,27 @@ class BaseHandler():
                 # HttpResourceGone exceptions, they will be raised now), and then in the
                 # ``validate`` method, we perform any data validations. We
                 # assign it to parameter ``request.dataset``.
-                request.dataset = self.data(request, *args, **kwargs)              
+                request.dataset = self.data(request, *args, **kwargs)
             self.validate(request, *args, **kwargs)
-        
+
         # Pick action to run
         action = getattr(self,  CALLMAP.get(request.method.upper()))
         # Run it
         data = action(request, *args, **kwargs)
         # Select output fields
-        fields = self.get_output_fields(request) 
+        fields = self.get_output_fields(request)
         # Slice
         sliced_data, total = self.response_slice_data(request, data)
         # inject fake dynamic fields to the response data
-        sliced_data = self.inject_fake_dynamic_fields(request, sliced_data, fields)            
-        
+        sliced_data = self.inject_fake_dynamic_fields(request, sliced_data, fields)
+
         # Use the emitter to serialize any python objects / data structures
-        # within I{sliced_data}, to serializable forms(dict, list, string), 
+        # within I{sliced_data}, to serializable forms(dict, list, string),
         # so that the specific emitter we use for returning
         # the response, can easily serialize them in some other format,
         # The L{Emitter} is responsible for making sure that only fields contained in
         # I{fields} will be included in the result.
-        emitter = Emitter(self, sliced_data, fields)      
+        emitter = Emitter(self, sliced_data, fields)
         ser_data = emitter.construct()
 
         # Structure the response data
@@ -453,7 +461,7 @@ class BaseHandler():
         """
         Override this method in your handler, in order to add more (meta)data
         within the response data structure.
-    
+
         @type response_structure: dict
         @param response_structure: Dictionary that includes the I{data} key.
         I{data} contains the sliced dataset that will be returned in the
@@ -476,7 +484,7 @@ class BaseHandler():
         @return: Result dataset
         """
         return request.data
-    
+
     def read(self, request, *args, **kwargs):
         """
         Default implementation of a read operation, put in place when the
@@ -488,7 +496,7 @@ class BaseHandler():
         @return: Result dataset
         """
         return self.data(request, *args, **kwargs)
-    
+
     def update(self, request, *args, **kwargs):
         """
         Default implementation of an update operation, put in place when the
@@ -503,7 +511,7 @@ class BaseHandler():
         # it an appropriate response. Never directly use *self.data*, as that
         # one can in no way be considered the result of an update operation.
         return request.data
-    
+
     def delete(self, request, *args, **kwargs):
         """
         Default implementation of a delete operation, put in place when the
@@ -515,7 +523,7 @@ class BaseHandler():
         @return: Result dataset
         """
         return self.data(request, *args, **kwargs)
-    
+
     def data_safe_for_delete(self, data):
         """
         If we want the delete operation to remove data without impacting the
@@ -523,31 +531,32 @@ class BaseHandler():
         """
         pass
 
+
 class ModelHandler(BaseHandler):
     """
     Provides off-the-shelf CRUD operations on data of a certain model type.
-    
+
     Note that in order to prevent accidental exposure of data that was never
     intended to be public, model data fields will not be included in the
     response if they are not explicitly mentioned in
-    I{BaseHandler.allowed_out_fields}. 
-    """    
+    I{BaseHandler.allowed_out_fields}.
+    """
     model = None
     """
     A Django model class.
     """
-    
+
     exclude_nested = ()
     """
     A list of field names that should be excluded from the fields selection in
     case of a nested representation; eg. when the model is contained by
     another model object.
     """
- 
+
     filters = False
     """
-    Dictionary specifying data filters, in pairs of I{name: filter}. 
-    
+    Dictionary specifying data filters, in pairs of I{name: filter}.
+
     I{name} is the querystring parameter used to trigger the filter.
 
     {filter} defines the field on  which the filter will be applied on, as well as (implicitly or explicitly)
@@ -558,7 +567,7 @@ class ModelHandler(BaseHandler):
     value given to ``id``. So, the querystring I{?id=12&id=14}, will perform
     the filter I{filter(id__in=[12, 14])}, on the corresponding model.
     """
-    
+
     read = True
     create = True
     update = True
@@ -573,8 +582,8 @@ class ModelHandler(BaseHandler):
         The model instances are validated using Django's I{full_clean()}
         method, so we can be sure that they are valid model instances, ready to
         hit the database. This can be seen as something totally similar to Django ModelForm
-        validation.         
-        
+        validation.
+
         After this method, we shouldn't perform modifications on the model
         instances, since any modifications might make the data models invalid.
 
@@ -612,7 +621,7 @@ class ModelHandler(BaseHandler):
                     yield e
                 yield None
 
-        def validate_all_put(instances): 
+        def validate_all_put(instances):
             for instance in instances:
                 try:
                     instance.full_clean()
@@ -631,44 +640,44 @@ class ModelHandler(BaseHandler):
         if request.method.upper() == 'POST':
             # Create model instance(s) (without saving them), and validate them
             if not isinstance(request.data, list):
-                # Single model instance. 
-                #Validate and raise any exception that may happen                
+                # Single model instance.
+                # Validate and raise any exception that may happen
                 request.data = self.model(**request.data)
-                try:                    
-                    request.data.full_clean()                    
+                try:
+                    request.data.full_clean()
                 except ObjectDoesNotExist:
                     # There is a weird case, when if a Foreign Key on the model
                     # instance is not defined, and this foreign key is used in
                     # the __unicode__ method of the model, to derive its string
                     # representation, we get a ``DoesNotExist``exception,
                     # instead of a ``ValidationError``.
-                    # #TODO: Is this a bug though? 
+                    # #TODO: Is this a bug though?
                     # It can also be dealt with by removing the use of the FK
                     # from the model's unicode method, but that would require a
                     # lot of manual work
                     raise ValidationError('Foreign Keys on model not defined')
                 except ValidationError:
                     raise
-            else:                   
-                # Multiple model instances. 
+            else:
+                # Multiple model instances.
                 # Create(not save), validate all, make a list of all exceptions
                 # that may happen, and pack them in a ValidationErrorList.
                 request.data = \
                     [self.model(**data_item) for data_item in request.data]
-                
+
                 error_list = [error for error in validate_all_post(request.data) if error]
                 if error_list:
                     raise ValidationErrorList(error_list)
 
-        elif request.method.upper() == 'PUT':     
+        elif request.method.upper() == 'PUT':
             current = getattr(request, 'dataset', None)
-            
+
             def update(instance, update_items):
                 # Update ``instance`` with the key, value pairs in
                 # ``update_values``
                 [setattr(instance, field, value) for field, value in update_items]
 
-            # (key, value) pairs to update                
+            # (key, value) pairs to update
             update_items = request.data.items()
 
             if isinstance(current, self.model):
@@ -697,7 +706,7 @@ class ModelHandler(BaseHandler):
 
         @rtype: QuerySet
         @return: Model Queryset
-        
+
         I{Notes:}
 
         * Keyword arguments are defined in the URL mapper, and are usually in
@@ -713,12 +722,12 @@ class ModelHandler(BaseHandler):
             return self.model.objects.filter(**kwargs)
         except ValueError:
             raise
-    
+
     def data_item(self, request, *args, **kwargs):
         """
         Returns a single model instance, if such has been pointed out. Else the
         super class returns None.
-        
+
         @type request: HTTPRequest object
         @param request: Incoming request
 
@@ -735,7 +744,7 @@ class ModelHandler(BaseHandler):
                     # We found a parameter that identifies a single item, so
                     # we assume that singular data was requested. If the data
                     # turns out not to be there, an ``ObjectDoesNotExist``
-                    # exception will be raised.        
+                    # exception will be raised.
                     value = kwargs.get(field)
                     if value is not None:
                         # Ignore ``None`` valued keyword-arguments
@@ -744,7 +753,7 @@ class ModelHandler(BaseHandler):
                 # No field named *field* on *self.model*, try next field.
                 pass
         return super(ModelHandler, self).data_item(request, *args, **kwargs)
-    
+
     def filter_data(self, request, data, definition, values):
         """
         @type request: HTTPRequest object
@@ -760,12 +769,12 @@ class ModelHandler(BaseHandler):
         <https://docs.djangoproject.com/en/dev/topics/db/queries/#field-lookups>},
         defining both the field and the lookup. For example I{id__in}, which
         defines the field {id} and the lookup filter to be applied upon it.
-        
+
         * A {a custom filter} as defined in L{custom_filters}, defining
         both the field and the filter. For example, I{emails__in_list},
         which defines the field {emails} and the filter {__in_list} to be
         applied upon it.
-        
+
         * A tuple defining the fields on which an OR based Full Text search will be performed.
         For example I{('name', 'surname')}.
 
@@ -782,29 +791,29 @@ class ModelHandler(BaseHandler):
                 if definition.endswith(lookup):
                     return filter_to_method[lookup](data, definition, values)
             return data.filter(**{ definition: values })
-        
+
         if isinstance(definition, (list, tuple, set)):
             # definition: List of fields to filter based on
             # values: list of terms to apply on each field for filtering.
             # For every value, we apply an OR among all definitions
             # We AND all partial queries generated for very value.
-                                                                                 
+
             query = models.Q()
-            
+
             for value in values:
                 partial_query = models.Q()
                 for field in definition:
-                    partial_query = partial_query | models.Q(**{'%s__icontains' % field:value})                     
+                    partial_query = partial_query | models.Q(**{'%s__icontains' % field: value})
                 query = query & partial_query
             return data.filter(query)
-        
+
         return data
-    
+
     def order_data(self, data, *order):
         """
         """
         return data.order_by(*order)
-    
+
     def response_slice_data(self, request, data):
         """
         Slices the data and limits it to a certain range.
@@ -843,7 +852,7 @@ class ModelHandler(BaseHandler):
         """
         Writes the model instances available in I{request.data}, to the
         database.
-        
+
         After this method, I{request.data} only contains the successfully
         created model instance(s).
 
@@ -851,7 +860,7 @@ class ModelHandler(BaseHandler):
         * In very rare cases, when a model instance will escape the uniqueness
         constraints(eg, bulk create: More that one entries are the same.
         They both escape the uniqueness constraints since they are not yet
-        created, but only the first of them managed to be created eventually), 
+        created, but only the first of them managed to be created eventually),
         and the second only fails upon hitting the database.
         * Database failure
 
@@ -864,13 +873,13 @@ class ModelHandler(BaseHandler):
         def persist(instance):
             try:
                 instance.save(force_insert=True)
-            except:
-                # TODO: 
+            except Exception as err:
+                # TODO:
                 # 1. If I was using InnoDB storage engine, I could simply consider
                 # the whole operation (whether single or Bulk) as a
                 # transaction, and roll it back in the first failure.
                 # Unfortunately I cannot assume that InnoDB is used
-                # 
+                #
                 # 2. Use bulk_create that Django 1.4 offers
                 #
                 # Long term plan:
@@ -879,6 +888,8 @@ class ModelHandler(BaseHandler):
                 # - Bulk POST: Use Django 1.4 ``bulk_create``. This way a
                 # failure can raise an error.
                 #
+                logger.error("Saving obj (%s) failed: %s",
+                        str(instance), str(err))
                 return None
             else:
                 return instance
@@ -890,7 +901,7 @@ class ModelHandler(BaseHandler):
                 [instance for instance in request.data if persist(instance)]
 
         return super(ModelHandler, self).create(request, *args, **kwargs)
-    
+
     def update(self, request, *args, **kwargs):
         """
         Saves (updates) the model instances contained in I{request.data}. Returns the
@@ -906,26 +917,28 @@ class ModelHandler(BaseHandler):
         def persist(instance):
             try:
                 instance.save(force_update=True)
-            except:
+            except Exception as err:
+                logger.error("Updating obj (%s) failed: %s",
+                        str(instance), str(err))
                 return None
             else:
                 return instance
-        
+
         if isinstance(request.data, self.model):
             request.data = persist(request.data)
         elif request.data:
             request.data = \
                 [instance for instance in request.data if persist(instance)]
-        
+
         return super(ModelHandler, self).update(request, *args, **kwargs)
-    
+
     def data_safe_for_delete(self, data):
         """
         We only run this method AFTER the result data have been serialized into
         text. If we had ran it earlier, then the model instances of the result
         set would have been deleted, hence their I{id} field would have been
         equal to I{None}, and hence their I{id} would not be available for
-        serialization.        
+        serialization.
 
         @type data: Model or QuerySet
         @param data: Model instance(s) to be deleted
