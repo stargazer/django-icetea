@@ -1,3 +1,5 @@
+import sys
+
 from django.views.decorators.vary import vary_on_headers
 from django.http import HttpResponse
 from django.conf import settings
@@ -9,15 +11,15 @@ from django.http import HttpResponseBadRequest, \
     HttpResponseForbidden, HttpResponseServerError
 
 from django.db import connection
-        
-from utils import coerce_put_post, translate_mime
-from exceptions import MethodNotAllowed, UnprocessableEntity,\
+
+from .utils import coerce_put_post, translate_mime
+from .exceptions import MethodNotAllowed, UnprocessableEntity,\
     ValidationErrorList, UnprocessableEntityList
-from emitters import Emitter, JSONEmitter
-                   
-from django.views.debug import ExceptionReporter   
+from .emitters import Emitter, JSONEmitter
+
+from django.views.debug import ExceptionReporter
 from django.core.mail import EmailMessage
-import sys
+
 
 class Resource:
     """
@@ -41,9 +43,9 @@ class Resource:
         the same resource. So, the same __call__ method will be called by
         different threads of the wsgi process. If one of the threads modifies
         the resource's attributes, the modifications will affect all threads.
-        
+
         Then, is it a problem that both threads will be running the same
-        handler?        
+        handler?
         No. The handlers take the ``request`` object as input, and their
         behaviour is based on that. So, the 2 threads running the same handler,
         will be running it with different input, and therefore different
@@ -78,10 +80,10 @@ class Resource:
         returns it back to the caller.
 
         I{Note:}
-       
+
         This method is invoked by the URL mapper. It is run by a separate
         thread for every request.
-        """                     
+        """
         # Reset (request specific) query list
         connection.queries = []
 
@@ -117,10 +119,10 @@ class Resource:
         # argument
         emitter_format = self.determine_emitter_format(request, *args, **kwargs)
         kwargs.pop('emitter_format', None)
-        
+
         # Execute request
-        try:      
-            # Dictionary containing {'data': <Serialized result>}                
+        try:
+            # Dictionary containing {'data': <Serialized result>}
             response_dictionary = self.handler.execute_request(request, *args, **kwargs)
         except Exception, e:
             return self.error_response(e, request)
@@ -134,9 +136,9 @@ class Resource:
         """
         if self.authentication.is_authenticated(request):
             return True
-        return False 
-             
-    def authorize(self, request, *args, **kwargs):   
+        return False
+
+    def authorize(self, request, *args, **kwargs):
         """
         Is this HTTP method allowed?
 
@@ -146,21 +148,21 @@ class Resource:
         """
         request_method = request.method.upper()
 
-        if not request_method in self.handler.allowed_methods:
+        if request_method not in self.handler.allowed_methods:
             raise MethodNotAllowed(*self.handler.allowed_methods)
 
         #  Singular POST request? (eg contacts/1/)
         #  This makes no sense at all.
         #  Note: We assume that any ``id`` keyword argument in the request, indicates a
-        #  singular request.       
+        #  singular request.
         if request_method == 'POST':
             if 'id' in kwargs.keys():
                 raise MethodNotAllowed(*self.handler.allowed_methods)
 
         #  Check if the request is a plural PUT or DELETE. Allow only if
-        #  explicitly enabled through ``plural_update`` and ``plural_delete``. 
+        #  explicitly enabled through ``plural_update`` and ``plural_delete``.
         #  Note: We assume that any ``id`` keyword argument in the request, indicates a
-        #  singular request.       
+        #  singular request.
         if request_method == 'PUT' and \
             not self.handler.plural_update and \
             not 'id' in kwargs.keys():
@@ -187,7 +189,7 @@ class Resource:
             return self.DEFAULT_EMITTER_FORMAT
 
         return emitter_format
- 
+
     def serialize_result(self, result, request, emitter_format):
         """
         The request has been executed succefully and we end up here to
@@ -224,7 +226,7 @@ class Resource:
         """
         Cleanes up the incoming request, makes sure it's valid and allowed. In
         detail, the checks performed are the folowing:
-        
+
         * If the request is I{PUT}, transform its data to I{POST}.
         * If request is I{PUT} or I{POST}, make sure the request body
           conforms to the I{Content-Type} header.
@@ -235,14 +237,14 @@ class Resource:
           body.
         """
         request_method = request.method.upper()
-         
+
         # Construct the request.data dictionary, if the request is PUT/POST
         if request_method in ('PUT', 'POST'):
             if request_method == 'PUT':
                 # TODO: STUDY what this does exactly
                 coerce_put_post(request)
             # Check whether data has the correct format, according to
-            # ``Content-Type``          
+            # ``Content-Type``
             if request_method in ('PUT', 'POST'):
                 try:
                     translate_mime(request)
@@ -252,7 +254,7 @@ class Resource:
                     if request_method == 'POST':
                         request.data = request.POST
                     else:
-                        request.data = request.PUT  
+                        request.data = request.PUT
                 if request.data is None:
                     # In the case when Content-Type is not given or is invalid
                     raise ValidationError('Please make sure the header '+ \
@@ -280,12 +282,12 @@ class Resource:
                 for item in request.data:
                     if not isinstance(item, dict):
                         continue
-                
+
                     clean_item = dict((key, value) for key, value in item.iteritems() \
                         if key in self.handler.allowed_in_fields)
-        
+
                     new_request_data.append(clean_item)
-                request.data = new_request_data                
+                request.data = new_request_data
 
             else:
                 # Assume it's a dictionary
@@ -295,7 +297,7 @@ class Resource:
 
     def non_error_response(self, request, response_dictionary, emitter_format, additional_headers={}):
         """
-        No exception has been raised in the handler. 
+        No exception has been raised in the handler.
         Here we construct and return the HTTP response object, with the
         appropriate content in the response body.
 
@@ -322,9 +324,9 @@ class Resource:
         # Serialize the result into JSON(or whatever else)
         serialized_result, content_type, emitter_format = \
             self.serialize_result(response_dictionary, request,\
-            emitter_format) 
-        
-        # Construct HTTP response       
+            emitter_format)
+
+        # Construct HTTP response
         response = HttpResponse(serialized_result,
                 content_type=content_type, status=200)
 
@@ -342,7 +344,7 @@ class Resource:
 
         return response
 
-    def error_response(self, e, request):            
+    def error_response(self, e, request):
         """
         Creates and returns the appropriate HttpResponse object, depending on
         the type of exception that has been raised.
@@ -352,7 +354,7 @@ class Resource:
 
         @type request: HTTPRequest
         @param request: Incoming request
-        
+
         @rtype: HTTPResponse
         @return: Response object
         """
@@ -374,25 +376,25 @@ class Resource:
     def exception_to_http_response(self, e, request):
         """
         Any exceptions that are raised within the API handler, are taken care
-        of here.                   
-        
+        of here.
+
         @type e: Exception
         @param e: Exception object
 
         @type request: HTTPRequest
         @param request: Incoming request
-        
+
         @rtype: tuple
         @return: Tuple of (HttpResponseObject, message)
 
         The HttpResponseObject, is simply an HttpRespone object of the
         appropriate form, depending on the error that occured.
         The message is any kind of message that we will be included in the
-        response body.        
+        response body.
         """
         def format_error(error):
             return u'django-icetea crash report:\n\n%s' % error
-        
+
         http_response, message = None, ''
 
         def validation_error_message(e):
@@ -419,7 +421,7 @@ class Resource:
             if hasattr(e, 'params') and e.params:
                 message.update(**e.params)
             return message
-        
+
         if isinstance(e, ValidationError):
             message = validation_error_message(e)
             http_response = HttpResponseBadRequest()
@@ -431,13 +433,13 @@ class Resource:
         elif isinstance(e, (NotImplementedError, ObjectDoesNotExist, ValueError)):
             http_response = HttpResponseGone()
 
-        elif isinstance(e, MethodNotAllowed): 
+        elif isinstance(e, MethodNotAllowed):
             http_response = HttpResponseNotAllowed(e.permitted_methods)
 
         elif isinstance(e, PermissionDenied):
             http_response = HttpResponseForbidden()
 
-        elif isinstance(e, ValidationErrorList):       
+        elif isinstance(e, ValidationErrorList):
             http_response = HttpResponseBadRequest()
             # TODO: Differentiate between validation error and unprocessable
             # entity errors
@@ -447,13 +449,13 @@ class Resource:
             http_response = HttpResponse(status=422)
             message = [unprocessable_entity_message(error) for error in e.error_list]
 
-        else: 
+        else:
             # Consider it a Server Error.
             # Send email, respond with a 500 Error code, display error.
             exc_type, exc_value, traceback = sys.exc_info()
             reporter = ExceptionReporter(
-                request, 
-                exc_type, 
+                request,
+                exc_type,
                 exc_value,
                 traceback.tb_next
             )
@@ -461,9 +463,9 @@ class Resource:
                 self.email_exception(reporter)
             if self.display_errors and settings.DEBUG:
                 message = format_error('\n'.join(reporter.format_exception()))
-            
+
             http_response = HttpResponseServerError()
-        return http_response, message            
+        return http_response, message
 
     def email_exception(self, reporter):
         """
@@ -496,7 +498,7 @@ class Resource:
                 total_query_time = sum(time_per_query)
             else:
                 total_query_time = 'Not Available'
-            
+
             response_dictionary.update({
                 'debug': {
                     'total_query_time': total_query_time,
@@ -504,4 +506,3 @@ class Resource:
                     'query_log': connection.queries,
                 }
             })
-
