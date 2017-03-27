@@ -616,7 +616,7 @@ class ModelHandler(BaseHandler):
                         'Foreign Keys on model not defined',
                         params={'index': i}
                     )
-                except ValidationError, e:
+                except ValidationError as e:
                     e.params = {'index': i}
                     yield e
                 yield None
@@ -630,7 +630,7 @@ class ModelHandler(BaseHandler):
                         'Foreign Keys on model not defined',
                         params={'id': instance.id}
                     )
-                except ValidationError, e:
+                except ValidationError as e:
                     e.params = {'id': instance.id}
                     yield e
                 yield None
@@ -873,7 +873,7 @@ class ModelHandler(BaseHandler):
         def persist(instance):
             try:
                 instance.save(force_insert=True)
-            except Exception as err:
+            except Exception:
                 # TODO:
                 # 1. If I was using InnoDB storage engine, I could simply consider
                 # the whole operation (whether single or Bulk) as a
@@ -887,9 +887,7 @@ class ModelHandler(BaseHandler):
                 #   HTTPResponse, when the database fails.
                 # - Bulk POST: Use Django 1.4 ``bulk_create``. This way a
                 # failure can raise an error.
-                #
-                logger.error("Saving obj (%s) failed: %s",
-                        str(instance), str(err))
+                logger.exception("Saving obj (%r) failed", instance)
                 return None
             else:
                 return instance
@@ -917,9 +915,8 @@ class ModelHandler(BaseHandler):
         def persist(instance):
             try:
                 instance.save(force_update=True)
-            except Exception as err:
-                logger.error("Updating obj (%s) failed: %s",
-                        str(instance), str(err))
+            except Exception:
+                logger.exception("Updating obj (%r) failed", instance)
                 return None
             else:
                 return instance
