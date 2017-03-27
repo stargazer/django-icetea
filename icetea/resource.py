@@ -243,22 +243,23 @@ class Resource:
             if request_method == 'PUT':
                 # TODO: STUDY what this does exactly
                 coerce_put_post(request)
+
             # Check whether data has the correct format, according to
             # ``Content-Type``
-            if request_method in ('PUT', 'POST'):
-                try:
-                    translate_mime(request)
-                except ValidationError:
-                    raise
-                if not hasattr(request, 'data'):
-                    if request_method == 'POST':
-                        request.data = request.POST
-                    else:
-                        request.data = request.PUT
-                if request.data is None:
-                    # In the case when Content-Type is not given or is invalid
-                    raise ValidationError('Please make sure the header '+ \
-                    '"Content-Type: application/json" is given')
+            try:
+                translate_mime(request)
+            except ValidationError:
+                raise
+
+            if not hasattr(request, 'data'):
+                if request_method == 'POST':
+                    request.data = request.POST
+                else:
+                    request.data = request.PUT
+            if request.data is None:
+                # In the case when Content-Type is not given or is invalid
+                raise ValidationError('Please make sure the header '+ \
+                '"Content-Type: application/json" is given')
 
         #    Bulk-PUT makes no sense at all, so it gives a ValidationError.
         #    Bulk-POST should only be allowed if it has been explicitly enabled
