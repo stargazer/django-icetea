@@ -1,9 +1,10 @@
 class MethodNotAllowed(Exception):
-	"""
-	Raised when a request tries to access a method not allowed by the handler.
-	"""
-	def __init__(self, *permitted_methods):
-		self.permitted_methods = permitted_methods
+    """
+    Raised when a request tries to access a method not allowed by the handler.
+    """
+    def __init__(self, *permitted_methods):
+        self.permitted_methods = permitted_methods
+
 
 class UnprocessableEntity(Exception):
     """
@@ -11,18 +12,20 @@ class UnprocessableEntity(Exception):
     semanticlly incorrect querystring parameters.
     """
     def __init__(self, errors, params=None):
-        self.errors = [errors,]
-        
+        self.errors = [errors]
+
         # Similarly to ValidationError, we give it an extra optional argument
         # ``params``
         if params:
             self.params = params
+
 
 class MimerDataException(Exception):
     """
     Raised if the content_type and data don't match
     """
     pass
+
 
 class ErrorList(Exception):
     """
@@ -41,8 +44,10 @@ class ErrorList(Exception):
     def __init__(self, error_list):
         self.error_list = error_list
 
+
 class ValidationErrorList(ErrorList):
     pass
+
 
 class UnprocessableEntityList(ErrorList):
     pass
