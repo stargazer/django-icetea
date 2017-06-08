@@ -17,4 +17,5 @@ build/
 develop-eggs/
 bin/
 *.cfg
-xlwt
+.tox
+tests/db.sqlite3

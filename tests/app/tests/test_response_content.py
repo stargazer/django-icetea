@@ -1,9 +1,11 @@
-from project.app.handlers import AccountHandler, ClientHandler, ContactHandler,\
-InfoHandler
 from icetea.tests import TestResponseContentBase, TestResponseFieldsBase
 
+from app.handlers import (
+        AccountHandler, ClientHandler, ContactHandler, InfoHandler)
+
+
 """
-The fixtures used have the following form: 
+The fixtures used have the following form:
     Client 1
         Owns Account instances: 1,2,3,4,5
         Owns Contact instances: 1,2,3,4,5
@@ -22,9 +24,10 @@ The fixtures used have the following form:
         Owns File instances: 8
     Client 5
         Owns Account instances: 9
-        Owns Contact instances: 
+        Owns Contact instances:
         Owns File instances: 9
-"""  
+"""
+
 
 class TestResponseContent(TestResponseContentBase):
     """
@@ -48,7 +51,7 @@ class TestResponseContent(TestResponseContentBase):
             ('',  {},     'populated_list', 1),
         )
         self.execute(type, handler, test_data)
- 
+
     def test_ClientHandler_read_singular(self):
         handler = ClientHandler
         type = 'read'
@@ -85,13 +88,13 @@ class TestResponseContent(TestResponseContentBase):
             ('',    {'parameter': 'lalala'},     'not_allowed', None),
             ('',    ('parameter'),     'not_allowed', None),
             ('',    [{}, {}],     'not_allowed', None),
-            ('',    [{'param1':'lalala'}, {'param2':'lololo'}],     'not_allowed', None),
+            ('',    [{'param1': 'lalala'}, {'param2': 'lololo'}],     'not_allowed', None),
         )
         self.execute(type, handler, test_data)
- 
+
     def test_ClientHandler_create_singular(self):
         """
-        There is no such thing as a singular POST. 
+        There is no such thing as a singular POST.
         In anycase though, the handler does not allow POST requests.
         """
         handler = ClientHandler
@@ -119,7 +122,7 @@ class TestResponseContent(TestResponseContentBase):
             ('1000/',  {}, 'not_allowed', None),
             ('1000/',  {'name': 'lalalala'}, 'not_allowed', None),
             ('aaaaaa/', {'name': 'lalala'}, 'not_allowed', None),
-        )            
+        )
         self.execute(type, handler, test_data)
 
     def test_ClientHandler_update_plural(self):
@@ -138,7 +141,7 @@ class TestResponseContent(TestResponseContentBase):
             ('',    [{'param1':'lalala'}, {'param2':'lololo'}],     'not_allowed', None),
         )
         self.execute(type, handler, test_data)
- 
+
     def test_ClientHandler_update_singular(self):
         """
         Handler forbids PUT requests.
@@ -169,7 +172,7 @@ class TestResponseContent(TestResponseContentBase):
             ('1000/',  {}, 'not_allowed', None),
             ('1000/',  {'name': 'lalalala'}, 'not_allowed', None),
             ('aaaaa/',  {'name': 'lalalala'}, 'not_allowed', None),
-        )            
+        )
         self.execute(type, handler, test_data)
 
     def test_ClientHandler_delete_plural(self):
@@ -212,7 +215,6 @@ class TestResponseContent(TestResponseContentBase):
         )
         self.execute(type, handler, test_data)
 
-
     def test_AccountHandler_read_plural(self):
         handler = AccountHandler
         type = 'read'
@@ -244,7 +246,7 @@ class TestResponseContent(TestResponseContentBase):
             ('aaaaa/',    {}, 'gone', None),
         )
         self.execute(type, handler, test_data)
- 
+
     def test_AccountHandler_create_plural(self):
         handler = AccountHandler
         type = 'create'
@@ -260,11 +262,11 @@ class TestResponseContent(TestResponseContentBase):
             ('',    {'username': 'userlalala', 'password': 'pass'},  'populated_dict',   1),
             # Handler forbids bulk-POST requests
             ('',    [{}, {}],     'bad_request', 1),
-            ('',    [{'username': 'user1', 'password': 'pass'},{}], 'bad_request',  1), 
+            ('',    [{'username': 'user1', 'password': 'pass'},{}], 'bad_request',  1),
             ('',    [{'name':'Randy'}, {'name': 'Harry'}],   'bad_request', 1),
         )
         self.execute(type, handler, test_data)
- 
+
     def test_AccountHandler_create_singular(self):
         """
         There is no such thing as a singular POST.
@@ -272,7 +274,7 @@ class TestResponseContent(TestResponseContentBase):
         """
         handler = AccountHandler
         type = 'create'
-                                       
+
         test_data = (
             # Resource exist and is accessible
             ('1/',  {}, 'not_allowed', None),
@@ -297,9 +299,9 @@ class TestResponseContent(TestResponseContentBase):
             ('1000/',  {}, 'not_allowed', None),
             ('1000/',  {'name': 'lalalala'}, 'not_allowed', None),
             ('aaaaa/',  {'name': 'lalalala'}, 'not_allowed', None),
-        )            
+        )
         self.execute(type, handler, test_data)
- 
+
     def test_AccountHandler_update_plural(self):
         handler = AccountHandler
         type = 'update'
@@ -308,7 +310,7 @@ class TestResponseContent(TestResponseContentBase):
             ('',    {},     'not_allowed', None),
             ('',    {'name': 'Randy', 'surname': 'Frombelize'},     'not_allowed', None),
             ('',    {'username': 'user1'},     'not_allowed', None),
-            ('',    {'username': 'userlololo'},     'not_allowed', None),           
+            ('',    {'username': 'userlololo'},     'not_allowed', None),
             # Invalid value for ``gender``
             ('',    {'username': 'asdasda'},     'not_allowed', None),
             ('',    {'username': 'tttttt'},     'not_allowed', None),
@@ -316,15 +318,15 @@ class TestResponseContent(TestResponseContentBase):
             ('',    {'username': 'pppppppp'},     'not_allowed', None),
             # Handler forbids bulk-POST requests
             ('',    [{}, {}],     'not_allowed', None),
-            ('',    [{'username':'userlololo'}, {}],     'not_allowed', None),
-            ('',    [{'first_name':'Randy'}, {'first_name': 'Harry'}],     'not_allowed', None),
+            ('',    [{'username': 'userlololo'}, {}],     'not_allowed', None),
+            ('',    [{'first_name': 'Randy'}, {'first_name': 'Harry'}],     'not_allowed', None),
         )
         self.execute(type, handler, test_data)
- 
+
     def test_AccountHandler_update_singular(self):
         handler = AccountHandler
         type = 'update'
-                                        
+
         test_data = (
             # Resource exist and is accessible
             ('1/',  {}, 'populated_dict', 1),
@@ -343,7 +345,7 @@ class TestResponseContent(TestResponseContentBase):
             # ``list in request body
             ('5/',    [{}, {}],     'bad_request', 1),
             # Resource exists but is inaccessible
-            # ``gender``        
+            # ``gender``
             ('6/',  {}, 'gone', None),
             ('6/',  {'name': 'lalalala'}, 'gone', None),
             ('7/',  {}, 'gone', None),
@@ -355,9 +357,8 @@ class TestResponseContent(TestResponseContentBase):
             ('1000/',  {}, 'gone', None),
             ('1000/',  {'name': 'lalalala'}, 'gone', None),
             ('aaaaa/',  {'name': 'lalalala'}, 'gone', None),
-        )            
+        )
         self.execute(type, handler, test_data)
-                                
 
     def test_AccountHandler_delete_plural(self):
         """
@@ -371,7 +372,6 @@ class TestResponseContent(TestResponseContentBase):
             ('',  {},     'not_allowed', None),
         )
         self.execute(type, handler, test_data)
- 
 
     def test_AccountHandler_delete_singular(self):
         """
@@ -380,7 +380,7 @@ class TestResponseContent(TestResponseContentBase):
         """
         handler = AccountHandler
         type = 'delete'
-        
+
         test_data = (
             # Resource exists and is Accessible
             ('2/',    {},     'populated_dict', 1),
@@ -499,7 +499,7 @@ class TestResponseContent(TestResponseContentBase):
         )
         self.execute(type, handler, test_data)
 
-    def test_ContactHandler_create_plural(self):       
+    def test_ContactHandler_create_plural(self):
         handler = ContactHandler
         type = 'create'
 
@@ -510,7 +510,7 @@ class TestResponseContent(TestResponseContentBase):
             ('',    {},     'populated_dict', 1),
             ('',    {'name': 'Randy', 'surname': 'Frombelize'},  'populated_dict', 1),
             ('',    {'gender': 'M'},   'populated_dict', 1),
-            ('',    {'gender': 'F'},   'populated_dict', 1),           
+            ('',    {'gender': 'F'},   'populated_dict', 1),
             # Invalid values for ``gender``
             ('',    {'gender': 'm'},   'bad_request', 1),
             ('',    {'gender': 'f'},   'bad_request', 1),
@@ -526,12 +526,12 @@ class TestResponseContent(TestResponseContentBase):
             ('',    [{'name':'Randy'}, {'name': 'Harry'}],   'populated_list', 2),
         )
         self.execute(type, handler, test_data)
- 
+
     def test_ContactHandler_create_singular(self):
         """
         There is no such thing as a singular POST, so the API responds with a
         405 error
-        """                                   
+        """
         handler = ContactHandler
         type = 'create'
 
@@ -559,10 +559,10 @@ class TestResponseContent(TestResponseContentBase):
             ('1000/',  {}, 'not_allowed', None),
             ('1000/',  {'name': 'lalalala'}, 'not_allowed', None),
             ('aaaaaa/',  {'name': 'lalalala'}, 'not_allowed', None),
-        )            
+        )
         self.execute(type, handler, test_data)
 
-    def test_ContactHandler_update_plural(self):    
+    def test_ContactHandler_update_plural(self):
         """
         The handler allows plural PUT requests.
         """
@@ -573,7 +573,7 @@ class TestResponseContent(TestResponseContentBase):
             ('',    {},     'populated_list', 5),
             ('',  {'name': 'Randy', 'surname': 'Frombelize'}, 'populated_list', 5),
             ('',    {'gender': 'M'},     'populated_list', 5),
-            ('',    {'gender': 'F'},     'populated_list', 5),           
+            ('',    {'gender': 'F'},     'populated_list', 5),
             # Invalid values for ``gender``
             ('',    {'gender': 'm'},     'bad_request', 5),
             ('',    {'gender': 'f'},     'bad_request', 5),
@@ -588,11 +588,11 @@ class TestResponseContent(TestResponseContentBase):
             ('',    [{'name':'Randy'}, {'name': 'Harry'}],     'bad_request', 1),
         )
         self.execute(type, handler, test_data)
- 
+
     def test_ContactHandler_update_singular(self):
         handler = ContactHandler
         type = 'update'
- 
+
         test_data = (
             # Resource exist and is accessible
             ('1/',  {}, 'populated_dict', 1),
@@ -604,7 +604,7 @@ class TestResponseContent(TestResponseContentBase):
             #   ``gender``
             ('4/',  {'name': 'lalalala', 'gender': 'f'}, 'bad_request', 1),
             ('4/',  {'name': 'lalala', 'gender': 'm'}, 'bad_request', 1),
-            #   ``gender``        
+            #   ``gender``
             ('4/',  {'gender': 'm'}, 'bad_request', 1),
             #   ``list in request body
             ('5/',    [{}, {}],     'bad_request', 1),
@@ -625,9 +625,9 @@ class TestResponseContent(TestResponseContentBase):
             ('100/',  {}, 'gone', None),
             ('100/',  {'name': 'lalalala'}, 'gone', None),
             ('aaa/',  {'name': 'lalalala'}, 'gone', None),
-        )            
+        )
         self.execute(type, handler, test_data)
- 
+
     def test_ContactHandler_delete_plural(self):
         """
         The handler allows plural DELETE requests.
@@ -656,7 +656,7 @@ class TestResponseContent(TestResponseContentBase):
             ('?id=lalalala',  {},  'unprocessable', 1),
         )
         self.execute(type, handler, test_data)
- 
+
     def test_ContactHandler_delete_singular(self):
         handler = ContactHandler
         type = 'delete'
@@ -676,7 +676,7 @@ class TestResponseContent(TestResponseContentBase):
             ('10/',    {},     'gone', None),
             ('100/',    {},     'gone', None),
             ('1000/',    {},     'gone', None),
-            ('10000/',    {},     'gone', None),      
+            ('10000/',    {},     'gone', None),
             ('aaaaa/',    {},     'gone', None),
         )
         self.execute(type, handler, test_data)
@@ -698,7 +698,7 @@ class TestResponseContent(TestResponseContentBase):
         )
         self.execute(type, handler, test_data)
 
- 
+
 class TestResponseFields(TestResponseFieldsBase):
     """
     Testing whether the JSON responses contain all the fields they should.
@@ -724,18 +724,18 @@ class TestResponseFields(TestResponseFieldsBase):
             ('?field=accounts', {}, ('accounts',)),
             ('?field=contacts', {}, ('contacts',)),
             ('?field=contacts&field=accounts', {}, ('contacts', 'accounts')),
-        )                
+        )
         self.execute(type, handler, test_data)
 
     def test_ClientHandler_read_singular(self):
         handler = ClientHandler
         type = 'read'
         test_data = (
-            ('1/', {}, handler.allowed_out_fields),         
+            ('1/', {}, handler.allowed_out_fields),
             # When none of the given field exist, all the fields are returned
-            ('1/?field=whatever', {}, handler.allowed_out_fields),         
-            ('1/?field=name', {}, ('name',)),         
-            ('1/?field=accounts', {}, ('accounts',)),         
+            ('1/?field=whatever', {}, handler.allowed_out_fields),
+            ('1/?field=name', {}, ('name',)),
+            ('1/?field=accounts', {}, ('accounts',)),
             ('1/?field=contacts&field=accounts', {}, ('contacts', 'accounts')),
         )
         self.execute(type, handler, test_data)
@@ -754,7 +754,7 @@ class TestResponseFields(TestResponseFieldsBase):
 
     def test_ClientHandler_create_singular(self):
         """
-        There is no such thing as a singular POST. 
+        There is no such thing as a singular POST.
         In anycase though, the handler does not allow POST requests.
         So the data part of the response will be empty always.
         """
@@ -821,11 +821,11 @@ class TestResponseFields(TestResponseFieldsBase):
         type = 'read'
         test_data = (
             ('', {}, handler.allowed_out_fields),
-            ('?field=whatever', {}, handler.allowed_out_fields), 
-            ('?field=id', {}, ('id',)),                
-            ('?field=client', {}, ('client',)),                
-            ('?field=datetime_now', {}, ('datetime_now',)),                
-            ('?field=client&field=id', {}, ('client', 'id')),                
+            ('?field=whatever', {}, handler.allowed_out_fields),
+            ('?field=id', {}, ('id',)),
+            ('?field=client', {}, ('client',)),
+            ('?field=datetime_now', {}, ('datetime_now',)),
+            ('?field=client&field=id', {}, ('client', 'id')),
         )
         self.execute(type, handler, test_data)
 
@@ -834,11 +834,12 @@ class TestResponseFields(TestResponseFieldsBase):
         type = 'read'
         test_data = (
             ('1/', {}, handler.allowed_out_fields),
-            ('1/?field=whatever', {}, handler.allowed_out_fields), 
+            ('1/?field=whatever', {}, handler.allowed_out_fields),
             ('1/?field=id', {}, ('id',)),
             ('1/?field=client', {}, ('client',)),
             ('1/?field=datetime_now', {}, ('datetime_now',)),
             ('1/?field=client&field=id', {}, ('client', 'id')),
+            ('1/?field=client_id&field=id', {}, ('client_id', 'id')),
         )
         self.execute(type, handler, test_data)
 
@@ -847,28 +848,28 @@ class TestResponseFields(TestResponseFieldsBase):
         type = 'create'
         test_data = (
             # Fails
-            ( '', {}, (),),
-            # Successful                
-            (   
+            ('', {}, (),),
+            # Successful
+            (
                 '',
                 {'username': 'userlalala', 'password': 'pass'},
                 handler.allowed_out_fields,
             ),
-            # Successful                
-            (   
+            # Successful
+            (
                 '?field=id&field=client',
                 {'username': 'userlalolo', 'password': 'pass'},
-                ('id', 'client'),    
+                ('id', 'client'),
             ),
-            # Successful                
-            (   
+            # Successful
+            (
                 '?field=id&field=datetime_now',
                 {'username': 'userlilili', 'password': 'pass'},
-                ('id', 'datetime_now'),    
+                ('id', 'datetime_now'),
             ),
         )
         self.execute(type, handler, test_data)
-    
+
     def test_AccountHandler_create_singular(self):
         """
         There is no such thing as a singular POST. All these requests will
@@ -877,8 +878,8 @@ class TestResponseFields(TestResponseFieldsBase):
         handler = AccountHandler
         type = 'create'
         test_data = (
-            ('1/', {}, ()),                
-            ('1/', {'username': 'user', 'password': 'pass'}, ()),                
+            ('1/', {}, ()),
+            ('1/', {'username': 'user', 'password': 'pass'}, ()),
         )
         self.execute(type, handler, test_data)
 
@@ -890,22 +891,22 @@ class TestResponseFields(TestResponseFieldsBase):
         handler = AccountHandler
         type = 'update'
         test_data = (
-            ('', {}, ()),                
-            ('', {'first_name': 'name', 'last_name': 'surname'}, ()),                
+            ('', {}, ()),
+            ('', {'first_name': 'name', 'last_name': 'surname'}, ()),
         )
         self.execute(type, handler, test_data)
 
     def test_AccountHandler_update_singular(self):
         handler = AccountHandler
         type = 'update'
-        
+
         test_data = (
             ('1/', {}, handler.allowed_out_fields),
-            ('1/?field=whatever', {}, handler.allowed_out_fields), 
-            ('1/?field=id&field=client', {}, 
-                ('id', 'client',)),                
-            ('1/?field=datetime_now', {}, 
-                ('datetime_now',)),                
+            ('1/?field=whatever', {}, handler.allowed_out_fields),
+            ('1/?field=id&field=client', {},
+                ('id', 'client',)),
+            ('1/?field=datetime_now', {},
+                ('datetime_now',)),
         )
         self.execute(type, handler, test_data)
 
@@ -917,7 +918,7 @@ class TestResponseFields(TestResponseFieldsBase):
         handler = AccountHandler
         type = 'delete'
         test_data = (
-            ('', {}, ()),                
+            ('', {}, ()),
         )
         self.execute(type, handler, test_data)
 
@@ -931,18 +932,18 @@ class TestResponseFields(TestResponseFieldsBase):
         type = 'delete'
 
         test_data = (
-            ('2/', {}, handler.allowed_out_fields),                
+            ('2/', {}, handler.allowed_out_fields),
             # This fails because we already deleted the resource
-            ('2/', {}, ()),                
+            ('2/', {}, ()),
 
-            ('3/?field=whatever', {}, handler.allowed_out_fields),                
-            ('4/?field=id&field=last_name', {}, 
-                ('id', 'last_name',)),                
-            ('5/?field=client&field=datetime_now', {}, 
-                ('client', 'datetime_now')),                
+            ('3/?field=whatever', {}, handler.allowed_out_fields),
+            ('4/?field=id&field=last_name', {},
+                ('id', 'last_name',)),
+            ('5/?field=client&field=datetime_now', {},
+                ('client', 'datetime_now')),
         )
         self.execute(type, handler, test_data)
- 
+
     def test_ContactHandler_read_singular(self):
         handler = ContactHandler
         type = 'read'
@@ -963,11 +964,11 @@ class TestResponseFields(TestResponseFieldsBase):
         type = 'read'
         test_data = (
             ('',  {}, handler.allowed_out_fields),
-            ('?field=whatever',  {}, 
+            ('?field=whatever',  {},
                 ('client', 'name', 'surname', 'gender')),
-            ('?field=whatever&field=name',  {}, 
+            ('?field=whatever&field=name',  {},
                 ('name',)),
-            ('?field=client&field=name',  {}, 
+            ('?field=client&field=name',  {},
                 ('client', 'name',)),
         )
         self.execute(type, handler, test_data)
@@ -980,49 +981,49 @@ class TestResponseFields(TestResponseFieldsBase):
         type = 'read'
         test_data = (
             ('?id=1', {}, handler.allowed_out_fields),
-            ('?id=1&id=2',  {},  
+            ('?id=1&id=2',  {},
                 ('client', 'name', 'surname', 'gender')),
-            ('?id=3&field=client&field=name',  {},  
+            ('?id=3&field=client&field=name',  {},
                 ('client', 'name',)),
-            ('?id=4&field=whatever',  {},  
+            ('?id=4&field=whatever',  {},
                 ('client', 'name', 'surname', 'gender')),
         )
         self.execute(type, handler, test_data)
 
-    def test_ContactHandler_create_plural(self):       
+    def test_ContactHandler_create_plural(self):
         handler = ContactHandler
         type = 'create'
 
         test_data = (
             ('',    {}, handler.allowed_out_fields),
 
-            ('?field=whatever',    {'name': 'Randy', 'surname': 'Frombelize'},  
+            ('?field=whatever',    {'name': 'Randy', 'surname': 'Frombelize'},
                 ('client', 'name', 'surname', 'gender')),
 
 
-            ('?field=whatever&field=name',    {'name': 'Randy', 'surname': 'Frombelize'},  
+            ('?field=whatever&field=name',    {'name': 'Randy', 'surname': 'Frombelize'},
                 ('name',)),
 
-            ('?field=name&field=client',    {'name': 'Randy', 'surname': 'Frombelize'},  
+            ('?field=name&field=client',    {'name': 'Randy', 'surname': 'Frombelize'},
                 ('client', 'name',)),
         )
         self.execute(type, handler, test_data)
- 
+
     def test_ContactHandler_create_singular(self):
         """
         There is no such thing as a singular POST, so the data response will
         always be empty
-        """                                   
+        """
         handler = ContactHandler
         type = 'create'
 
         test_data = (
             ('1/',  {}, ()),
             ('2/',  {'name': 'lalalala'},  ()),
-        )            
+        )
         self.execute(type, handler, test_data)
 
-    def test_ContactHandler_update_plural(self):    
+    def test_ContactHandler_update_plural(self):
         """
         The handler allows plural PUT requests.
         """
@@ -1032,18 +1033,18 @@ class TestResponseFields(TestResponseFieldsBase):
         test_data = (
             ('',    {}, handler.allowed_out_fields),
 
-            ('?field=whatever',  {'name': 'Randy', 'surname': 'Frombelize'}, 
+            ('?field=whatever',  {'name': 'Randy', 'surname': 'Frombelize'},
                 ('client', 'name', 'surname', 'gender')),
 
-            ('?field=name&field=client',    {'gender': 'M'},     
+            ('?field=name&field=client',    {'gender': 'M'},
                 ('client', 'name')),
         )
         self.execute(type, handler, test_data)
- 
+
     def test_ContactHandler_update_singular(self):
         handler = ContactHandler
         type = 'update'
- 
+
         test_data = (
             # Resource exist and is accessible
             ('1/', {}, handler.allowed_out_fields),
@@ -1055,9 +1056,9 @@ class TestResponseFields(TestResponseFieldsBase):
 
             ('1/?field=client&field=name', {},
                 ('client', 'name',)),
-        )            
+        )
         self.execute(type, handler, test_data)
- 
+
     def test_ContactHandler_delete_plural(self):
         """
         The handler allows plural DELETE requests.
@@ -1077,21 +1078,20 @@ class TestResponseFields(TestResponseFieldsBase):
         type = 'delete'
         test_data = (
             ('?id=1&id=2',  {}, handler.allowed_out_fields),
-            ('?id=3&field=whatever',  {},  
+            ('?id=3&field=whatever',  {},
                 ('client', 'name', 'surname', 'gender')),
-            ('?id=4&id=5&field=client&field=name',  {},  
+            ('?id=4&id=5&field=client&field=name',  {},
                 ('client', 'name',)),
         )
         self.execute(type, handler, test_data)
- 
+
     def test_ContactHandler_delete_singular(self):
         handler = ContactHandler
         type = 'delete'
         test_data = (
             ('1/',    {}, handler.allowed_out_fields),
             ('2/?field=whatever', {}, handler.allowed_out_fields),
-            ('3/?field=client&field=name&field=surname',    {},     
+            ('3/?field=client&field=name&field=surname',    {},
                 ('client', 'name', 'surname',)),
         )
         self.execute(type, handler, test_data)
- 

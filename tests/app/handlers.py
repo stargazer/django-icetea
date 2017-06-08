@@ -1,20 +1,17 @@
 from icetea.handlers import ModelHandler, BaseHandler
-from project.app.models import Client, Account, Contact
 
-                                    
+from .models import Client, Account, Contact
+
+
 class ClientHandler(ModelHandler):
     model = Client
     authentication = True
 
     read = True
-    
-    allowed_out_fields= (    
-        'name',
-        'accounts',
-        'contacts',
-    )
 
+    allowed_out_fields = ('name', 'accounts', 'contacts')
     allowed_in_fields = ()
+    exclude_nested = ('accounts', 'contacts')
 
     def working_set(self, request, *args, **kwargs):
         """
@@ -49,9 +46,10 @@ class ClientModelHandler(ModelHandler):
         for item in isinstance(request.data, dict) and [request.data] or \
             request.data:
             item['client_id'] = request.user.account.client.id
-        
+
         super(ClientModelHandler, self).\
             validate(request, *args, **kwargs)
+
 
 class AccountHandler(ClientModelHandler):
     model = Account
@@ -63,15 +61,16 @@ class AccountHandler(ClientModelHandler):
     delete = True
 
     allowed_out_fields = (
-        'id', 
+        'id',
         'first_name',
         'last_name',
         'client',
+        'client_id',
         # fake static field
         'datetime_now',
 
         # fake dynamic field
-        'superuser', 
+        'superuser',
     )
     allowed_in_fields = (
         'username',
@@ -104,6 +103,7 @@ class AccountHandler(ClientModelHandler):
 
         return data
 
+
 class ContactHandler(ClientModelHandler):
     model = Contact
     authentication = True
@@ -121,7 +121,7 @@ class ContactHandler(ClientModelHandler):
     )
 
     allowed_out_fields = (
-        'client', 
+        'client',
         'name',
         'surname',
         'gender',
@@ -136,6 +136,7 @@ class ContactHandler(ClientModelHandler):
     exclude_nested = (
         'client',
     )
+
 
 class InfoHandler(BaseHandler):
     """
@@ -156,14 +157,10 @@ class InfoHandler(BaseHandler):
                 name=name1 <br>
                 surname=surname1 <br>
                 id=1 <br>
-                <br>            
+                <br>
                 name=name2 <br>
                 surname=surname2 <br>
                 id=2 <br>
                 </body>
-            </html>                       
+            </html>
         """
-        
-
-
-

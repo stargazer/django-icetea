@@ -166,7 +166,25 @@ class Emitter(object):
                 for field_name in fields:
                     # Try to retrieve the field by name
                     try:
-                        f = data._meta.get_field_by_name(field_name)[0]
+                        field_object, model, direct, m2m = data._meta.get_field_by_name(field_name)
+
+                        # Django 1.7 and up now include the field attname in
+                        # the Options name.map. This means that both the field
+                        # name and field attname will be found by
+                        # `get_field_by_name`. For example the following
+                        # definition:
+                        #
+                        # class Foo(models.Model):
+                        #      bar = ForeignKeyField(...)
+                        #
+                        # In Django 1.6 get_field_by_name("bar_id") would raise
+                        # a FieldDoesNotExist exception but starting in 1.7 it
+                        # will return the field.
+                        #
+                        # This is a work around to maintain the 1.6 behaviour.
+                        if direct and field_object.rel is not None and field_name.endswith("_id"):
+                            raise FieldDoesNotExist
+
                     except FieldDoesNotExist:
                         # Field is not a physical model field.
                         # So it's either a fake static field, or a fake dynamic
@@ -201,7 +219,7 @@ class Emitter(object):
                             # method.
                             continue
 
-                    # The field ``f`` is a physical model field.
+                    # The field ``field_object`` is a physical model field.
                     else:
                         try:
                             value = getattr(data, field_name)
@@ -217,38 +235,39 @@ class Emitter(object):
 
                         # ``field_name``: Name of the field (string)
                         # ``value``: Value of the field
-                        # ``f``: Instance of a subclass of
-                        #        ``django.models.db.fields.Field``
+                        # ``field_object``: Instance of a subclass of
+                        #                   ``django.models.db.fields.Field``
 
                         # Check if the field is a RelatedManager object(reverse
                         # FK)
-                        if hasattr(value, 'all'):
+                        if not direct and not m2m:
                             ret[field_name] = _related(value)
                             continue
 
                         # Check if the field is many_to_many
-                        elif f in data._meta.many_to_many:
-                            if f.serialize:
-                                ret[field_name] = _m2m(data, f)
+                        elif not direct and m2m:
+                            if field_object.serialize:
+                                ret[field_name] = _m2m(data, field_object)
                                 continue
 
                         # Check if the field is a RelatedObject instance.
                         # Happens when a modelB inherits from modelA. In that
                         # case, in the representation of modelA, the modelB
                         # instance appears as a RelatedObject.
-                        elif isinstance(f, RelatedObject):
+                        elif isinstance(field_object, RelatedObject):
                             ret[field_name] = _model(value)
 
                         # Check if it is a local field or virtual field
-                        elif f in (data._meta.local_fields + data._meta.virtual_fields)\
-                                and hasattr(f, 'serialize') and f.serialize:
+                        elif (field_object in (data._meta.local_fields + data._meta.virtual_fields)
+                                and hasattr(field_object, 'serialize')
+                                and field_object.serialize):
                             # Is it a serializable physical field on the model?
-                            if not f.rel:
+                            if not field_object.rel:
                                 ret[field_name] = _any(value)
                                 continue
                             # Is it a foreign key?
                             else:
-                                ret[field_name] = _fk(data, f)
+                                ret[field_name] = _fk(data, field_object)
                                 continue
 
                         # Else simple try to serialize the value
