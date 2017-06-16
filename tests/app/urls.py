@@ -1,14 +1,16 @@
-from django.conf.urls import *
+from django.conf.urls import patterns, url
 from icetea.resource import Resource
-from handlers import ClientHandler, AccountHandler, ContactHandler, \
-InfoHandler
+
+from .handlers import (ClientHandler, AccountHandler, ContactHandler,
+                       InfoHandler)
 
 client_handler = Resource(ClientHandler)
 account_handler = Resource(AccountHandler)
 contact_handler = Resource(ContactHandler)
 info_handler = Resource(InfoHandler)
 
-urlpatterns = patterns('',
+urlpatterns = patterns(
+    '',
     url(r'^clients/$', client_handler),
     url(r'^clients/(?P<id>[^/]+)/$', client_handler),
     url(r'^accounts/$', account_handler),
