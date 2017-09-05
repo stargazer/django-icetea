@@ -1,43 +1,44 @@
-import decimal, StringIO
-from django.db.models.query import QuerySet
-from django.db.models import Model
-from django.db.models.related import RelatedObject
-from django.db.models.fields import FieldDoesNotExist
-from django.core.exceptions import ObjectDoesNotExist
-from django.utils.xmlutils import SimplerXMLGenerator
-from django.utils.encoding import smart_unicode
-from django.core.serializers.json import DateTimeAwareJSONEncoder
+import StringIO
+import decimal
 import json
 
-# Class which will register MimeTypes to methods that will decode the
-# corresponding MimeType to python data structures.
-from utils import Mimer
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.serializers.json import DateTimeAwareJSONEncoder
+from django.db.models import Model
+from django.db.models.fields import FieldDoesNotExist
+from django.db.models.query import QuerySet
+from django.db.models.related import RelatedObject
+from django.utils.encoding import smart_unicode
+from django.utils.xmlutils import SimplerXMLGenerator
 
-# Wrapped the ``import xlwt`` in try/catch, otherwise sphinx crashes. WTF!!
+
+# Wrapped the ``import xlwt`` in try/catch, otherwise sphinx crashes.
 try:
-	import xlwt
+    import xlwt
 except ImportError:
-	pass
+    pass
 
-class Emitter:
+
+class Emitter(object):
     """
-    Super emitter. All other emitters should subclass this one. 
-    
-    Its L{Emitter.construct} method returns a dictionary, list or
-    string, of whatever data it is given. This is basically a serializable
-    representation of I{self.data}, and is typically the only method
-    that a custom emitter needs. 
+    Super emitter. All other emitters should subclass this one.
 
-    The custom emitter will then take this serializable data, and serialize it into any
-    format(JSON, XML, wtc) it needs to.
+    Its L{Emitter.construct} method returns a dictionary, list or string, of
+    whatever data it is given. This is basically a serializable representation
+    of I{self.data}, and is typically the only method that a custom emitter
+    needs.
+
+    The custom emitter will then take this serializable data, and serialize it
+    into any format(JSON, XML, wtc) it needs to.
     """
     # List of registered emitters
     EMITTERS = {}
+
     # Maps pairs of {<API Handler class>: <Model>}
     TYPEMAPPER = {}
 
     def __init__(self, handler, payload, fields=()):
-        # API Handler, handling this request        
+        # API Handler, handling this request
         self.handler = handler
         # Data to be serialized
         self.data = payload
@@ -49,9 +50,8 @@ class Emitter:
 
     def construct(self):
         """
-        Recursively serialize a lot of types, and
-        in cases where it doesn't recognize the type,
-        it will fall back to Django's I{smart_unicode}.
+        Recursively serialize a lot of types, and in cases where it doesn't
+        recognize the type, it will fall back to Django's I{smart_unicode}.
 
         Returns a serializable representation of I{self.data}.
         """
@@ -64,7 +64,7 @@ class Emitter:
             for models and dictionaries.
             @param nested: Are the fields of I{thing} nested, or are they
             first class fields? This is relevant only for models.
-            """        
+            """
             ret = None
 
             if isinstance(thing, QuerySet):
@@ -89,8 +89,8 @@ class Emitter:
 
         def _model(data, fields=(), nested=False):
             """
-            Models. 
-            
+            Models.
+
             @type data: Model
             @param data: Model instance that we need to represent as a dict
 
@@ -100,7 +100,7 @@ class Emitter:
             fields that we can output are decided by:
                 handler.allowed_out_fields - handler.exclude_nested.
 
-            @type nested: bool                
+            @type nested: bool
             @param nested: True if model is nested in the data response
 
             @rtype: dict
@@ -108,34 +108,32 @@ class Emitter:
 
             If there is no handler responsible for constructing the
             representation of the model type that ``data`` belongs to, the
-            methodr will try to construct a default representataion of the
-            data.
+            method will try to construct a default representation of the data.
             """
             def _fk(data, field):
                 """
                 Serializes and returns the FK field ``field`` of the data model
-                ``data``.
-                FK fields are always nested.
+                ``data``. FK fields are always nested.
                 """
                 return _any(getattr(data, field.name), fields=(), nested=True)
 
             def _m2m(data, field):
                 """
                 Serializes and returns the many-to-many field ``field`` of the
-                ``data`` model instance.
-                Many-to-Many fields are always nested.
+                ``data`` model instance. Many-to-Many fields are always nested.
                 """
-                return [ _model(m, fields=(), nested=True) for m in getattr(data, field.name).iterator() ]
+                return [_model(m, fields=(), nested=True)
+                        for m in getattr(data, field.name).iterator()]
 
             def _related(data):
                 """
                 Serializes and returns the RelatedManager ``data``. ``data``
                 represents a QuerySet which is a backwards relationshop to the
-                model from which we came here.
-                Related fields are always nested.
+                model from which we came here. Related fields are always
+                nested.
                 """
-                return [ _model(m, fields=(), nested=True) for m in data.iterator() ]
-            
+                return [_model(m, fields=(), nested=True)
+                        for m in data.iterator()]
 
             def get_fields(handler, fields, nested):
                 """
@@ -148,11 +146,11 @@ class Emitter:
 
                 # If the model is not nested, and the ``fields`` is still
                 # empty, then we use the ``allowed_out_fields`` that the API
-                # handler for model type of ``data`` defined.
-                # (When could this happen? In the case that a BaseHandler would
-                # like to return a model instance of type A as a first class citizen. If
-                # that BaseHandler has an empty ``allowed_out_fields`` tuple,
-                # but the Handler for the model A would dictate a different
+                # handler for model type of ``data`` defined.  (When could this
+                # happen? In the case that a BaseHandler would like to return a
+                # model instance of type A as a first class citizen. If that
+                # BaseHandler has an empty ``allowed_out_fields`` tuple, but
+                # the Handler for the model A would dictate a different
                 # representation. Then we use the representation that the
                 # handler for A defined.
                 elif not fields:
@@ -161,18 +159,36 @@ class Emitter:
 
             ret = {}
             handler = self.in_typemapper(data)
-            
+
             if handler:
                 fields = get_fields(handler, fields, nested)
 
-                for field_name in fields:  
+                for field_name in fields:
                     # Try to retrieve the field by name
                     try:
-                        f = data._meta.get_field_by_name(field_name)[0]
-                    except FieldDoesNotExist:                         
-                        # Field is not a physical model field. 
+                        field_object, model, direct, m2m = data._meta.get_field_by_name(field_name)
+
+                        # Django 1.7 and up now include the field attname in
+                        # the Options name.map. This means that both the field
+                        # name and field attname will be found by
+                        # `get_field_by_name`. For example the following
+                        # definition:
+                        #
+                        # class Foo(models.Model):
+                        #      bar = ForeignKeyField(...)
+                        #
+                        # In Django 1.6 get_field_by_name("bar_id") would raise
+                        # a FieldDoesNotExist exception but starting in 1.7 it
+                        # will return the field.
+                        #
+                        # This is a work around to maintain the 1.6 behaviour.
+                        if direct and field_object.rel is not None and field_name.endswith("_id"):
+                            raise FieldDoesNotExist
+
+                    except FieldDoesNotExist:
+                        # Field is not a physical model field.
                         # So it's either a fake static field, or a fake dynamic
-                        # field. 
+                        # field.
                         # In the first case, it is defined in the model's
                         # ``_fake_static_fields`` tuple. So we invoke the
                         # ``_compute_fake_static_field`` method to get its
@@ -189,13 +205,13 @@ class Emitter:
                                 except AttributeError:
                                     raise
                                 else:
-                                    continue       
+                                    continue
 
                         # Then it's a fake dynamic field
                         try:
                             ret[field_name] = _any(getattr(data, field_name))
                         except:
-                            # Field hasn't been found on this model. 
+                            # Field hasn't been found on this model.
                             # It's most likely defined as a fake dynamic field,
                             # but has never been populated on this model
                             # instance. This means there's most likely a bug in
@@ -203,53 +219,55 @@ class Emitter:
                             # method.
                             continue
 
-                    # The field ``f`` is a physical model field.
-                    else:                               
+                    # The field ``field_object`` is a physical model field.
+                    else:
                         try:
                             value = getattr(data, field_name)
                         except (AttributeError, ObjectDoesNotExist):
                             # Happens if the field f does not exist on this
-                            # model instance. 
+                            # model instance.
                             # For example: model class B inherits from model
                             # class A. Therefore, every instance of A has
                             # ReverseObject references to B. However, a pure
                             # instance of model A, will throw a DoesNotExist
                             # exception when trying to read the reference to B.
                             continue
-                            
+
                         # ``field_name``: Name of the field (string)
                         # ``value``: Value of the field
-                        # ``f``: Instance of a subclass of ``django.models.db.fields.Field``
+                        # ``field_object``: Instance of a subclass of
+                        #                   ``django.models.db.fields.Field``
 
-                        # Check if the field is a RelatedManager object(reverse FK)
-                        if hasattr(value, 'all'):
+                        # Check if the field is a RelatedManager object(reverse
+                        # FK)
+                        if not direct and not m2m:
                             ret[field_name] = _related(value)
                             continue
 
                         # Check if the field is many_to_many
-                        elif f in data._meta.many_to_many:
-                            if f.serialize:
-                                ret[field_name] = _m2m(data, f)
-                                continue           
+                        elif not direct and m2m:
+                            if field_object.serialize:
+                                ret[field_name] = _m2m(data, field_object)
+                                continue
 
                         # Check if the field is a RelatedObject instance.
                         # Happens when a modelB inherits from modelA. In that
-                        # case, in the representation of modelA, the modelB instance appears
-                        # as a RelatedObject.
-                        elif isinstance(f, RelatedObject): 
-                            ret[field_name] = _model(value)                            
+                        # case, in the representation of modelA, the modelB
+                        # instance appears as a RelatedObject.
+                        elif isinstance(field_object, RelatedObject):
+                            ret[field_name] = _model(value)
 
                         # Check if it is a local field or virtual field
-                        elif f in (data._meta.local_fields + data._meta.virtual_fields)\
-                        and hasattr(f, 'serialize')\
-                        and f.serialize:
+                        elif (field_object in (data._meta.local_fields + data._meta.virtual_fields)
+                                and hasattr(field_object, 'serialize')
+                                and field_object.serialize):
                             # Is it a serializable physical field on the model?
-                            if not f.rel:
+                            if not field_object.rel:
                                 ret[field_name] = _any(value)
                                 continue
                             # Is it a foreign key?
                             else:
-                                ret[field_name] = _fk(data, f)
+                                ret[field_name] = _fk(data, field_object)
                                 continue
 
                         # Else simple try to serialize the value
@@ -267,17 +285,17 @@ class Emitter:
         def _qs(data, fields=(), nested=False):
             """
             Querysets.
-            
+
             Queryset data might be both nested or first class citizens of the
             representation.
             """
-            return [ _any(v, fields, nested) for v in data ]
+            return [_any(v, fields, nested) for v in data]
 
         def _list(data, fields=(), nested=False):
             """
             Lists.
             """
-            return [ _any(v, fields, nested) for v in data ]
+            return [_any(v, fields, nested) for v in data]
 
         def _dict(data, fields=()):
             """
@@ -288,9 +306,9 @@ class Emitter:
             # If there is field selection selection, output only allowed
             # fields. Else, output all fields
             if fields:
-                return dict([ (k, _any(v, fields=(), nested=True)) for k, v in data.iteritems() if k in fields])
+                return dict([(k, _any(v, fields=(), nested=True)) for k, v in data.iteritems() if k in fields])
             else:
-                return dict([ (k, _any(v, fields=(), nested=True)) for k, v in data.iteritems()])
+                return dict([(k, _any(v, fields=(), nested=True)) for k, v in data.iteritems()])
 
         # kickstart
         return _any(self.data, self.fields, nested=False)
@@ -306,7 +324,7 @@ class Emitter:
                 return _handler
 
         # Else, check whether one of its superclasses is mapped
-        # in the typemapper (this is useful in cases ``model_instance`` 
+        # in the typemapper (this is useful in cases ``model_instance``
         # is not a pure model instance, but rather a Deferred one.
         for _handler, _model in self.TYPEMAPPER.items():
             if isinstance(model_instance, _model):
@@ -324,7 +342,7 @@ class Emitter:
         """
         Gets an emitter, returns the class and a content-type.
         """
-        if cls.EMITTERS.has_key(format):
+        if format in cls.EMITTERS:
             return cls.EMITTERS.get(format)
 
         raise ValueError("No emitters found for type %s" % format)
@@ -348,7 +366,8 @@ class Emitter:
         Remove an emitter from the registry. Useful if you don't
         want to provide output in one of the built-in emitters.
         """
-        return cls.EMITTERS.pop(name, None)        
+        return cls.EMITTERS.pop(name, None)
+
 
 class JSONEmitter(Emitter):
     """
@@ -359,7 +378,10 @@ class JSONEmitter(Emitter):
         # contain any of the following python data structures: dict, list, str.
         # So here we simply serialize it into JSON.
         return json.dumps(self.data, cls=DateTimeAwareJSONEncoder, ensure_ascii=False, indent=4)
+
+
 Emitter.register('json', JSONEmitter, 'application/json; charset=utf-8')
+
 
 class XMLEmitter(Emitter):
     def _to_xml(self, xml, data):
@@ -389,13 +411,17 @@ class XMLEmitter(Emitter):
         xml.endDocument()
 
         return stream.getvalue()
+
+
 Emitter.register('xml', XMLEmitter, 'text/xml; charset=utf-8')
 
 
 class ExcelEmitter(Emitter):
+
     def render(self, request):
+
         def _to_unicode(string):
-            """ 
+            """
             Return the unicode repsesentation of string
             """
             try:
@@ -404,9 +430,10 @@ class ExcelEmitter(Emitter):
                 # the string is a bytestring
                 ascii_text = str(string).encode('string_escape')
                 return unicode(ascii_text)
+
         def to_utf8(string):
             """
-            Return the utf-8 encoded representation of the string 
+            Return the utf-8 encoded representation of the string
             """
             unic = _to_unicode(string)
             return unic.encode('utf-8')
@@ -420,9 +447,9 @@ class ExcelEmitter(Emitter):
 
         wb = xlwt.Workbook(encoding='utf-8')
         stream = StringIO.StringIO()
-        
+
         ws = wb.add_sheet("Sheet")
-        
+
         # Write field names on row 0
         col = 0
         for field_name in fields:
@@ -434,16 +461,16 @@ class ExcelEmitter(Emitter):
         if isinstance(data, dict):
             data = [data]
 
-        row = 1     
+        row = 1
 
         for record in data:
             # every record is a dict
-            
-            col = 0         
+
+            col = 0
             for key in fields:
                 value = ""
                 field_value = record[key]
-                
+
                 # I show lists or dicts to comma-separated strings
                 if isinstance(field_value, list):
                     if field_value:
@@ -451,32 +478,37 @@ class ExcelEmitter(Emitter):
                         value = ", ".join(field_value)
                 elif isinstance(field_value, dict):
                     if field_value:
-                        value = ", ".join(to_utf8(key) + ": " + to_utf8(value)  for key, value in
+                        value = ", ".join(to_utf8(key) + ": " + to_utf8(value) for key, value in
                             field_value.items())
                 else:
                     value = to_utf8(record[key])
 
-                ws.write(row, col, value )
+                ws.write(row, col, value)
                 col = col + 1
             row = row + 1
         wb.save(stream)
         return stream.getvalue()
+
     # TODO
     # Works only for outputting handlers extending the ModelHandler class
-    # Doesn't really work with outputing nested fields 
+    # Doesn't really work with outputing nested fields
+
+
 Emitter.register('excel', ExcelEmitter, 'application/vnd.ms-excel')
- 
+
+
 class HTMLEmitter(Emitter):
+
     def render(self, request):
         construct = self.construct()
         if 'data' in construct:
             # If the ``construct['data']`` is dictionary(hence the request was
             # singular), and only contains one field,
-            # we can simmly output the  ``value`` of this field. 
-            # Else, we simply output the whole data structure 
+            # we can simmly output the  ``value`` of this field.
+            # Else, we simply output the whole data structure
             # as is (altough it doesn't make much sense).
-            if isinstance(construct['data'], dict)\
-            and len(construct['data']) == 1:
+            if (isinstance(construct['data'], dict)
+                    and len(construct['data']) == 1):
                 return construct['data'].values()[0]
             else:
                 return construct['data']
@@ -485,5 +517,7 @@ class HTMLEmitter(Emitter):
             # Validation was raised
             return construct['errors']
 
-        return None         
+        return None
+
+
 Emitter.register('html', HTMLEmitter, 'text/html')
