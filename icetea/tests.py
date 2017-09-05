@@ -1,16 +1,17 @@
-from django.test import TestCase
-from django.test import Client
+import inspect
 import json
 import sys
-import inspect
+
+from django.test import Client, TestCase
+
 
 class BaseTest(TestCase):
     """
     Base Test Class.
     Don't inherit directly from this class, but from one of its subclasses.
-    """    
+    """
     def setUp(self):
-        self.browser = Client()        
+        self.browser = Client()
         self.method_mapping = {
             'read': self.browser.get,
             'create': self.browser.post,
@@ -23,7 +24,7 @@ class BaseTest(TestCase):
         self.browser.login(
             username=self.USERNAME,
             password=self.PASSWORD,
-        )   
+        )
 
     def request(self, type, endpoint, payload):
         """
@@ -38,7 +39,7 @@ class BaseTest(TestCase):
         """
         if type in ('create', 'update'):
             if not payload == 'non_json_payload':
-                payload=json.dumps(payload)
+                payload = json.dumps(payload)
 
         method = self.method_mapping[type]
         response = method(
@@ -58,6 +59,7 @@ class BaseTest(TestCase):
             return string
         else:
             return string[:(limit - 4)] + "..."
+
 
 class TestResponseFieldsBase(BaseTest):
     """
@@ -91,18 +93,18 @@ class TestResponseFieldsBase(BaseTest):
         ``read``, ``create``, ``update``, ``delete``
 
      * Create the ``test_data``, which is a list of tuples. Every tuple should
-       contain:       
+       contain:
 
        * URL endpoint suffix. Should be a string.
        * Payload. Should be a a dictionary
-       * Tuple with the fields that the response should contain.. 
+       * Tuple with the fields that the response should contain..
 
      * Call ``self.execute(type, handler, test_data)``, which checks whether
-       the test succeeds or not.               
+       the test succeeds or not.
 
     In order to see concrete examples, check the ``tests`` package under
     ``django-icetea`` folder, which used this class to test ``django-icetea``
-    itself.  
+    itself.
     """
     # Length of test outputs
     LEN_ENDPOINT = 45
@@ -110,17 +112,16 @@ class TestResponseFieldsBase(BaseTest):
     LEN_EXPECTED = 60
     LEN_ACTUAL = 60
 
-
     def execute(self, type, handler, test_data):
         print '\n'
         # caller method name (method that called ``execute``)
         caller_method = inspect.stack()[1][3]
         # Print test information
         sys.stdout.write("Info: {name}, {caller}, {handler}, {type}".format(
-            name=self.__class__.__name__, 
+            name=self.__class__.__name__,
             caller=caller_method,
             handler=handler.__name__,
-            type=type,            
+            type=type,
         ))
         sys.stdout.write("\n--------------------------------------------------------------------\n")
 
@@ -131,7 +132,7 @@ class TestResponseFieldsBase(BaseTest):
             self.LEN_EXPECTED,
             self.LEN_ACTUAL,
         )).format(
-            endpoint="API Endpoint", 
+            endpoint="API Endpoint",
             payload="Payload",
             expected="Expected",
             actual="Actual",
@@ -139,7 +140,7 @@ class TestResponseFieldsBase(BaseTest):
         sys.stdout.write("\n")
 
         # Perform test and print results
-        for suffix, payload, expected_fields in test_data:  
+        for suffix, payload, expected_fields in test_data:
             expected_fields = set(expected_fields)
 
             # construct endpoint
@@ -147,10 +148,10 @@ class TestResponseFieldsBase(BaseTest):
             # execute request
             response = self.request(type, endpoint, payload)
             if response.status_code == 200:
-                
+
                 if not 'application/json' in response.get('Content-Type', None):
                     raise AssertionError('Test is only valid for JSON responses')
-                
+
                 content = json.loads(response.content)
                 data = content['data']
 
@@ -161,8 +162,8 @@ class TestResponseFieldsBase(BaseTest):
                                    # results contain the same fields, so I only
                                    # check the first one.
 
-                actual_fields.update(data.keys())                    
-            
+                actual_fields.update(data.keys())
+
             else:
                 actual_fields = set()
 
@@ -172,7 +173,7 @@ class TestResponseFieldsBase(BaseTest):
                 self.LEN_EXPECTED,
                 self.LEN_ACTUAL,
             )).format(
-                endpoint=self.truncate(endpoint, self.LEN_ENDPOINT), 
+                endpoint=self.truncate(endpoint, self.LEN_ENDPOINT),
                 payload=self.truncate((payload), self.LEN_PAYLOAD),
                 expected=self.truncate(expected_fields, self.LEN_EXPECTED),
                 actual=self.truncate(actual_fields, self.LEN_ACTUAL),
@@ -206,7 +207,7 @@ class TestResponseContentBase(BaseTest):
         ``read``, ``create``, ``update``, ``delete``
 
      * Create the ``test_data``, which is a list of tuples. Every tuple should
-       contain:       
+       contain:
 
        * URL endpoint suffix. Should be a string.
        * Payload. Should be a a dictionary
@@ -228,15 +229,15 @@ class TestResponseContentBase(BaseTest):
        * Number of expected resources returned. ``None`` if not applicable.
 
      * Call ``self.execute(type, handler, test_data)``, which checks whether
-       the test succeeds or not.               
+       the test succeeds or not.
 
     In order to see concrete examples, check the ``tests`` package under
     ``django-icetea`` folder, which used this class to test ``django-icetea``
-    itself.               
+    itself.
 
     """
     # Lengths of test outputs
-    LEN_ENDPOINT = 45 
+    LEN_ENDPOINT = 45
     LEN_PAYLOAD = 40
     LEN_EXPECTED_RES = 25
     LEN_ACTUAL_RES = 25
@@ -276,14 +277,14 @@ class TestResponseContentBase(BaseTest):
                     type = 'html'
                     length = None
             else:
-                if content == None:
+                if content is None:
                     type = 'None'
                     length = None
                 if isinstance(content, dict):
                     if len(content) == 0:
                         type = 'empty_dict'
-                    else:   
-                        type = 'populated_dict'    
+                    else:
+                        type = 'populated_dict'
                         # length is always 1 in this case
                         length = 1
                 elif isinstance(content, list):
@@ -303,7 +304,7 @@ class TestResponseContentBase(BaseTest):
             type = 'forbidden'
         elif response.status_code == 400:
             content = json.loads(response.content)
-            type = 'bad_request' 
+            type = 'bad_request'
             if isinstance(content, dict):
                 length = 1
             elif isinstance(content, list):
@@ -315,7 +316,7 @@ class TestResponseContentBase(BaseTest):
                 length = 1
             elif isinstance(content, list):
                 length = len(content)
-        
+
         return type, length
 
     def execute(self, type, handler, test_data):
@@ -324,25 +325,25 @@ class TestResponseContentBase(BaseTest):
         caller_method = inspect.stack()[1][3]
         # Print test information
         sys.stdout.write("Info: {name}, {caller}, {handler}, {type}".format(
-            name=self.__class__.__name__, 
+            name=self.__class__.__name__,
             caller=caller_method,
             handler=handler.__name__,
-            type=type,            
+            type=type,
         ))
         sys.stdout.write("\n--------------------------------------------------------------------\n")
 
         # Print headings
         sys.stdout.write((
             "{endpoint:%d}{payload:%d}{expected_response:%d}{actual_response:%d}{expected_length:%d}{actual_length:%d}" % (
-                self.LEN_ENDPOINT, 
-                self.LEN_PAYLOAD, 
+                self.LEN_ENDPOINT,
+                self.LEN_PAYLOAD,
                 self.LEN_EXPECTED_RES,
-                self.LEN_ACTUAL_RES, 
+                self.LEN_ACTUAL_RES,
                 self.LEN_EXPECTED_LEN,
                 self.LEN_ACTUAL_LEN
             )
        ).format(
-            endpoint="API Endpoint", 
+            endpoint="API Endpoint",
             payload="Payload",
             expected_response="Expected",
             actual_response="Actual",
@@ -351,18 +352,18 @@ class TestResponseContentBase(BaseTest):
             )
         )
         sys.stdout.write("\n")
- 
+
         # Perform test and print results
-        for suffix, payload, expected_response, expected_length in test_data:     
+        for suffix, payload, expected_response, expected_length in test_data:
             # construct endpoint
             endpoint = self.endpoints[handler] + suffix
             # execute request
             response = self.request(type, endpoint, payload)
             # analyze response
             actual_response, actual_length = self.analyze(response)
-            sys.stdout.write((\
+            sys.stdout.write((
             "{endpoint:%d}{payload:%d}{expected_response:%d}{actual_response:%d}{expected_length:%d}{actual_length:%d}" % (
-                self.LEN_ENDPOINT, 
+                self.LEN_ENDPOINT,
                 self.LEN_PAYLOAD,
                 self.LEN_EXPECTED_RES,
                 self.LEN_ACTUAL_RES,
@@ -371,7 +372,7 @@ class TestResponseContentBase(BaseTest):
             )).format(
                 endpoint=self.truncate(endpoint, self.LEN_ENDPOINT),
                 payload=self.truncate(payload, self.LEN_PAYLOAD),
-                expected_response=self.truncate(expected_response, self.LEN_EXPECTED_RES), 
+                expected_response=self.truncate(expected_response, self.LEN_EXPECTED_RES),
                 actual_response=self.truncate(actual_response, self.LEN_ACTUAL_RES),
                 expected_length=self.truncate(expected_length, self.LEN_EXPECTED_LEN),
                 actual_length=self.truncate(actual_length, self.LEN_ACTUAL_LEN),
@@ -409,18 +410,18 @@ class TestDatabaseOperations(BaseTest):
        for example 'SELECT' or 'UPDATE'
 
      * Create the ``test_data``, which is a list of tuples. Every tuple should
-       contain:       
+       contain:
 
        * URL endpoint suffix. Should be a string.
        * Payload. Should be a a dictionary
        * Integer that defines the number of expected db queries of type ``QUERY``.
 
      * Call ``self.execute(type, handler, test_data)``, which checks whether
-       the test succeeds or not.               
+       the test succeeds or not.
 
     In order to see concrete examples, check the ``tests`` package under
     ``django-icetea`` folder, which used this class to test ``django-icetea``
-    itself.  
+    itself.
     """
     # Length of test outputs
     LEN_ENDPOINT = 45
@@ -434,11 +435,11 @@ class TestDatabaseOperations(BaseTest):
         caller_method = inspect.stack()[1][3]
         # Print test information
         sys.stdout.write("Info: {name}, {caller}, {handler}, {type}, {query}".format(
-            name=self.__class__.__name__, 
+            name=self.__class__.__name__,
             caller=caller_method,
             handler=handler.__name__,
             query=query,
-            type=type,            
+            type=type,
         ))
         sys.stdout.write("\n--------------------------------------------------------------------\n")
 
@@ -449,19 +450,19 @@ class TestDatabaseOperations(BaseTest):
             self.LEN_EXPECTED,
             self.LEN_ACTUAL,
         )).format(
-            endpoint="API Endpoint", 
+            endpoint="API Endpoint",
             payload="Payload",
             expected="Expected",
             actual="Actual",
         ))
         sys.stdout.write("\n")
-        
+
         # DEBUG = True, to enable query monitoring
         from django.conf import settings
         settings.DEBUG = True
 
         # Perform test and print results
-        for suffix, payload, expected  in test_data:  
+        for suffix, payload, expected in test_data:
             expected = expected
 
             # construct endpoint
@@ -475,7 +476,7 @@ class TestDatabaseOperations(BaseTest):
             actual = 0
             for item in queries:
                 if query in item['sql']:
-                    actual = actual + 1         
+                    actual = actual + 1
 
             sys.stdout.write(("{endpoint:%d}{payload:%d}{expected:%d}{actual:%d}\n" % (
                 self.LEN_ENDPOINT,
@@ -483,13 +484,12 @@ class TestDatabaseOperations(BaseTest):
                 self.LEN_EXPECTED,
                 self.LEN_ACTUAL,
             )).format(
-                endpoint=self.truncate(endpoint, self.LEN_ENDPOINT), 
+                endpoint=self.truncate(endpoint, self.LEN_ENDPOINT),
                 payload=self.truncate((payload), self.LEN_PAYLOAD),
                 expected=self.truncate(expected, self.LEN_EXPECTED),
                 actual=self.truncate(actual,     self.LEN_ACTUAL)
             ))
             assert expected == actual
-        
-        # Set it back to False            
+
+        # Set it back to False
         settings.DEBUG = False
- 

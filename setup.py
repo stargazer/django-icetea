@@ -4,19 +4,19 @@ except ImportError:
     from distutils.core import setup
 
 setup(
-	name="django-icetea",
-	packages=('icetea', ),
-	version="0.5",
+    name="django-icetea",
+    packages=('icetea',),
+    version="0.5.5",
     description="REST API Framework",
-	author="C. Paschalides",
-	author_email="already.late@gmail.com",
+    author="C. Paschalides",
+    author_email="already.late@gmail.com",
     license="WTFPL",
-	url="http://github.com/stargazer/django-icetea",
+    url="http://github.com/stargazer/django-icetea",
     keywords=("rest", "restful", "api", "crud"),
-	install_requires=(
-		"Django==1.5.4",
+    install_requires=(
+        "Django>=1.6,<1.8",
         "xlwt",
-	),
+    ),
     zip_safe=False,
     classifiers=(
         "Programming Language :: Python",
@@ -27,5 +27,4 @@ setup(
         "License :: Freely Distributable",
         "Development Status :: 4 - Beta",
     ),
-)                                                    
-
+)
